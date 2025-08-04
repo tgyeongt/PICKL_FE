@@ -23,6 +23,7 @@ const router = createBrowserRouter([
           { path: "chat", Component: Chat },
           { path: "my", Component: My },
           { path: "search-map", Component: MapSearchPage },
+          // { path: "edit-location", Component: },
         ],
       },
     ],
