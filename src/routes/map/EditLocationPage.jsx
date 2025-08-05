@@ -25,6 +25,17 @@ const EditLocationWrapper = styled.div`
   padding-left: 20px;
 `;
 
-const TitleBox = styled.div``;
+const TitleBox = styled.div`
+  height: 64px;
+  padding: 0;
+  margin-bottom: 18px;
+`;
 
-const Title = styled.p``;
+const Title = styled.p`
+  color: #000;
+  font-family: Pretendard;
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 32px;
+`;

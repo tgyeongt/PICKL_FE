@@ -8,7 +8,7 @@ export default function MapHeader() {
   return (
     <MapHeaderWrapper>
       <Title>Pick동네</Title>
-      <SearchButton onClick={() => navigate("/search-map")}>
+      <SearchButton onClick={() => navigate("/map/search-map")}>
         <SearchIcon src={SearchIconImg} alt="검색 이미지" />
       </SearchButton>
     </MapHeaderWrapper>

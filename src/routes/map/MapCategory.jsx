@@ -18,7 +18,7 @@ export default function MapCategory() {
 
   return (
     <MapCategoryWrapper>
-      <LocationBox onClick={() => navigate("/edit-location")}>
+      <LocationBox onClick={() => navigate("/map/edit-location")}>
         {isLoading ? (
           <AddressText>위치 불러오는 중</AddressText>
         ) : (
