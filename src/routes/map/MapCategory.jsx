@@ -11,8 +11,13 @@ export default function MapCategory() {
   const { data: addressData, isLoading } = useQuery({
     queryKey: ["userLocation"],
     queryFn: async () => {
-      const res = await APIService.public.get("/user/location");
-      return res.data;
+      try {
+        const res = await APIService.public.get("/user/location");
+        return res.data ?? { address: "주소 없음" }; // fallback 처리!
+      } catch (err) {
+        console.error("위치 요청 실패", err);
+        return { address: "주소 없음" }; // 오류 시에도 빈 값 반환
+      }
     },
   });
 

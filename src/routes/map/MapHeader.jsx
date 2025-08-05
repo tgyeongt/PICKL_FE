@@ -42,7 +42,7 @@ const SearchButton = styled.button`
   transform: translateY(-50%);
   cursor: pointer;
   border: none;
-  background-color: #f6f6f6;
+  background-color: #ffffff;
 `;
 
 const SearchIcon = styled.img`

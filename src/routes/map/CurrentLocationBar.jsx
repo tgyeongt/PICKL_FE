@@ -1,9 +1,9 @@
 import styled from "styled-components";
 import targetImg from "@icon/target.png";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 export default function CurrentLocationBar() {
-  const navigate = useNavigate();
+  //   const navigate = useNavigate();
   const handleClick = () => {};
 
   return (
