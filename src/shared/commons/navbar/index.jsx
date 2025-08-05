@@ -28,10 +28,9 @@ const NavBarWrapper = styled.nav`
   position: fixed;
   bottom: 0;
   width: 100%;
-  max-width: 768px;
+  max-width: 390px;
   height: 60px;
   background-color: white;
   display: flex;
-  border-top: 1px solid #e0e0e0;
   z-index: 1000;
 `;
