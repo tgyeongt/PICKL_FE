@@ -29,15 +29,12 @@ html {
   }
 }
 
-main {
-  max-width: 390px;
-}
-
 body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  max-width: 390px;
   margin: 0 auto;
   background-color: #fbfbfb;
 }
