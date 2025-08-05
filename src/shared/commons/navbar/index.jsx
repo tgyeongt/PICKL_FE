@@ -28,7 +28,6 @@ const NavBarWrapper = styled.nav`
   position: fixed;
   bottom: 0;
   width: 100%;
-  max-width: 390px;
   height: 60px;
   background-color: white;
   display: flex;
