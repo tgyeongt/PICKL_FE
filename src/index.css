@@ -3,6 +3,12 @@
   src: local("PretendardVariable"), url("../assets/font/PretendardVariable.woff2") format("woff2");
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 html {
   font-family: Pretendard, sans-serif;
 }
