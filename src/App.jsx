@@ -9,6 +9,7 @@ import Search from "./routes/search";
 import Chat from "./routes/chat";
 import My from "./routes/my";
 import MapSearchPage from "./routes/map/MapSearchPage";
+import EditLocationPage from "./routes/map/EditLocationPage";
 
 const router = createBrowserRouter([
   {
@@ -23,7 +24,7 @@ const router = createBrowserRouter([
           { path: "chat", Component: Chat },
           { path: "my", Component: My },
           { path: "search-map", Component: MapSearchPage },
-          // { path: "edit-location", Component: },
+          { path: "edit-location", Component: EditLocationPage },
         ],
       },
     ],

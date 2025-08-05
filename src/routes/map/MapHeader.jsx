@@ -19,7 +19,7 @@ const MapHeaderWrapper = styled.div`
   position: relative;
   height: 55px;
   width: 100%;
-  background: #f6f6f6;
+  background: #ffffff;
 
   border: none;
   outline: none;

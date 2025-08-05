@@ -58,6 +58,7 @@ const CategoryButton = styled.button`
   border: ${({ $selected }) => ($selected ? "1.5px solid #58D748" : "1px solid #ddd")};
   border-radius: 10px;
   box-shadow: 1px 1px 4px 0 var(--GREY10, #e1e1e3);
+  cursor: pointer;
 `;
 
 const CategoryIcon = styled.img`

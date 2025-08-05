@@ -44,6 +44,7 @@ const MapCategoryWrapper = styled.div`
 
 const LocationBox = styled.div`
   margin-bottom: 29px;
+  cursor: pointer;
 `;
 
 const AddressTextWrapper = styled.div`
