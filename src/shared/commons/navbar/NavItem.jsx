@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router";
 export default function NavItem({ icon, activeIcon, to, label }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const isActive = location.pathname === to;
+  const isActive = to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
 
   return (
     <ItemWrapper onClick={() => navigate(to)}>
