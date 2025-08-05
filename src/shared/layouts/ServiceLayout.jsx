@@ -13,5 +13,5 @@ export default function ServiceLayout() {
 }
 
 const Container = styled.div`
-  padding: 20px;
+  padding: 0 20px;
 `;

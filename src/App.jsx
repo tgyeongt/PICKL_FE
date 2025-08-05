@@ -13,18 +13,25 @@ import EditLocationPage from "./routes/map/EditLocationPage";
 
 const router = createBrowserRouter([
   {
+    // RootLayout은 좌우 패딩값이 필요없는 페이지에 적용한다. (가장 기본이 되는 레이아웃)
     Component: RootLayout,
     children: [
       { path: "/", index: true, Component: Home },
       {
+        path: "map",
+        children: [
+          { index: true, Component: Map },
+          { path: "search-map", Component: MapSearchPage },
+          { path: "edit-location", Component: EditLocationPage },
+        ],
+      },
+      // ServiceLayout은 좌우 패딩값이 20px로 되어있다.
+      {
         Component: ServiceLayout,
         children: [
-          { path: "map", Component: Map },
           { path: "search", Component: Search },
           { path: "chat", Component: Chat },
           { path: "my", Component: My },
-          { path: "map/search-map", Component: MapSearchPage },
-          { path: "map/edit-location", Component: EditLocationPage },
         ],
       },
     ],
