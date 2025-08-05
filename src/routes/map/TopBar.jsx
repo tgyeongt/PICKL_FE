@@ -16,7 +16,7 @@ export default function TopBar({ title }) {
 }
 
 const TopBarWrapper = styled.div`
-  background-color: aliceblue;
+  background-color: #ffffff;
   width: 100%;
   display: flex;
   align-items: center;
