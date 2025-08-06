@@ -27,7 +27,7 @@ const CurrentLocationWrapper = styled.button`
   align-items: center;
   gap: 4px;
   cursor: pointer;
-
+  
   &:active {
     opacity: 0.8;
   }

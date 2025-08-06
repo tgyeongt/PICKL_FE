@@ -26,4 +26,5 @@ const MapWrapper = styled.div`
 
 const MapContent = styled.div`
   flex: 1;
+  margin-top: 16px;
 `;
