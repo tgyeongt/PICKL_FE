@@ -11,7 +11,7 @@ export default function KakaoMap() {
 
     return new Promise((resolve) => {
       const script = document.createElement("script");
-      const appKey = import.meta.env.VITE_KAKAO_APP_KEY;
+      const appKey = import.meta.env.VITE_KAKAOMAP_APP_KEY;
       script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`;
       script.async = true;
       script.onload = resolve;
