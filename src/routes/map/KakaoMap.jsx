@@ -127,9 +127,12 @@ export default function KakaoMap() {
 
     stores.forEach((store) => {
       const storeKey = `${store.latitude},${store.longitude}`;
-      const storePosition = new window.kakao.maps.LatLng(store.latitude, store.longitude);
-      if (!bounds.contain(storePosition)) return;
+
       if (selectedCategory !== "all" && store.type.toLowerCase() !== selectedCategory) return;
+
+      const storePosition = new window.kakao.maps.LatLng(store.latitude, store.longitude);
+
+      if (!bounds.contain(storePosition)) return;
 
       if (overlayMapRef.current.bubbleTargetKey === storeKey) {
         if (overlayMapRef.current.bubble) newMarkers.push(overlayMapRef.current.bubble);
@@ -155,6 +158,11 @@ export default function KakaoMap() {
   useEffect(() => {
     loadScript().then(createMap);
   }, []);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    renderMarkers();
+  }, [selectedCategory, renderMarkers, mapInstance]);
 
   useEffect(() => {
     if (!mapInstance) return;
