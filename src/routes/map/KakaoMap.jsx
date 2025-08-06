@@ -29,6 +29,9 @@ export default function KakaoMap() {
     staleTime: 1000 * 60 * 5,
   });
 
+  const isDev = import.meta.env.MODE === "development";
+  const stores = storesData ?? (isDev ? mockStoresData : []);
+
   const loadScript = () => {
     if (document.querySelector("script[src*='dapi.kakao.com']")) return Promise.resolve();
 
@@ -71,18 +74,17 @@ export default function KakaoMap() {
   };
 
   const renderMarkers = () => {
-    if (!mapInstance || !storesData) return;
+    if (!mapInstance || !stores) return;
 
     markers.forEach((marker) => marker.setMap(null));
 
     const bounds = mapInstance.getBounds();
     const newMarkers = [];
 
-    storesData.forEach((store) => {
+    stores.forEach((store) => {
       const storePosition = new window.kakao.maps.LatLng(store.latitude, store.longitude);
 
       if (!bounds.contain(storePosition)) return;
-
       if (selectedCategory !== "all" && store.type !== selectedCategory) return;
 
       const imageSrc = store.type === "market" ? marketIcon : martIcon;
@@ -110,11 +112,10 @@ export default function KakaoMap() {
     };
 
     window.kakao.maps.event.addListener(mapInstance, "idle", handleIdle);
-
     return () => {
       window.kakao.maps.event.removeListener(mapInstance, "idle", handleIdle);
     };
-  }, [mapInstance, storesData, selectedCategory]);
+  }, [mapInstance, stores, selectedCategory]);
 
   return (
     <KakaoMapWrapper>

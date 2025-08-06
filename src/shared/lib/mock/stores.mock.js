@@ -3,14 +3,14 @@ export const mockStoresData = [
     id: 1,
     name: "길음시장",
     type: "market",
-    latitude: 37.612969,
-    longitude: 127.025452,
+    latitude: 37.6027782265744,
+    longitude: 127.02193272935449,
   },
   {
     id: 2,
     name: "이마트 미아점",
     type: "mart",
-    latitude: 37.61388,
-    longitude: 127.030967,
+    latitude: 37.6046907253244,
+    longitude: 127.03127341283384,
   },
 ];
