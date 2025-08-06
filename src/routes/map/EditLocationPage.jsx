@@ -22,7 +22,6 @@ const EditLocationWrapper = styled.div`
   background-color: #fbfbfb;
   display: flex;
   flex-direction: column;
-  padding-left: 20px;
 `;
 
 const TitleBox = styled.div`
@@ -30,6 +29,8 @@ const TitleBox = styled.div`
   padding: 0;
   margin-bottom: 18px;
   margin-top: 35px;
+  padding-left: 20px;
+  padding-right: 20px;
 `;
 
 const Title = styled.p`

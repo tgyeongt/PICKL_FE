@@ -22,6 +22,9 @@ const TopBarWrapper = styled.div`
   align-items: center;
   padding-top: 13px;
   padding-bottom: 0px;
+  position: relative;
+  padding-left: 20px;
+  padding-right: 20px;
 `;
 
 const BackButton = styled.button`
