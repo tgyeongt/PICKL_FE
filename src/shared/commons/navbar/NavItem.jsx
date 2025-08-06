@@ -9,7 +9,7 @@ export default function NavItem({ icon, activeIcon, to, label }) {
   return (
     <ItemWrapper onClick={() => navigate(to)}>
       <Icon src={isActive ? activeIcon : icon} alt={`${label} icon`} />
-      <Label isActive={isActive}>{label}</Label>
+      <Label $isActive={isActive}>{label}</Label>
     </ItemWrapper>
   );
 }
@@ -29,9 +29,11 @@ const Icon = styled.img`
   height: 24px;
 `;
 
-const Label = styled.span`
+const Label = styled.span.withConfig({
+  shouldForwardProp: (prop) => prop !== "$isActive",
+})`
   font-size: 11px;
   margin-top: 4px;
-  color: ${({ isActive }) => (isActive ? "#58D748" : "#ADADAF")};
+  color: ${({ $isActive }) => ($isActive ? "#58D748" : "#ADADAF")};
   font-weight: 400;
 `;

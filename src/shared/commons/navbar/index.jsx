@@ -1,16 +1,16 @@
 import styled from "styled-components";
 import NavItem from "./NavItem";
 
-import HomeIcon from "@icon/home.svg";
-import HomeActive from "@icon/home_active.svg";
-import MapIcon from "@icon/map.svg";
-import MapActive from "@icon/map_active.svg";
-import SearchIcon from "@icon/search.svg";
-import SearchActive from "@icon/search_active.svg";
-import ChatIcon from "@icon/chat.svg";
-import ChatActive from "@icon/chat_active.svg";
-import MyIcon from "@icon/my.svg";
-import MyActive from "@icon/my_active.svg";
+import HomeIcon from "@icon/navbar/home.svg";
+import HomeActive from "@icon/navbar/home_active.svg";
+import MapIcon from "@icon/navbar/map.svg";
+import MapActive from "@icon/navbar/map_active.svg";
+import SearchIcon from "@icon/navbar/search.svg";
+import SearchActive from "@icon/navbar/search_active.svg";
+import ChatIcon from "@icon/navbar/chat.svg";
+import ChatActive from "@icon/navbar/chat_active.svg";
+import MyIcon from "@icon/navbar/my.svg";
+import MyActive from "@icon/navbar/my_active.svg";
 
 export default function NavBar() {
   return (
@@ -28,10 +28,9 @@ const NavBarWrapper = styled.nav`
   position: fixed;
   bottom: 0;
   width: 100%;
-  max-width: 768px;
+  max-width: 390px;
   height: 60px;
   background-color: white;
   display: flex;
-  border-top: 1px solid #e0e0e0;
   z-index: 1000;
 `;
