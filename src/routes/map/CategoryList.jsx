@@ -67,7 +67,7 @@ const CategoryIcon = styled.img`
 `;
 
 const CategoryLabel = styled.p`
-  color: #000;
+  color: #1C1B1A;
   font-family: Pretendard;
   font-size: 12px;
   font-style: normal;

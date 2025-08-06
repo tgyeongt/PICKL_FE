@@ -74,7 +74,7 @@ const CurrentLocationButton = styled.button`
   bottom: 80px;
   left: 20px;
   z-index: 10;
-  background-color: #ffffff;
+  background-color: #fbfbfb;
   border: 1px solid #ccc;
   border-radius: 48px;
   width: 46px;

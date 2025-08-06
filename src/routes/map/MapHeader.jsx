@@ -19,7 +19,7 @@ const MapHeaderWrapper = styled.div`
   position: relative;
   height: 55px;
   width: 100%;
-  background: #ffffff;
+  background: #fbfbfb;
 
   border: none;
   outline: none;
@@ -28,6 +28,7 @@ const MapHeaderWrapper = styled.div`
 
 const Title = styled.p`
   position: absolute;
+  color: #1C1B1A;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -42,7 +43,7 @@ const SearchButton = styled.button`
   transform: translateY(-50%);
   cursor: pointer;
   border: none;
-  background-color: #ffffff;
+  background-color: #fbfbfb;
 `;
 
 const SearchIcon = styled.img`

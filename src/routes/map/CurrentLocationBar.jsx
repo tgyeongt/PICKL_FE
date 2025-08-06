@@ -44,7 +44,7 @@ const TargetTextBox = styled.div`
 `;
 
 const TargetText = styled.p`
-  color: black;
+  color: #1C1B1A;
   font-family: Pretendard;
   font-size: 12px;
   font-style: normal;
