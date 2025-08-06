@@ -1,13 +1,11 @@
 import { useEffect, useRef } from "react";
+import currentIcon from "@icon/map/currentIcon.svg";
 
 export default function CheckLocationMap() {
   const mapRef = useRef(null);
 
   const loadScript = () => {
-    // 이미 로드되었는지 확인
     if (window.kakao && window.kakao.maps) return Promise.resolve();
-
-    // 중복 로딩 방지
     if (document.querySelector("script[src*='dapi.kakao.com']")) return Promise.resolve();
 
     return new Promise((resolve) => {
@@ -28,7 +26,6 @@ export default function CheckLocationMap() {
     }
 
     window.kakao.maps.load(() => {
-      // 위치 정보 받아오기
       navigator.geolocation.getCurrentPosition(
         ({ coords }) => {
           const { latitude, longitude } = coords;
@@ -41,13 +38,23 @@ export default function CheckLocationMap() {
 
           const map = new window.kakao.maps.Map(container, options);
 
+          const markerImage = new window.kakao.maps.MarkerImage(
+            currentIcon,
+            new window.kakao.maps.Size(35, 50),
+            {
+              offset: new window.kakao.maps.Point(20, 40),
+            }
+          );
+
           new window.kakao.maps.Marker({
             position: new window.kakao.maps.LatLng(latitude, longitude),
             map: map,
+            image: markerImage,
           });
         },
-        (err) => {
-          console.error("위치 정보를 가져올 수 없습니다:", err);
+        (error) => {
+          alert("위치 정보를 불러올 수 없습니다.");
+          console.error(error);
         }
       );
     });
