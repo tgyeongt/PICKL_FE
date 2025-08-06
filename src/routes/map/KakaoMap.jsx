@@ -1,5 +1,4 @@
-// ✅ 1. 필요한 import는 그대로 유지
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   KakaoMapWrapper,
   KakaoMapBox,
@@ -18,8 +17,9 @@ import martIcon from "@icon/map/selectMart.svg";
 export default function KakaoMap() {
   const mapRef = useRef(null);
   const [mapInstance, setMapInstance] = useState(null);
-  const [markers, setMarkers] = useState([]);
   const [selectedCategory] = useAtom(selectedCategoryAtom);
+
+  const markersRef = useRef([]);
 
   const { data: storesData } = useQuery({
     queryKey: ["stores"],
@@ -28,8 +28,7 @@ export default function KakaoMap() {
   });
 
   const isDev = import.meta.env.MODE === "development";
-  const stores = storesData ?? (isDev ? mockStoresData : []);
-
+  const stores = useMemo(() => storesData ?? (isDev ? mockStoresData : []), [storesData, isDev]);
   const overlayMapRef = useRef({ round: {}, bubble: null, bubbleTargetKey: null });
 
   const loadScript = () => {
@@ -72,13 +71,10 @@ export default function KakaoMap() {
     icon.style.width = "30px";
     icon.style.height = "30px";
     marker.appendChild(icon);
-
-    // ✅ 애니메이션 효과 부여
     setTimeout(() => {
       marker.style.opacity = "1";
       marker.style.transform = "scale(1)";
     }, 10);
-
     return marker;
   };
 
@@ -91,39 +87,38 @@ export default function KakaoMap() {
         <div style="position: absolute; bottom: -6px; left: 26px; width: 0; height: 0;
           border-left: 6px solid transparent; border-right: 6px solid transparent;
           border-top: 6px solid #58D748;"></div>
-      </div>
-    `;
-
-    // ✅ 나타나는 애니메이션 트리거
+      </div>`;
     setTimeout(() => {
       bubble.querySelector(".custom-bubble")?.classList.add("show");
     }, 10);
-
     return bubble;
   };
 
-  const showBubbleOverlay = (store, storePosition, imageSrc) => {
-    const prevRound = overlayMapRef.current.round[`${store.latitude},${store.longitude}`];
-    if (prevRound) {
-      prevRound.setMap(null);
-      prevRound.getContent()?.remove?.();
-      delete overlayMapRef.current.round[`${store.latitude},${store.longitude}`];
-    }
+  const showBubbleOverlay = useCallback(
+    (store, storePosition, imageSrc) => {
+      const prevRound = overlayMapRef.current.round[`${store.latitude},${store.longitude}`];
+      if (prevRound) {
+        prevRound.setMap(null);
+        prevRound.getContent()?.remove?.();
+        delete overlayMapRef.current.round[`${store.latitude},${store.longitude}`];
+      }
+      const bubbleEl = createBubbleElement(store, imageSrc);
+      const bubbleOverlay = new window.kakao.maps.CustomOverlay({
+        position: storePosition,
+        content: bubbleEl,
+        yAnchor: 1.1,
+      });
+      bubbleOverlay.setMap(mapInstance);
+      overlayMapRef.current.bubble = bubbleOverlay;
+      overlayMapRef.current.bubbleTargetKey = `${store.latitude},${store.longitude}`;
+    },
+    [mapInstance]
+  );
 
-    const bubbleEl = createBubbleElement(store, imageSrc);
-    const bubbleOverlay = new window.kakao.maps.CustomOverlay({
-      position: storePosition,
-      content: bubbleEl,
-      yAnchor: 1.1,
-    });
-    bubbleOverlay.setMap(mapInstance);
-    overlayMapRef.current.bubble = bubbleOverlay;
-    overlayMapRef.current.bubbleTargetKey = `${store.latitude},${store.longitude}`;
-  };
-
-  const renderMarkers = () => {
+  const renderMarkers = useCallback(() => {
     if (!mapInstance || !stores) return;
-    markers.forEach((m) => m.setMap(null));
+
+    markersRef.current.forEach((m) => m.setMap(null));
     Object.values(overlayMapRef.current.round).forEach((o) => o.setMap(null));
     overlayMapRef.current.round = {};
 
@@ -134,7 +129,7 @@ export default function KakaoMap() {
       const storeKey = `${store.latitude},${store.longitude}`;
       const storePosition = new window.kakao.maps.LatLng(store.latitude, store.longitude);
       if (!bounds.contain(storePosition)) return;
-      if (selectedCategory !== "all" && store.type !== selectedCategory) return;
+      if (selectedCategory !== "all" && store.type.toLowerCase() !== selectedCategory) return;
 
       if (overlayMapRef.current.bubbleTargetKey === storeKey) {
         if (overlayMapRef.current.bubble) newMarkers.push(overlayMapRef.current.bubble);
@@ -150,12 +145,12 @@ export default function KakaoMap() {
       });
       roundOverlay.setMap(mapInstance);
       overlayMapRef.current.round[storeKey] = roundOverlay;
-
       markerEl.addEventListener("click", () => showBubbleOverlay(store, storePosition, imageSrc));
       newMarkers.push(roundOverlay);
     });
-    setMarkers(newMarkers);
-  };
+
+    markersRef.current = newMarkers;
+  }, [mapInstance, stores, selectedCategory, showBubbleOverlay]);
 
   useEffect(() => {
     loadScript().then(createMap);
@@ -164,10 +159,10 @@ export default function KakaoMap() {
   useEffect(() => {
     if (!mapInstance) return;
     const handleIdle = () => renderMarkers();
+
     const handleMapClick = () => {
       const { bubble, bubbleTargetKey } = overlayMapRef.current;
       if (!bubble || !bubbleTargetKey) return;
-
       bubble.setMap(null);
       bubble.getContent()?.remove?.();
       overlayMapRef.current.bubble = null;
@@ -186,18 +181,18 @@ export default function KakaoMap() {
       });
       roundOverlay.setMap(mapInstance);
       overlayMapRef.current.round[bubbleTargetKey] = roundOverlay;
-
       markerEl.addEventListener("click", () => showBubbleOverlay(store, storePosition, imageSrc));
       overlayMapRef.current.bubbleTargetKey = null;
     };
 
     window.kakao.maps.event.addListener(mapInstance, "idle", handleIdle);
     window.kakao.maps.event.addListener(mapInstance, "click", handleMapClick);
+
     return () => {
       window.kakao.maps.event.removeListener(mapInstance, "idle", handleIdle);
       window.kakao.maps.event.removeListener(mapInstance, "click", handleMapClick);
     };
-  }, [mapInstance, stores, selectedCategory]);
+  }, [mapInstance, renderMarkers, showBubbleOverlay, stores]);
 
   return (
     <KakaoMapWrapper>
