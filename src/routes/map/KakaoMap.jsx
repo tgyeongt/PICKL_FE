@@ -12,6 +12,7 @@ import marketIcon from "@icon/map/selectMarket.png";
 import martIcon from "@icon/map/selectMart.png";
 import { useAtom } from "jotai";
 import { selectedCategoryAtom } from "./state/CategoryState";
+import { mockStoresData } from "../../shared/lib/mock/stores.mock";
 
 export default function KakaoMap() {
   const mapRef = useRef(null);
