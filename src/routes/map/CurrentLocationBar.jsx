@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import targetImg from "@icon/target.png";
+import targetImg from "@icon/map/target.png";
 // import { useNavigate } from "react-router-dom";
 
 export default function CurrentLocationBar() {

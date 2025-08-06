@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import SearchIconImg from "@icon/searchButton.png";
+import SearchIconImg from "@icon/map/searchButton.png";
 
 export default function MapHeader() {
   const navigate = useNavigate();

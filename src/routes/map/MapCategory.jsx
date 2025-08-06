@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import CategoryList from "./CategoryList";
-import DropdownIcon from "@icon/dropdown.png";
+import DropdownIcon from "@icon/map/dropdown.png";
 
 export default function MapCategory() {
   const navigate = useNavigate();
