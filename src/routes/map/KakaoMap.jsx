@@ -10,9 +10,11 @@ import { APIService } from "../../shared/lib/api";
 import { useAtom } from "jotai";
 import { selectedCategoryAtom } from "./state/CategoryState";
 import { mockStoresData } from "../../shared/lib/mock/stores.mock";
+
 import CurrentLocationImg from "@icon/map/vector.svg";
 import marketIcon from "@icon/map/selectMarket.svg";
 import martIcon from "@icon/map/selectMart.svg";
+import currentMarkerIcon from "@icon/map/currentLocationMarker.svg";
 
 export default function KakaoMap() {
   const mapRef = useRef(null);
@@ -20,6 +22,8 @@ export default function KakaoMap() {
   const [selectedCategory] = useAtom(selectedCategoryAtom);
 
   const markersRef = useRef([]);
+  const currentMarkerRef = useRef(null);
+  const overlayMapRef = useRef({ round: {}, bubble: null, bubbleTargetKey: null });
 
   const { data: storesData } = useQuery({
     queryKey: ["stores"],
@@ -29,7 +33,6 @@ export default function KakaoMap() {
 
   const isDev = import.meta.env.MODE === "development";
   const stores = useMemo(() => storesData ?? (isDev ? mockStoresData : []), [storesData, isDev]);
-  const overlayMapRef = useRef({ round: {}, bubble: null, bubbleTargetKey: null });
 
   const loadScript = () => {
     if (document.querySelector("script[src*='dapi.kakao.com']")) return Promise.resolve();
@@ -127,11 +130,9 @@ export default function KakaoMap() {
 
     stores.forEach((store) => {
       const storeKey = `${store.latitude},${store.longitude}`;
-
       if (selectedCategory !== "all" && store.type.toLowerCase() !== selectedCategory) return;
 
       const storePosition = new window.kakao.maps.LatLng(store.latitude, store.longitude);
-
       if (!bounds.contain(storePosition)) return;
 
       if (overlayMapRef.current.bubbleTargetKey === storeKey) {
@@ -154,6 +155,44 @@ export default function KakaoMap() {
 
     markersRef.current = newMarkers;
   }, [mapInstance, stores, selectedCategory, showBubbleOverlay]);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      ({ coords }) => {
+        const { latitude, longitude } = coords;
+        const position = new window.kakao.maps.LatLng(latitude, longitude);
+
+        if (!currentMarkerRef.current) {
+          const markerImage = new window.kakao.maps.MarkerImage(
+            currentMarkerIcon,
+            new window.kakao.maps.Size(40, 40),
+            { offset: new window.kakao.maps.Point(20, 40) }
+          );
+
+          const marker = new window.kakao.maps.Marker({
+            position,
+            image: markerImage,
+            zIndex: 10,
+          });
+
+          marker.setMap(mapInstance);
+          currentMarkerRef.current = marker;
+        } else {
+          currentMarkerRef.current.setPosition(position);
+        }
+      },
+      (err) => console.error("위치 추적 실패:", err),
+      {
+        enableHighAccuracy: true,
+        maximumAge: 1000,
+        timeout: 5000,
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [mapInstance]);
 
   useEffect(() => {
     loadScript().then(createMap);
@@ -207,11 +246,9 @@ export default function KakaoMap() {
       <KakaoMapBox ref={mapRef} />
       <CurrentLocationButton
         onClick={() => {
-          if (!mapInstance) return;
-          navigator.geolocation.getCurrentPosition(({ coords }) => {
-            const moveLatLng = new window.kakao.maps.LatLng(coords.latitude, coords.longitude);
-            mapInstance.panTo(moveLatLng);
-          });
+          if (!mapInstance || !currentMarkerRef.current) return;
+          const currentPos = currentMarkerRef.current.getPosition();
+          mapInstance.panTo(currentPos);
         }}
       >
         <CurrentLocationIcon src={CurrentLocationImg} alt="현재 위치" />
