@@ -1,11 +1,13 @@
 import styled from "styled-components";
-import { useState } from "react";
-import selectAll from "@icon/selectAll.png";
-import selectMarket from "@icon/selectMarket.png";
-import selectMart from "@icon/selectMart.png";
+import { useAtom } from "jotai";
+import { selectedCategoryAtom } from "./state/CategoryState";
+
+import selectAll from "@icon/map/selectAll.svg";
+import selectMarket from "@icon/map/selectMarket.svg";
+import selectMart from "@icon/map/selectMart.svg";
 
 export default function CategoryList() {
-  const [selected, setSelected] = useState("all");
+  const [selected, setSelected] = useAtom(selectedCategoryAtom);
 
   return (
     <CategoryListWrapper>
@@ -67,7 +69,7 @@ const CategoryIcon = styled.img`
 `;
 
 const CategoryLabel = styled.p`
-  color: #000;
+  color: #1c1b1a;
   font-family: Pretendard;
   font-size: 12px;
   font-style: normal;

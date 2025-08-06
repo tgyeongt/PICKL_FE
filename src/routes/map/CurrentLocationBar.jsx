@@ -1,10 +1,12 @@
 import styled from "styled-components";
-import targetImg from "@icon/target.png";
-// import { useNavigate } from "react-router-dom";
+import targetImg from "@icon/map/target.svg";
+import { useNavigate } from "react-router-dom";
 
 export default function CurrentLocationBar() {
-  //   const navigate = useNavigate();
-  const handleClick = () => {};
+  const navigate = useNavigate();
+  const handleClick = () => {
+    navigate("/map/check-location");
+  };
 
   return (
     <CurrentLocationWrapper onClick={handleClick}>
@@ -27,9 +29,12 @@ const CurrentLocationWrapper = styled.button`
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  
+
   &:active {
     opacity: 0.8;
+  }
+  &:hover {
+    background-color: #edebeb;
   }
 `;
 
@@ -44,7 +49,7 @@ const TargetTextBox = styled.div`
 `;
 
 const TargetText = styled.p`
-  color: black;
+  color: #1c1b1a;
   font-family: Pretendard;
   font-size: 12px;
   font-style: normal;

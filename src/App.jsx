@@ -10,6 +10,7 @@ import Chat from "./routes/chat";
 import My from "./routes/my";
 import MapSearchPage from "./routes/map/MapSearchPage";
 import EditLocationPage from "./routes/map/EditLocationPage";
+import CheckLocationPage from "./routes/map/CheckLocationPage";
 
 const router = createBrowserRouter([
   {
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
           { index: true, Component: Map },
           { path: "search-map", Component: MapSearchPage },
           { path: "edit-location", Component: EditLocationPage },
+          { path: "check-location", Component: CheckLocationPage },
         ],
       },
       // ServiceLayout은 좌우 패딩값이 20px로 되어있다.

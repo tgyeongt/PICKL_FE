@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import SearchIconImg from "@icon/searchButton.png";
+import SearchIconImg from "@icon/map/searchButton.svg";
 
 export default function MapHeader() {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const MapHeaderWrapper = styled.div`
   position: relative;
   height: 55px;
   width: 100%;
-  background: #ffffff;
+  background: #fbfbfb;
 
   border: none;
   outline: none;
@@ -28,6 +28,7 @@ const MapHeaderWrapper = styled.div`
 
 const Title = styled.p`
   position: absolute;
+  color: #1c1b1a;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -42,7 +43,7 @@ const SearchButton = styled.button`
   transform: translateY(-50%);
   cursor: pointer;
   border: none;
-  background-color: #ffffff;
+  background-color: #fbfbfb;
 `;
 
 const SearchIcon = styled.img`

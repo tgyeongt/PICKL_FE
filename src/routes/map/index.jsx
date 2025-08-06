@@ -19,7 +19,7 @@ const MapWrapper = styled.div`
   width: 100%;
   max-width: 768px;
   height: 100vh;
-  background-color: #ffffff;
+  background-color: #fbfbfb;
   display: flex;
   flex-direction: column;
 `;

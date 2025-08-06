@@ -19,20 +19,22 @@ const EditLocationWrapper = styled.div`
   width: 100%;
   max-width: 768px;
   height: 100vh;
-  background-color: #ffffff;
+  background-color: #fbfbfb;
   display: flex;
   flex-direction: column;
-  padding-left: 20px;
 `;
 
 const TitleBox = styled.div`
   height: 64px;
   padding: 0;
   margin-bottom: 18px;
+  margin-top: 35px;
+  padding-left: 20px;
+  padding-right: 20px;
 `;
 
 const Title = styled.p`
-  color: #000;
+  color: #1c1b1a;
   font-family: Pretendard;
   font-size: 24px;
   font-style: normal;

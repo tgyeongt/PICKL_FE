@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import CategoryList from "./CategoryList";
-import DropdownIcon from "@icon/dropdown.png";
+import DropdownIcon from "@icon/map/dropdown.svg";
 
 export default function MapCategory() {
   const navigate = useNavigate();
@@ -13,10 +13,10 @@ export default function MapCategory() {
     queryFn: async () => {
       try {
         const res = await APIService.public.get("/user/location");
-        return res.data ?? { address: "주소 없음" }; // fallback 처리!
+        return res.data ?? { address: "주소 없음" };
       } catch (err) {
         console.error("위치 요청 실패", err);
-        return { address: "주소 없음" }; // 오류 시에도 빈 값 반환
+        return { address: "주소 없음" };
       }
     },
   });

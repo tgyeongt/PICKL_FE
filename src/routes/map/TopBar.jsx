@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import BackButtonIcon from "@icon/backButtonIcon.png";
+import BackButtonIcon from "@icon/map/backButtonIcon.svg";
 
 export default function TopBar({ title }) {
   const navigate = useNavigate();
@@ -16,12 +16,15 @@ export default function TopBar({ title }) {
 }
 
 const TopBarWrapper = styled.div`
-  background-color: #ffffff;
+  background-color: #fbfbfb;
   width: 100%;
   display: flex;
   align-items: center;
   padding-top: 13px;
-  padding-bottom: 35px;
+  padding-bottom: 0px;
+  position: relative;
+  padding-left: 20px;
+  padding-right: 20px;
 `;
 
 const BackButton = styled.button`
