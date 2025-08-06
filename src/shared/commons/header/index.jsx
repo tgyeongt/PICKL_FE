@@ -1,37 +1,27 @@
 import useHeaderStore from "../../stores/useHeaderStore";
 import styled from "styled-components";
+import back from "@icon/common/back.svg";
+import heart_on from "@icon/common/heart_on.svg";
+import heart_off from "@icon/common/heart_off.svg";
 
 export default function Header() {
-  const { title, showBack, showHeart, onHeartClick } = useHeaderStore();
+  const { title, showBack, showHeart, isVisible, isHeartActive, toggleHeart } = useHeaderStore();
+
+  if (!isVisible) return null;
 
   return (
     <Wrapper>
       {showBack && (
-        <button
-          onClick={() => window.history.back()}
-          style={{ marginLeft: "16px", fontSize: "18px", cursor: "pointer" }}
-          aria-label="뒤로가기"
-        >
-          ←
+        <button onClick={() => window.history.back()}>
+          <img src={back} alt="뒤로가기" />
         </button>
       )}
 
       <Title>{title}</Title>
 
       {showHeart && (
-        <button
-          onClick={() => onHeartClick?.()}
-          style={{
-            marginRight: "16px",
-            fontSize: "20px",
-            cursor: "pointer",
-            background: "black",
-            border: "none",
-            color: "white",
-          }}
-          aria-label="찜하기"
-        >
-          ❤️
+        <button onClick={toggleHeart}>
+          <img src={isHeartActive ? heart_on : heart_off} />
         </button>
       )}
     </Wrapper>
@@ -46,6 +36,7 @@ const Wrapper = styled.header`
   height: 50px;
   background-color: white;
   min-width: 390px;
+  padding: 0 20px;
 `;
 
 const Title = styled.p`

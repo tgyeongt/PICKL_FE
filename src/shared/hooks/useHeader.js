@@ -6,22 +6,27 @@ export default function useHeader({
   title,
   showBack = false,
   showHeart = false,
-  onHeartClick = null,
+  onHeartOn = null,
+  onHeartOff = null,
 }) {
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setShowBack = useHeaderStore((state) => state.setShowBack);
   const setShowHeart = useHeaderStore((state) => state.setShowHeart);
-  const setOnHeartClick = useHeaderStore((state) => state.setOnHeartClick);
+  const setOnHeartOn = useHeaderStore((state) => state.setOnHeartOn);
+  const setOnHeartOff = useHeaderStore((state) => state.setOnHeartOff);
+  const setIsVisible = useHeaderStore((state) => state.setIsVisible);
   const resetHeader = useHeaderStore((state) => state.resetHeader);
 
   useEffect(() => {
     setTitle(title);
     setShowBack(showBack);
     setShowHeart(showHeart);
-    setOnHeartClick(onHeartClick);
+    setOnHeartOn(onHeartOn);
+    setOnHeartOff(onHeartOff);
+    setIsVisible(true);
 
     return () => {
       resetHeader();
     };
-  }, [title, showBack, showHeart, onHeartClick]);
+  }, [title, showBack, showHeart, onHeartOn, onHeartOff]);
 }
