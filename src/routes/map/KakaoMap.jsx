@@ -64,6 +64,7 @@ export default function KakaoMap() {
       width: 50px; height: 50px; background: white; border-radius: 50%;
       display: flex; justify-content: center; align-items: center;
       box-shadow: 1px 1px 4px 0 var(--GREY10, #E1E1E3); cursor: pointer;
+      transform: scale(0.8); opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
     `;
     const icon = document.createElement("img");
     icon.src = imageSrc;
@@ -71,23 +72,33 @@ export default function KakaoMap() {
     icon.style.width = "30px";
     icon.style.height = "30px";
     marker.appendChild(icon);
+
+    // ✅ 애니메이션 효과 부여
+    setTimeout(() => {
+      marker.style.opacity = "1";
+      marker.style.transform = "scale(1)";
+    }, 10);
+
     return marker;
   };
 
   const createBubbleElement = (store, imageSrc) => {
     const bubble = document.createElement("div");
     bubble.innerHTML = `
-      <div style="
-        position: relative; background-color: #58D748; color: white;
-        padding: 8px 20px; border-radius: 999px; font-weight: bold; font-size: 14px;
-        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-        box-shadow: 0 0 8px rgba(0,0,0,0.3); max-width: calc(100vw - 40px); white-space: nowrap;">
+      <div class="custom-bubble">
         <img src="${imageSrc}" style="width: 20px; height: 20px; margin-left: 2px;" />
         <span>${store.name}</span>
         <div style="position: absolute; bottom: -6px; left: 26px; width: 0; height: 0;
           border-left: 6px solid transparent; border-right: 6px solid transparent;
           border-top: 6px solid #58D748;"></div>
-      </div>`;
+      </div>
+    `;
+
+    // ✅ 나타나는 애니메이션 트리거
+    setTimeout(() => {
+      bubble.querySelector(".custom-bubble")?.classList.add("show");
+    }, 10);
+
     return bubble;
   };
 
