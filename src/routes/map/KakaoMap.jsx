@@ -77,7 +77,6 @@ export default function KakaoMap() {
     if (!mapInstance || !stores) return;
 
     markers.forEach((marker) => marker.setMap(null));
-
     const bounds = mapInstance.getBounds();
     const newMarkers = [];
 
@@ -88,17 +87,33 @@ export default function KakaoMap() {
       if (selectedCategory !== "all" && store.type !== selectedCategory) return;
 
       const imageSrc = store.type === "market" ? marketIcon : martIcon;
-      const imageSize = new window.kakao.maps.Size(40, 40);
-      const markerImage = new window.kakao.maps.MarkerImage(imageSrc, imageSize);
 
-      const marker = new window.kakao.maps.Marker({
-        map: mapInstance,
+      const markerEl = document.createElement("div");
+      markerEl.style.width = "50px";
+      markerEl.style.height = "50px";
+      markerEl.style.background = "#ffffff";
+      markerEl.style.borderRadius = "50%";
+      markerEl.style.display = "flex";
+      markerEl.style.justifyContent = "center";
+      markerEl.style.alignItems = "center";
+      markerEl.style.boxShadow = "1px 1px 4px 0 var(--GREY10, #E1E1E3)";
+
+      const iconEl = document.createElement("img");
+      iconEl.src = imageSrc;
+      iconEl.alt = store.name;
+      iconEl.style.width = "30px";
+      iconEl.style.height = "30px";
+
+      markerEl.appendChild(iconEl);
+
+      const overlay = new window.kakao.maps.CustomOverlay({
         position: storePosition,
-        image: markerImage,
-        title: store.name,
+        content: markerEl,
+        yAnchor: 1,
       });
 
-      newMarkers.push(marker);
+      overlay.setMap(mapInstance);
+      newMarkers.push(overlay);
     });
 
     setMarkers(newMarkers);
