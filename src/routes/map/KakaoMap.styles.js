@@ -16,21 +16,16 @@ export const CurrentLocationButton = styled.button`
   bottom: 80px;
   left: 16px;
   z-index: 10;
-
   width: 46px;
   height: 46px;
   border-radius: 50%;
-
   background-color: #fbfbfb;
   border: 1px solid #ccc;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   cursor: pointer;
-
   transition: bottom 0.3s ease;
 `;
 

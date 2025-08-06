@@ -33,6 +33,9 @@ const CurrentLocationWrapper = styled.button`
   &:active {
     opacity: 0.8;
   }
+  &:hover {
+    background-color: #edebeb;
+  }
 `;
 
 const TargetIcon = styled.img`

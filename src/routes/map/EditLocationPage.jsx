@@ -29,10 +29,11 @@ const TitleBox = styled.div`
   height: 64px;
   padding: 0;
   margin-bottom: 18px;
+  margin-top: 35px;
 `;
 
 const Title = styled.p`
-  color: #1C1B1A;
+  color: #1c1b1a;
   font-family: Pretendard;
   font-size: 24px;
   font-style: normal;
