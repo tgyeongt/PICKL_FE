@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import SearchIconImg from "@icon/map/searchButton.png";
+import SearchIconImg from "@icon/map/searchButton.svg";
 
 export default function MapHeader() {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ const MapHeaderWrapper = styled.div`
 
 const Title = styled.p`
   position: absolute;
-  color: #1C1B1A;
+  color: #1c1b1a;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);

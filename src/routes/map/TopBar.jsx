@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import BackButtonIcon from "@icon/map/backButtonIcon.png";
+import BackButtonIcon from "@icon/map/backButtonIcon.svg";
 
 export default function TopBar({ title }) {
   const navigate = useNavigate();

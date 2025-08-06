@@ -10,9 +10,9 @@ import { APIService } from "../../shared/lib/api";
 import { useAtom } from "jotai";
 import { selectedCategoryAtom } from "./state/CategoryState";
 import { mockStoresData } from "../../shared/lib/mock/stores.mock";
-import CurrentLocationImg from "@icon/map/vector.png";
-import marketIcon from "@icon/map/selectMarket.png";
-import martIcon from "@icon/map/selectMart.png";
+import CurrentLocationImg from "@icon/map/vector.svg";
+import marketIcon from "@icon/map/selectMarket.svg";
+import martIcon from "@icon/map/selectMart.svg";
 
 export default function KakaoMap() {
   const mapRef = useRef(null);

@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import targetImg from "@icon/map/target.png";
+import targetImg from "@icon/map/target.svg";
 // import { useNavigate } from "react-router-dom";
 
 export default function CurrentLocationBar() {
@@ -27,7 +27,7 @@ const CurrentLocationWrapper = styled.button`
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  
+
   &:active {
     opacity: 0.8;
   }
@@ -44,7 +44,7 @@ const TargetTextBox = styled.div`
 `;
 
 const TargetText = styled.p`
-  color: #1C1B1A;
+  color: #1c1b1a;
   font-family: Pretendard;
   font-size: 12px;
   font-style: normal;

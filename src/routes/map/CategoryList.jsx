@@ -2,12 +2,12 @@ import styled from "styled-components";
 import { useAtom } from "jotai";
 import { selectedCategoryAtom } from "./state/CategoryState";
 
-import selectAll from "@icon/map/selectAll.png";
-import selectMarket from "@icon/map/selectMarket.png";
-import selectMart from "@icon/map/selectMart.png";
+import selectAll from "@icon/map/selectAll.svg";
+import selectMarket from "@icon/map/selectMarket.svg";
+import selectMart from "@icon/map/selectMart.svg";
 
 export default function CategoryList() {
-  const [selected, setSelected] = useAtom(selectedCategoryAtom); // ✅ Jotai로 상태 연동
+  const [selected, setSelected] = useAtom(selectedCategoryAtom);
 
   return (
     <CategoryListWrapper>
