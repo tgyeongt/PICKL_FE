@@ -33,4 +33,5 @@ const NavBarWrapper = styled.nav`
   background-color: white;
   display: flex;
   z-index: 1000;
+  border-radius: 20px 20px 0 0;
 `;
