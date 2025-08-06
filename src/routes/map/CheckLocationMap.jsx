@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import currentIcon from "@icon/map/currentIcon.svg";
 
-export default function CheckLocationMap() {
+export default function CheckLocationMap({ setMapInstance }) {
   const mapRef = useRef(null);
 
   const loadScript = () => {
@@ -37,6 +37,10 @@ export default function CheckLocationMap() {
           };
 
           const map = new window.kakao.maps.Map(container, options);
+
+          if (setMapInstance) {
+            setMapInstance(map);
+          }
 
           const markerImage = new window.kakao.maps.MarkerImage(
             currentIcon,
