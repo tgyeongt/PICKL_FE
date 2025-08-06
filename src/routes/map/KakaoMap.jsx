@@ -7,12 +7,12 @@ import {
 } from "./KakaoMap.styles";
 import { useQuery } from "@tanstack/react-query";
 import { APIService } from "../../shared/lib/api";
-import CurrentLocationImg from "@icon/map/vector.png";
-import marketIcon from "@icon/map/selectMarket.png";
-import martIcon from "@icon/map/selectMart.png";
 import { useAtom } from "jotai";
 import { selectedCategoryAtom } from "./state/CategoryState";
 import { mockStoresData } from "../../shared/lib/mock/stores.mock";
+import CurrentLocationImg from "@icon/map/vector.png";
+import marketIcon from "@icon/map/selectMarket.png";
+import martIcon from "@icon/map/selectMart.png";
 
 export default function KakaoMap() {
   const mapRef = useRef(null);
@@ -73,20 +73,44 @@ export default function KakaoMap() {
     });
   };
 
+  const overlayMapRef = useRef({
+    round: {},
+    bubble: null,
+    bubbleTargetKey: null,
+  });
+
   const renderMarkers = () => {
     if (!mapInstance || !stores) return;
 
-    markers.forEach((marker) => marker.setMap(null));
+    markers.forEach((marker) => {
+      marker.setMap(null);
+      marker.getContent()?.remove?.();
+    });
+
+    Object.values(overlayMapRef.current.round).forEach((overlay) => {
+      overlay.setMap(null);
+      overlay.getContent()?.remove?.();
+    });
+    overlayMapRef.current.round = {};
+
     const bounds = mapInstance.getBounds();
     const newMarkers = [];
 
     stores.forEach((store) => {
+      const storeKey = `${store.latitude},${store.longitude}`;
       const storePosition = new window.kakao.maps.LatLng(store.latitude, store.longitude);
 
       if (!bounds.contain(storePosition)) return;
       if (selectedCategory !== "all" && store.type !== selectedCategory) return;
 
       const imageSrc = store.type === "market" ? marketIcon : martIcon;
+
+      if (overlayMapRef.current.bubbleTargetKey === storeKey) {
+        if (overlayMapRef.current.bubble) {
+          newMarkers.push(overlayMapRef.current.bubble);
+        }
+        return;
+      }
 
       const markerEl = document.createElement("div");
       markerEl.style.width = "50px";
@@ -97,23 +121,85 @@ export default function KakaoMap() {
       markerEl.style.justifyContent = "center";
       markerEl.style.alignItems = "center";
       markerEl.style.boxShadow = "1px 1px 4px 0 var(--GREY10, #E1E1E3)";
+      markerEl.style.cursor = "pointer";
 
       const iconEl = document.createElement("img");
       iconEl.src = imageSrc;
       iconEl.alt = store.name;
       iconEl.style.width = "30px";
       iconEl.style.height = "30px";
-
       markerEl.appendChild(iconEl);
 
-      const overlay = new window.kakao.maps.CustomOverlay({
+      const roundOverlay = new window.kakao.maps.CustomOverlay({
         position: storePosition,
         content: markerEl,
         yAnchor: 1,
       });
 
-      overlay.setMap(mapInstance);
-      newMarkers.push(overlay);
+      roundOverlay.setMap(mapInstance);
+      newMarkers.push(roundOverlay);
+      overlayMapRef.current.round[storeKey] = roundOverlay;
+
+      markerEl.addEventListener("click", () => {
+        if (overlayMapRef.current.bubble) {
+          overlayMapRef.current.bubble.setMap(null);
+          overlayMapRef.current.bubble.getContent()?.remove?.();
+          overlayMapRef.current.bubble = null;
+          overlayMapRef.current.bubbleTargetKey = null;
+        }
+
+        const prevRound = overlayMapRef.current.round[storeKey];
+        if (prevRound) {
+          prevRound.setMap(null);
+          prevRound.getContent()?.remove?.();
+          delete overlayMapRef.current.round[storeKey];
+        }
+
+        const bubbleEl = document.createElement("div");
+        bubbleEl.innerHTML = `
+          <div style="
+            position: relative;
+            background-color: #58D748;
+            color: white;
+            padding: 8px 20px 8px 20px;
+            border-radius: 999px;
+            font-weight: bold;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.3);
+            max-width: calc(100vw - 40px);
+            white-space: nowrap;
+          ">
+            <img src="${imageSrc}" style="width: 20px; height: 20px; margin-left: 2px;" />
+            <span>${store.name}</span>
+            <div style="
+              position: absolute;
+              bottom: -6px;
+              left: 26px;
+              width: 0;
+              height: 0;
+              border-left: 6px solid transparent;
+              border-right: 6px solid transparent;
+              border-top: 6px solid #58D748;
+            "></div>
+          </div>
+        `;
+
+        const bubbleOverlay = new window.kakao.maps.CustomOverlay({
+          position: storePosition,
+          content: bubbleEl,
+          yAnchor: 1.1,
+        });
+
+        bubbleOverlay.setMap(mapInstance);
+        overlayMapRef.current.bubble = bubbleOverlay;
+        overlayMapRef.current.bubbleTargetKey = storeKey;
+
+        renderMarkers();
+      });
     });
 
     setMarkers(newMarkers);
@@ -121,15 +207,9 @@ export default function KakaoMap() {
 
   useEffect(() => {
     if (!mapInstance) return;
-
-    const handleIdle = () => {
-      renderMarkers();
-    };
-
+    const handleIdle = () => renderMarkers();
     window.kakao.maps.event.addListener(mapInstance, "idle", handleIdle);
-    return () => {
-      window.kakao.maps.event.removeListener(mapInstance, "idle", handleIdle);
-    };
+    return () => window.kakao.maps.event.removeListener(mapInstance, "idle", handleIdle);
   }, [mapInstance, stores, selectedCategory]);
 
   return (
