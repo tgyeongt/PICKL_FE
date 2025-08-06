@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import currentIcon from "@icon/map/currentIcon.svg";
 
 export default function CheckLocationMap({ setMapInstance }) {
@@ -19,7 +19,7 @@ export default function CheckLocationMap({ setMapInstance }) {
     });
   };
 
-  const createMap = () => {
+  const createMap = useCallback(() => {
     if (!window.kakao || !window.kakao.maps) {
       console.error("카카오맵 SDK가 로드되지 않았습니다.");
       return;
@@ -62,11 +62,11 @@ export default function CheckLocationMap({ setMapInstance }) {
         }
       );
     });
-  };
+  }, [setMapInstance]);
 
   useEffect(() => {
     loadScript().then(createMap);
-  }, []);
+  }, [createMap]);
 
   return <div ref={mapRef} style={{ width: "100%", height: "100%" }} />;
 }
