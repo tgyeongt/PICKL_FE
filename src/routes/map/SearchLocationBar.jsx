@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useState } from "react";
-import SearchImg from "@icon/map/searchButton.png";
+import SearchImg from "@icon/map/searchButton.svg";
 import ClearImg from "@icon/map/x-circle.svg";
 
 export default function SearchLocationBar() {

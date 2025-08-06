@@ -1,10 +1,12 @@
 import styled from "styled-components";
 import targetImg from "@icon/map/target.svg";
-// import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function CurrentLocationBar() {
-  //   const navigate = useNavigate();
-  const handleClick = () => {};
+  const navigate = useNavigate();
+  const handleClick = () => {
+    navigate("/map/check-location");
+  };
 
   return (
     <CurrentLocationWrapper onClick={handleClick}>
