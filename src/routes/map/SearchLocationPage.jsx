@@ -1,44 +1,81 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styled from "styled-components";
 import backIcon from "@icon/map/backButtonIcon.svg";
 import clearIcon from "@icon/map/x-circle.svg";
+import useDebounce from "../map/hooks/useDebounce";
+import { searchKeywordFromKakao } from "../../shared/lib/kakao";
 
 export default function SearchLocationPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
+  const [results, setResults] = useState([]);
+  const debouncedKeyword = useDebounce(keyword, 300);
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      if (!debouncedKeyword) {
+        setResults([]);
+        return;
+      }
+
+      try {
+        const res = await searchKeywordFromKakao(debouncedKeyword);
+        setResults(res);
+      } catch (err) {
+        alert("카카오 장소 검색에 실패하였습니다.");
+        console.log(err);
+      }
+    };
+
+    fetchResults();
+  }, [debouncedKeyword]);
 
   return (
     <SearchLocationWrapper>
-      <BackButton onClick={() => navigate(-1)}>
-        <BackIcon src={backIcon} alt="뒤로가기" />
-      </BackButton>
-      <SearchLocationBar>
-        <SearchInput
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="지번, 도로명, 건물명을 검색해보세요"
-        />
-        {keyword && (
-          <ClearButton>
-            <ClearIcon src={clearIcon} alt="지우기" onClick={() => setKeyword("")} />
-          </ClearButton>
-        )}
-      </SearchLocationBar>
+      <SearchLocationTopBar>
+        <BackButton onClick={() => navigate(-1)}>
+          <BackIcon src={backIcon} alt="뒤로가기" />
+        </BackButton>
+        <SearchLocationBar>
+          <SearchInput
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="지번, 도로명, 건물명을 검색해보세요"
+          />
+          {keyword && (
+            <ClearButton>
+              <ClearIcon src={clearIcon} alt="지우기" onClick={() => setKeyword("")} />
+            </ClearButton>
+          )}
+        </SearchLocationBar>
+      </SearchLocationTopBar>
+      <ResultList>
+        {results.map((place) => (
+          <ResultItem key={place.id || place.place_name}>
+            <PlaceName>{place.place_name}</PlaceName>
+            <PlaceAddress>{place.address_name}</PlaceAddress>
+          </ResultItem>
+        ))}
+      </ResultList>
     </SearchLocationWrapper>
   );
 }
 
 const SearchLocationWrapper = styled.div`
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   min-height: 100vh;
   width: 100%;
+  padding: 13px 20px 0;
   overflow-y: auto;
-  padding-left: 20px;
-  padding-right: 20px;
-  padding-top: 13px;
-  padding-bottom: 0;
+`;
+
+const SearchLocationTopBar = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 `;
 
 const BackButton = styled.button`
@@ -58,7 +95,7 @@ const BackIcon = styled.img`
 `;
 
 const SearchLocationBar = styled.div`
-  width: 100%;
+  flex: 1;
   height: 35px;
   display: flex;
   align-items: center;
@@ -75,10 +112,8 @@ const SearchInput = styled.input`
   background: transparent;
   color: #333;
   font-family: Pretendard;
-  font-size: 12px;
-  font-style: normal;
+  font-size: 13.5px;
   font-weight: 500;
-  line-height: normal;
   margin-left: 11px;
 
   &::placeholder {
@@ -100,4 +135,26 @@ const ClearButton = styled.button`
 const ClearIcon = styled.img`
   width: 18px;
   height: 18px;
+`;
+
+const ResultList = styled.ul`
+  margin-top: 16px;
+`;
+
+const ResultItem = styled.li`
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+`;
+
+const PlaceName = styled.div`
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+`;
+
+const PlaceAddress = styled.div`
+  font-size: 12px;
+  color: #777;
+  margin-top: 4px;
 `;
