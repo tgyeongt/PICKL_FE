@@ -38,16 +38,15 @@ export default function CheckLocationMap({ onAddressChange }) {
             const updateAddress = (latlng) => {
               geocoder.coord2Address(latlng.getLng(), latlng.getLat(), (result, status) => {
                 if (status === window.kakao.maps.services.Status.OK && result.length > 0) {
-                  const address =
-                    result[0].road_address?.address_name || result[0].address.address_name;
+                  const road = result[0].road_address?.address_name || "";
+                  const jibun = result[0].address?.address_name || "";
 
                   if (onAddressChange) {
-                    const road = result[0].road_address?.address_name || "";
-                    const jibun = result[0].address?.address_name || "";
-
                     onAddressChange({
                       roadAddress: road,
                       jibunAddress: jibun,
+                      lat: latlng.getLat(), // ✅ 위도
+                      lng: latlng.getLng(), // ✅ 경도
                     });
                   }
                 }
@@ -98,7 +97,6 @@ export default function CheckLocationMap({ onAddressChange }) {
     </CheckLocationMapWrapper>
   );
 }
-
 const CheckLocationMapWrapper = styled.div`
   position: relative;
   width: 100%;

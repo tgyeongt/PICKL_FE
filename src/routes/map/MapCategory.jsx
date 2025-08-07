@@ -2,23 +2,20 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import CategoryList from "./CategoryList";
 import DropdownIcon from "@icon/map/dropdown.svg";
-import useCurrentAddress from "../map/hooks/useCurrentAddress";
+import { useAtomValue } from "jotai";
+import { selectedAddressAtom } from "./state/addressAtom";
 
 export default function MapCategory() {
   const navigate = useNavigate();
-  const { address, isLoading } = useCurrentAddress();
+  const selectedAddress = useAtomValue(selectedAddressAtom);
 
   return (
     <MapCategoryWrapper>
       <LocationBox onClick={() => navigate("/map/edit-location")}>
-        {isLoading ? (
-          <AddressText>위치 불러오는 중</AddressText>
-        ) : (
-          <AddressTextWrapper>
-            <AddressText>{address}</AddressText>
-            <DropdownImg src={DropdownIcon} alt="드롭다운" />
-          </AddressTextWrapper>
-        )}
+        <AddressTextWrapper>
+          <AddressText>{selectedAddress.roadAddress || "현재 위치 불러오는 중..."}</AddressText>
+          <DropdownImg src={DropdownIcon} alt="드롭다운" />
+        </AddressTextWrapper>
       </LocationBox>
       <CategoryList />
     </MapCategoryWrapper>

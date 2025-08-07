@@ -1,21 +1,29 @@
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import styled from "styled-components";
 import SetModal from "../map/modal/SetModal";
+import { useAtomValue } from "jotai";
+import { selectedAddressAtom } from "../map/state/addressAtom";
 
-export default function LocationInfo({ roadAddress, jibunAddress }) {
+export default function LocationInfo() {
+  const selectedAddress = useAtomValue(selectedAddressAtom);
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleSetClick = () => {
     setIsOpen(true);
+    setTimeout(() => {
+      navigate("/map");
+    }, 1500);
   };
 
   return (
     <LocationInfoWrapper>
       <InfoTextSection>
-        <MainText>{roadAddress || "도로명 주소"}</MainText>
+        <MainText>{selectedAddress.roadAddress || "도로명 주소"}</MainText>
         <SubText>
-          {roadAddress}
-          {jibunAddress && `(${jibunAddress})`}
+          {selectedAddress.roadAddress}
+          {selectedAddress.jibunAddress && ` (${selectedAddress.jibunAddress})`}
         </SubText>
       </InfoTextSection>
       <BarSection>

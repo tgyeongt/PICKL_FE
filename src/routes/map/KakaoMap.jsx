@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useAtomValue } from "jotai";
+import { selectedAddressAtom } from "./state/addressAtom";
 import {
   KakaoMapWrapper,
   KakaoMapBox,
@@ -19,7 +21,7 @@ export default function KakaoMap() {
   const mapRef = useRef(null);
   const [mapInstance, setMapInstance] = useState(null);
   const [selectedCategory] = useAtom(selectedCategoryAtom);
-
+  const addressState = useAtomValue(selectedAddressAtom);
   const markersRef = useRef([]);
   const currentMarkerRef = useRef(null);
   const overlayMapRef = useRef({ round: {}, bubble: null, bubbleTargetKey: null });
@@ -48,20 +50,21 @@ export default function KakaoMap() {
 
   const createMap = () => {
     window.kakao.maps.load(() => {
-      navigator.geolocation.getCurrentPosition(({ coords }) => {
-        const { latitude, longitude } = coords;
-        const map = new window.kakao.maps.Map(mapRef.current, {
-          center: new window.kakao.maps.LatLng(latitude, longitude),
-          level: 3,
-          draggable: true,
-          scrollwheel: true,
-        });
-        setMapInstance(map);
+      const defaultLat = addressState.lat || 37.5665;
+      const defaultLng = addressState.lng || 126.978;
 
-        setTimeout(() => {
-          window.kakao.maps.event.trigger(map, "resize");
-        }, 100);
+      const map = new window.kakao.maps.Map(mapRef.current, {
+        center: new window.kakao.maps.LatLng(defaultLat, defaultLng),
+        level: 3,
+        draggable: true,
+        scrollwheel: true,
       });
+
+      setMapInstance(map);
+
+      setTimeout(() => {
+        window.kakao.maps.event.trigger(map, "resize");
+      }, 100);
     });
   };
 

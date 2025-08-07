@@ -1,25 +1,20 @@
-import { useState } from "react";
+import { useSetAtom } from "jotai";
 import styled from "styled-components";
 import TopBar from "./TopBar";
 import LocationInfo from "./LocationInfo";
 import CheckLocationMap from "./CheckLocationMap";
+import { selectedAddressAtom } from "../map/state/addressAtom";
 
 export default function CheckLocationPage() {
-  const [selectedAddress, setSelectedAddress] = useState({
-    roadAddress: "",
-    jibunAddress: "",
-  });
+  const setAddress = useSetAtom(selectedAddressAtom);
 
   return (
     <CheckLocationWrapper>
       <TopBar title="지도에서 위치 확인" />
       <KakaoMapBox>
-        <CheckLocationMap onAddressChange={setSelectedAddress} />
+        <CheckLocationMap onAddressChange={setAddress} />
       </KakaoMapBox>
-      <LocationInfo
-        roadAddress={selectedAddress.roadAddress}
-        jibunAddress={selectedAddress.jibunAddress}
-      />
+      <LocationInfo />
     </CheckLocationWrapper>
   );
 }
