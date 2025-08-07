@@ -31,6 +31,17 @@ export default function SearchLocationPage() {
     fetchResults();
   }, [debouncedKeyword]);
 
+  const handleSelectLocation = (place) => {
+    navigate("/map/check-location", {
+      state: {
+        lat: parseFloat(place.y),
+        lng: parseFloat(place.x),
+        roadAddress: place.road_address_name || "",
+        jibunAddress: place.address_name || "",
+      },
+    });
+  };
+
   return (
     <SearchLocationWrapper>
       <SearchLocationTopBar>
@@ -52,7 +63,10 @@ export default function SearchLocationPage() {
       </SearchLocationTopBar>
       <ResultList>
         {results.map((place) => (
-          <ResultItem key={place.id || place.place_name}>
+          <ResultItem
+            key={place.id || place.place_name}
+            onClick={() => handleSelectLocation(place)}
+          >
             <PlaceName>{place.place_name}</PlaceName>
             <PlaceAddress>{place.address_name}</PlaceAddress>
           </ResultItem>

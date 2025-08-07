@@ -3,7 +3,7 @@ import styled from "styled-components";
 import currentIcon from "@icon/map/currentIcon.svg";
 import currentLocationMoveIcon from "@icon/map/vector.svg";
 
-export default function CheckLocationMap({ onAddressChange }) {
+export default function CheckLocationMap({ onAddressChange, initialCenter }) {
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
 
@@ -22,55 +22,66 @@ export default function CheckLocationMap({ onAddressChange }) {
       }
 
       window.kakao.maps.load(() => {
-        navigator.geolocation.getCurrentPosition(
-          ({ coords }) => {
-            const { latitude, longitude } = coords;
-            const container = mapRef.current;
-            const options = {
-              center: new window.kakao.maps.LatLng(latitude, longitude),
-              level: 3,
-            };
-            const newMap = new window.kakao.maps.Map(container, options);
-            setMap(newMap);
+        const container = mapRef.current;
 
-            const geocoder = new window.kakao.maps.services.Geocoder();
+        const createMap = (lat, lng) => {
+          const options = {
+            center: new window.kakao.maps.LatLng(lat, lng),
+            level: 3,
+          };
+          const newMap = new window.kakao.maps.Map(container, options);
+          setMap(newMap);
 
-            const updateAddress = (latlng) => {
-              geocoder.coord2Address(latlng.getLng(), latlng.getLat(), (result, status) => {
-                if (status === window.kakao.maps.services.Status.OK && result.length > 0) {
-                  const road = result[0].road_address?.address_name || "";
-                  const jibun = result[0].address?.address_name || "";
+          const geocoder = new window.kakao.maps.services.Geocoder();
 
-                  if (onAddressChange) {
-                    onAddressChange({
-                      roadAddress: road,
-                      jibunAddress: jibun,
-                      lat: latlng.getLat(),
-                      lng: latlng.getLng(),
-                      isManual: true,
-                    });
-                  }
+          const updateAddress = (latlng) => {
+            geocoder.coord2Address(latlng.getLng(), latlng.getLat(), (result, status) => {
+              if (status === window.kakao.maps.services.Status.OK && result.length > 0) {
+                const road = result[0].road_address?.address_name || "";
+                const jibun = result[0].address?.address_name || "";
+
+                if (onAddressChange) {
+                  onAddressChange({
+                    roadAddress: road,
+                    jibunAddress: jibun,
+                    lat: latlng.getLat(),
+                    lng: latlng.getLng(),
+                    isManual: true,
+                  });
                 }
-              });
-            };
-
-            updateAddress(newMap.getCenter());
-
-            window.kakao.maps.event.addListener(newMap, "idle", () => {
-              const center = newMap.getCenter();
-              updateAddress(center);
+              }
             });
-          },
-          (error) => {
-            alert("위치 정보를 불러올 수 없습니다.");
-            console.error(error);
-          }
-        );
+          };
+
+          updateAddress(newMap.getCenter());
+
+          window.kakao.maps.event.addListener(newMap, "idle", () => {
+            const center = newMap.getCenter();
+            updateAddress(center);
+          });
+        };
+
+        // ✅ 조건: initialCenter가 있으면 그걸로 지도 생성
+        if (initialCenter?.lat && initialCenter?.lng) {
+          createMap(initialCenter.lat, initialCenter.lng);
+        } else {
+          navigator.geolocation.getCurrentPosition(
+            ({ coords }) => {
+              createMap(coords.latitude, coords.longitude);
+            },
+            (error) => {
+              alert("위치 정보를 불러올 수 없습니다.");
+              console.error(error);
+              // fallback
+              createMap(37.5665, 126.978);
+            }
+          );
+        }
       });
     };
 
     loadMap();
-  }, [onAddressChange]);
+  }, [onAddressChange, initialCenter]);
 
   const moveToCurrentLocation = () => {
     if (!map) return;
