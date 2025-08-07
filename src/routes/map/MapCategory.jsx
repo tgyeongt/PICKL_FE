@@ -1,25 +1,12 @@
-import { APIService } from "../../shared/lib/api";
-import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import CategoryList from "./CategoryList";
 import DropdownIcon from "@icon/map/dropdown.svg";
+import useCurrentAddress from "../map/hooks/useCurrentAddress";
 
 export default function MapCategory() {
   const navigate = useNavigate();
-
-  const { data: addressData, isLoading } = useQuery({
-    queryKey: ["userLocation"],
-    queryFn: async () => {
-      try {
-        const res = await APIService.public.get("/user/location");
-        return res.data ?? { address: "주소 없음" };
-      } catch (err) {
-        console.error("위치 요청 실패", err);
-        return { address: "주소 없음" };
-      }
-    },
-  });
+  const { address, isLoading } = useCurrentAddress();
 
   return (
     <MapCategoryWrapper>
@@ -28,7 +15,7 @@ export default function MapCategory() {
           <AddressText>위치 불러오는 중</AddressText>
         ) : (
           <AddressTextWrapper>
-            <AddressText>{addressData?.address ?? "주소 없음"}</AddressText>
+            <AddressText>{address}</AddressText>
             <DropdownImg src={DropdownIcon} alt="드롭다운" />
           </AddressTextWrapper>
         )}
