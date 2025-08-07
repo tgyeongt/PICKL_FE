@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   OverlayBox,
   IconSectionWrapper,
@@ -12,7 +13,17 @@ export default function SetModalBar({ children }) {
 }
 
 function Overlay({ children, onClose }) {
-  return <OverlayBox onClick={onClose}>{children}</OverlayBox>;
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setVisible(true);
+  }, []);
+
+  return (
+    <OverlayBox onClick={onClose} $visible={visible}>
+      {children}
+    </OverlayBox>
+  );
 }
 
 function IconSection() {

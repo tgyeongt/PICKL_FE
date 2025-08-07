@@ -12,6 +12,10 @@ export const OverlayBox = styled.div`
   justify-content: center;
   align-items: center;
   z-index: 1500;
+
+  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+  transform: ${({ $visible }) => ($visible ? "translateY(0)" : "translateY(20px)")};
+  transition: opacity 0.3s ease, transform 0.3s ease;
 `;
 
 export const SetModalContainer = styled.div`
