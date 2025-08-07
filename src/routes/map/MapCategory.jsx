@@ -13,7 +13,7 @@ export default function MapCategory() {
     <MapCategoryWrapper>
       <LocationBox onClick={() => navigate("/map/edit-location")}>
         <AddressTextWrapper>
-          <AddressText>{selectedAddress.roadAddress || "현재 위치 불러오는 중..."}</AddressText>
+          <AddressText>{selectedAddress.roadAddress || selectedAddress.jibunAddress}</AddressText>
           <DropdownImg src={DropdownIcon} alt="드롭다운" />
         </AddressTextWrapper>
       </LocationBox>
