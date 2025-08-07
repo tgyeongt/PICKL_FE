@@ -201,7 +201,24 @@ export default function KakaoMap() {
   }, [mapInstance]);
 
   useEffect(() => {
-    loadScript().then(createMap);
+    const loadKakaoMap = async () => {
+      await loadScript();
+      
+      const checkKakaoLoaded = () =>
+        new Promise((resolve) => {
+          const interval = setInterval(() => {
+            if (window.kakao && window.kakao.maps) {
+              clearInterval(interval);
+              resolve();
+            }
+          }, 100);
+        });
+
+      await checkKakaoLoaded();
+      createMap();
+    };
+
+    loadKakaoMap();
   }, []);
 
   useEffect(() => {

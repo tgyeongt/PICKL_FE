@@ -49,13 +49,13 @@ const AddressTextWrapper = styled.div`
 const AddressText = styled.span`
   color: #000;
   font-family: Pretendard;
-  font-size: 12px;
+  font-size: 13.5px;
   font-style: normal;
   font-weight: 700;
   line-height: 20px;
 `;
 
 const DropdownImg = styled.img`
-  width: 8px;
-  height: 7px;
+  width: 9.5px;
+  height: 8px;
 `;
