@@ -43,7 +43,7 @@ const AddressTextWrapper = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 6px;
+  gap: 3px;
 `;
 
 const AddressText = styled.span`
