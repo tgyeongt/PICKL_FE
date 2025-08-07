@@ -10,7 +10,6 @@ import { APIService } from "../../shared/lib/api";
 import { useAtom } from "jotai";
 import { selectedCategoryAtom } from "./state/CategoryState";
 import { mockStoresData } from "../../shared/lib/mock/stores.mock";
-
 import CurrentLocationImg from "@icon/map/vector.svg";
 import marketIcon from "@icon/map/selectMarket.svg";
 import martIcon from "@icon/map/selectMart.svg";
@@ -203,7 +202,7 @@ export default function KakaoMap() {
   useEffect(() => {
     const loadKakaoMap = async () => {
       await loadScript();
-      
+
       const checkKakaoLoaded = () =>
         new Promise((resolve) => {
           const interval = setInterval(() => {

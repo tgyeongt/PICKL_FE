@@ -1,6 +1,14 @@
+import { useState } from "react";
 import styled from "styled-components";
+import SetModal from "../map/modal/SetModal";
 
 export default function LocationInfo({ roadAddress, jibunAddress }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleSetClick = () => {
+    setIsOpen(true);
+  };
+
   return (
     <LocationInfoWrapper>
       <InfoTextSection>
@@ -14,7 +22,8 @@ export default function LocationInfo({ roadAddress, jibunAddress }) {
         <AlertBar>
           <AlertText>지도의 표시와 실제 위치가 맞는지 확인해 주세요.</AlertText>
         </AlertBar>
-        <LocationSetButton>현 위치로 설정</LocationSetButton>
+        <LocationSetButton onClick={handleSetClick}>현 위치로 설정</LocationSetButton>
+        {isOpen && <SetModal onClose={() => setIsOpen(false)} />}
       </BarSection>
     </LocationInfoWrapper>
   );
