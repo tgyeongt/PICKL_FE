@@ -5,4 +5,5 @@ export const selectedAddressAtom = atom({
   jibunAddress: "",
   lat: null,
   lng: null,
+  isManual: false,
 });

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { selectedCategoryAtom } from "./state/CategoryState";
 import { selectedAddressAtom } from "./state/addressAtom";
 import {
   KakaoMapWrapper,
@@ -9,9 +10,8 @@ import {
 } from "./KakaoMap.styles";
 import { useQuery } from "@tanstack/react-query";
 import { APIService } from "../../shared/lib/api";
-import { useAtom } from "jotai";
-import { selectedCategoryAtom } from "./state/CategoryState";
 import { mockStoresData } from "../../shared/lib/mock/stores.mock";
+
 import CurrentLocationImg from "@icon/map/vector.svg";
 import marketIcon from "@icon/map/selectMarket.svg";
 import martIcon from "@icon/map/selectMart.svg";
@@ -22,6 +22,8 @@ export default function KakaoMap() {
   const [mapInstance, setMapInstance] = useState(null);
   const [selectedCategory] = useAtom(selectedCategoryAtom);
   const addressState = useAtomValue(selectedAddressAtom);
+  const setSelectedAddress = useSetAtom(selectedAddressAtom);
+
   const markersRef = useRef([]);
   const currentMarkerRef = useRef(null);
   const overlayMapRef = useRef({ round: {}, bubble: null, bubbleTargetKey: null });
@@ -41,20 +43,22 @@ export default function KakaoMap() {
       const script = document.createElement("script");
       script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${
         import.meta.env.VITE_KAKAOMAP_APP_KEY
-      }&autoload=false`;
+      }&libraries=services&autoload=false`;
       script.async = true;
       script.onload = resolve;
       document.head.appendChild(script);
     });
   };
 
-  const createMap = () => {
+  const createMap = useCallback(() => {
     window.kakao.maps.load(() => {
       const defaultLat = addressState.lat || 37.5665;
       const defaultLng = addressState.lng || 126.978;
 
+      const centerLatLng = new window.kakao.maps.LatLng(defaultLat, defaultLng);
+
       const map = new window.kakao.maps.Map(mapRef.current, {
-        center: new window.kakao.maps.LatLng(defaultLat, defaultLng),
+        center: centerLatLng,
         level: 3,
         draggable: true,
         scrollwheel: true,
@@ -62,12 +66,37 @@ export default function KakaoMap() {
 
       setMapInstance(map);
 
+      map.setCenter(centerLatLng);
+
       setTimeout(() => {
         window.kakao.maps.event.trigger(map, "resize");
       }, 100);
     });
-  };
+  }, [addressState.lat, addressState.lng]);
 
+  useEffect(() => {
+    const initializeMap = async () => {
+      await loadScript();
+
+      const checkKakaoLoaded = () =>
+        new Promise((resolve) => {
+          const interval = setInterval(() => {
+            if (window.kakao && window.kakao.maps) {
+              clearInterval(interval);
+              resolve();
+            }
+          }, 100);
+        });
+
+      await checkKakaoLoaded();
+
+      if (addressState.lat && addressState.lng) {
+        createMap();
+      }
+    };
+
+    initializeMap();
+  }, [addressState.lat, addressState.lng, createMap]);
   const createMarkerElement = (store, imageSrc) => {
     const marker = document.createElement("div");
     marker.style.cssText = `
@@ -165,6 +194,72 @@ export default function KakaoMap() {
   }, [mapInstance, stores, selectedCategory, showBubbleOverlay]);
 
   useEffect(() => {
+    const loadKakaoMap = async () => {
+      await loadScript();
+
+      const checkKakaoLoaded = () =>
+        new Promise((resolve) => {
+          const interval = setInterval(() => {
+            if (window.kakao && window.kakao.maps) {
+              clearInterval(interval);
+              resolve();
+            }
+          }, 100);
+        });
+
+      await checkKakaoLoaded();
+
+      if (addressState?.isManual) {
+        createMap();
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+          const { latitude, longitude } = coords;
+          const geocoder = new window.kakao.maps.services.Geocoder();
+
+          geocoder.coord2Address(longitude, latitude, (result, status) => {
+            if (status === window.kakao.maps.services.Status.OK && result.length > 0) {
+              const road = result[0].road_address?.address_name || "";
+              const jibun = result[0].address?.address_name || "";
+
+              setSelectedAddress({
+                roadAddress: road,
+                jibunAddress: jibun,
+                lat: latitude,
+                lng: longitude,
+                isManual: false,
+              });
+            }
+          });
+        },
+        (err) => {
+          console.error("최초 위치 가져오기 실패:", err);
+          setSelectedAddress({
+            roadAddress: "서울특별시 중구 세종대로",
+            jibunAddress: "",
+            lat: 37.5665,
+            lng: 126.978,
+            isManual: false,
+          });
+        }
+      );
+
+      createMap();
+    };
+
+    loadKakaoMap();
+  }, [createMap, setSelectedAddress, addressState?.isManual]);
+
+  useEffect(() => {
+    if (!mapInstance || !addressState.lat || !addressState.lng) return;
+
+    const newCenter = new window.kakao.maps.LatLng(addressState.lat, addressState.lng);
+    mapInstance.setCenter(newCenter);
+  }, [mapInstance, addressState.lat, addressState.lng]);
+
+  useEffect(() => {
     if (!mapInstance) return;
 
     const watchId = navigator.geolocation.watchPosition(
@@ -189,6 +284,7 @@ export default function KakaoMap() {
           currentMarkerRef.current = marker;
         } else {
           currentMarkerRef.current.setPosition(position);
+          currentMarkerRef.current.setMap(mapInstance);
         }
       },
       (err) => console.error("위치 추적 실패:", err),
@@ -201,27 +297,6 @@ export default function KakaoMap() {
 
     return () => navigator.geolocation.clearWatch(watchId);
   }, [mapInstance]);
-
-  useEffect(() => {
-    const loadKakaoMap = async () => {
-      await loadScript();
-
-      const checkKakaoLoaded = () =>
-        new Promise((resolve) => {
-          const interval = setInterval(() => {
-            if (window.kakao && window.kakao.maps) {
-              clearInterval(interval);
-              resolve();
-            }
-          }, 100);
-        });
-
-      await checkKakaoLoaded();
-      createMap();
-    };
-
-    loadKakaoMap();
-  }, []);
 
   useEffect(() => {
     if (!mapInstance) return;

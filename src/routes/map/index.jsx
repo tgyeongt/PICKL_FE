@@ -2,14 +2,18 @@ import styled from "styled-components";
 import MapHeader from "./MapHeader";
 import MapCategory from "./MapCategory";
 import KakaoMap from "./KakaoMap";
+import { useAtomValue } from "jotai";
+import { selectedAddressAtom } from "./state/addressAtom";
 
 export default function Map() {
+  const selectedAddress = useAtomValue(selectedAddressAtom);
+
   return (
     <MapWrapper>
       <MapHeader />
       <MapCategory />
       <MapContent>
-        <KakaoMap />
+        <KakaoMap key={`${selectedAddress.lat}-${selectedAddress.lng}`} />
       </MapContent>
     </MapWrapper>
   );

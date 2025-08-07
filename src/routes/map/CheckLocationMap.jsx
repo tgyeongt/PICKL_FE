@@ -45,8 +45,9 @@ export default function CheckLocationMap({ onAddressChange }) {
                     onAddressChange({
                       roadAddress: road,
                       jibunAddress: jibun,
-                      lat: latlng.getLat(), // ✅ 위도
-                      lng: latlng.getLng(), // ✅ 경도
+                      lat: latlng.getLat(),
+                      lng: latlng.getLng(),
+                      isManual: true,
                     });
                   }
                 }
@@ -97,6 +98,7 @@ export default function CheckLocationMap({ onAddressChange }) {
     </CheckLocationMapWrapper>
   );
 }
+
 const CheckLocationMapWrapper = styled.div`
   position: relative;
   width: 100%;
