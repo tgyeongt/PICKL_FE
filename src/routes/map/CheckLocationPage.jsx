@@ -5,15 +5,21 @@ import LocationInfo from "./LocationInfo";
 import CheckLocationMap from "./CheckLocationMap";
 
 export default function CheckLocationPage() {
-  const [mapInstance, setMapInstance] = useState(null);
+  const [selectedAddress, setSelectedAddress] = useState({
+    roadAddress: "",
+    jibunAddress: "",
+  });
 
   return (
     <CheckLocationWrapper>
       <TopBar title="지도에서 위치 확인" />
       <KakaoMapBox>
-        <CheckLocationMap setMapInstance={setMapInstance} />
+        <CheckLocationMap onAddressChange={setSelectedAddress} />
       </KakaoMapBox>
-      <LocationInfo />
+      <LocationInfo
+        roadAddress={selectedAddress.roadAddress}
+        jibunAddress={selectedAddress.jibunAddress}
+      />
     </CheckLocationWrapper>
   );
 }

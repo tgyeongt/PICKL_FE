@@ -37,12 +37,18 @@ export default function CheckLocationMap({ onAddressChange }) {
 
             const updateAddress = (latlng) => {
               geocoder.coord2Address(latlng.getLng(), latlng.getLat(), (result, status) => {
-                if (status === window.kakao.maps.services.Status.OK) {
+                if (status === window.kakao.maps.services.Status.OK && result.length > 0) {
                   const address =
                     result[0].road_address?.address_name || result[0].address.address_name;
 
                   if (onAddressChange) {
-                    onAddressChange(address);
+                    const road = result[0].road_address?.address_name || "";
+                    const jibun = result[0].address?.address_name || "";
+
+                    onAddressChange({
+                      roadAddress: road,
+                      jibunAddress: jibun,
+                    });
                   }
                 }
               });
@@ -83,17 +89,17 @@ export default function CheckLocationMap({ onAddressChange }) {
   };
 
   return (
-    <MapWrapper>
+    <CheckLocationMapWrapper>
       <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
       <PICKLMarker src={currentIcon} />
       <CurrentLocationButton onClick={moveToCurrentLocation}>
         <CurrentLocationIcon src={currentLocationMoveIcon} alt="현재 위치 이동 아이콘" />
       </CurrentLocationButton>
-    </MapWrapper>
+    </CheckLocationMapWrapper>
   );
 }
 
-const MapWrapper = styled.div`
+const CheckLocationMapWrapper = styled.div`
   position: relative;
   width: 100%;
   height: 100%;
@@ -114,7 +120,7 @@ const CurrentLocationButton = styled.button`
   position: absolute;
   bottom: 16px;
   right: 16px;
-  background-color: white;
+  background-color: #ffffff;
   border-radius: 50%;
   width: 42px;
   height: 42px;
