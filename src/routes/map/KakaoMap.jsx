@@ -54,8 +54,14 @@ export default function KakaoMap() {
         const map = new window.kakao.maps.Map(mapRef.current, {
           center: new window.kakao.maps.LatLng(latitude, longitude),
           level: 3,
+          draggable: true,
+          scrollwheel: true,
         });
         setMapInstance(map);
+
+        setTimeout(() => {
+          window.kakao.maps.event.trigger(map, "resize");
+        }, 100);
       });
     });
   };
