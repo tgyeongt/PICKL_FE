@@ -36,13 +36,14 @@ const SearchInputButton = styled.button`
   flex: 1;
   border: none;
   outline: none;
+  text-align: start;
   background: transparent;
   color: #999;
   font-family: Pretendard;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.2s ease, background-color 0.2s ease; // 부드러운 전환
+  transition: color 0.2s ease, background-color 0.2s ease;
 
   &:hover {
     color: #333;
