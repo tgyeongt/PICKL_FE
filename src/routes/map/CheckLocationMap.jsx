@@ -104,8 +104,8 @@ const PICKLMarker = styled.img`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -100%);
-  width: 35px;
-  height: 50px;
+  width: 28px;
+  height: 43px;
   z-index: 10;
   pointer-events: none;
 `;
