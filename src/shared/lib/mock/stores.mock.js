@@ -5,6 +5,7 @@ export const mockStoresData = [
     type: "market",
     latitude: 37.6027782265744,
     longitude: 127.02193272935449,
+    imageUrl: "https://via.placeholder.com/100",
   },
   {
     id: 2,

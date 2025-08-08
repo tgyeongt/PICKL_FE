@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { APIService } from "../../shared/lib/api";
 import { mockStoresData } from "../../shared/lib/mock/stores.mock";
 
+import StoreCard from "./StoreCard";
 import CurrentLocationImg from "@icon/map/vector.svg";
 import marketIcon from "@icon/map/selectMarket.svg";
 import martIcon from "@icon/map/selectMart.svg";
@@ -20,6 +21,7 @@ import currentMarkerIcon from "@icon/map/currentLocationMarker.svg";
 export default function KakaoMap() {
   const mapRef = useRef(null);
   const [mapInstance, setMapInstance] = useState(null);
+  const [selectedStore, setSelectedStore] = useState(null);
   const [selectedCategory] = useAtom(selectedCategoryAtom);
   const addressState = useAtomValue(selectedAddressAtom);
   const setSelectedAddress = useSetAtom(selectedAddressAtom);
@@ -151,6 +153,7 @@ export default function KakaoMap() {
       bubbleOverlay.setMap(mapInstance);
       overlayMapRef.current.bubble = bubbleOverlay;
       overlayMapRef.current.bubbleTargetKey = `${store.latitude},${store.longitude}`;
+      setSelectedStore(store);
     },
     [mapInstance]
   );
@@ -314,6 +317,8 @@ export default function KakaoMap() {
       bubble.getContent()?.remove?.();
       overlayMapRef.current.bubble = null;
 
+      setSelectedStore(null);
+
       const store = stores.find((s) => `${s.latitude},${s.longitude}` === bubbleTargetKey);
       if (!store) return;
 
@@ -353,6 +358,7 @@ export default function KakaoMap() {
       >
         <CurrentLocationIcon src={CurrentLocationImg} alt="현재 위치" />
       </CurrentLocationButton>
+      <StoreCard store={selectedStore} />
     </KakaoMapWrapper>
   );
 }
