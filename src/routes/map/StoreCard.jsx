@@ -4,11 +4,36 @@ import { selectedAddressAtom } from "./state/addressAtom";
 import selectMarket from "@icon/map/selectMarket.svg";
 import selectMart from "@icon/map/selectMart.svg";
 import distanceIcon from "@icon/map/distanceMarker.svg";
-import styled from "styled-components";
+
+import {
+  StoreCardWrapper,
+  ImageWrapper,
+  StoreImage,
+  TypeIcon,
+  BottomBox,
+  StoreName,
+  StoreAddress,
+  DetailInfoBox,
+  InfoBox,
+  DistanceIcon,
+  InfoText,
+  ByText,
+} from "./StoreCard.styles";
 
 export default function StoreCard({ store }) {
   const address = useAtomValue(selectedAddressAtom);
   const [resolvedAddress, setResolvedAddress] = useState(null);
+  const [showClass, setShowClass] = useState(false);
+
+  useEffect(() => {
+    if (store) {
+      const timer = setTimeout(() => setShowClass(true), 30);
+      return () => {
+        clearTimeout(timer);
+        setShowClass(false);
+      };
+    }
+  }, [store]);
 
   useEffect(() => {
     if (!store || !store.latitude || !store.longitude || store.address) return;
@@ -56,15 +81,14 @@ export default function StoreCard({ store }) {
   const typeIcon = store.type === "market" ? selectMarket : selectMart;
 
   return (
-    <StoreCardWrapper>
+    <StoreCardWrapper className={showClass ? "show" : ""}>
       <ImageWrapper>
         <StoreImage src={store.imageUrl || "https://via.placeholder.com/100"} alt="상점 사진" />
         <TypeIcon src={typeIcon} alt="타입 아이콘" />
       </ImageWrapper>
-
       <BottomBox>
         <StoreName>{store.name}</StoreName>
-        <StoreAddress>{store.address || resolvedAddress || "주소 불러오는 중..."}</StoreAddress>
+        <StoreAddress>{store.address || resolvedAddress || "주소 불러오는 중"}</StoreAddress>
         <DetailInfoBox>
           <InfoBox>
             <DistanceIcon src={distanceIcon} alt="위치 아이콘" />
@@ -83,85 +107,3 @@ export default function StoreCard({ store }) {
     </StoreCardWrapper>
   );
 }
-
-const StoreCardWrapper = styled.div`
-  position: absolute;
-  bottom: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 768px;
-  background-color: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  z-index: 200;
-`;
-
-const ImageWrapper = styled.div`
-  position: relative;
-`;
-
-const StoreImage = styled.img`
-  width: 100%;
-  height: 132.03px;
-  object-fit: cover;
-`;
-
-const TypeIcon = styled.img`
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
-  background: white;
-  border-radius: 12px;
-  padding: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-`;
-
-const BottomBox = styled.div`
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-`;
-
-const StoreName = styled.h3`
-  font-size: 17px;
-  font-weight: 700;
-  color: #1c1b1a;
-`;
-
-const StoreAddress = styled.p`
-  font-size: 13px;
-  color: #757575;
-`;
-
-const DetailInfoBox = styled.div`
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-top: 4px;
-`;
-
-const InfoBox = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-`;
-
-const DistanceIcon = styled.img`
-  width: 16px;
-  height: 16px;
-`;
-
-const InfoText = styled.p`
-  font-size: 13px;
-  color: #58d748;
-`;
-
-const ByText = styled.p`
-  font-size: 13px;
-  color: #757575;
-`;
