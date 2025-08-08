@@ -8,8 +8,11 @@ export const StoreCardWrapper = styled.div`
     transform: none;
     opacity: 1;
     pointer-events: auto;
-    margin: 12px auto;
-    `
+    margin: 12px 0;
+    width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
+  `
       : `
     position: absolute;
     bottom: 15px;
@@ -22,10 +25,11 @@ export const StoreCardWrapper = styled.div`
       opacity: 1;
       pointer-events: auto;
     }
+
+    width: calc(100% - 35px); // 기존처럼 좁은 카드
+    max-width: 768px;
   `}
 
-  width: calc(100% - 35px);
-  max-width: 768px;
   background-color: white;
   border-radius: 12px;
   overflow: hidden;

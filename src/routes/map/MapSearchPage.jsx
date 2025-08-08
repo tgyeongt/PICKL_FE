@@ -6,11 +6,17 @@ import styled from "styled-components";
 import backIcon from "@icon/map/backButtonIcon.svg";
 import clearIcon from "@icon/map/x-circle.svg";
 import DropdownIcon from "@icon/map/dropdown.svg";
+import { mockStoresData } from "../../shared/lib/mock/stores.mock";
+import SearchResultList from "./SearchResultList"; // ✅ 추가
 
 export default function MapSearchPage() {
   const navigate = useNavigate();
   const selectedAddress = useAtomValue(selectedAddressAtom);
   const [keyword, setKeyword] = useState("");
+
+  const filteredStores = keyword
+    ? mockStoresData.filter((store) => store.name.includes(keyword))
+    : [];
 
   return (
     <MapSearchWrapper>
@@ -30,12 +36,24 @@ export default function MapSearchPage() {
             </ClearButton>
           )}
         </SearchBar>
-        <LocationBox onClick={() => navigate("/map/edit-location")}>
-          <AddressTextWrapper>
-            <AddressText>{selectedAddress.roadAddress || selectedAddress.jibunAddress}</AddressText>
-            <DropdownImg src={DropdownIcon} alt="드롭다운" />
-          </AddressTextWrapper>
-        </LocationBox>
+
+        {keyword ? (
+          <SearchInfoText>
+            <GreenText>{keyword}</GreenText>으로 검색된 결과{" "}
+            <GreenText>{filteredStores.length}</GreenText>건
+          </SearchInfoText>
+        ) : (
+          <LocationBox onClick={() => navigate("/map/edit-location")}>
+            <AddressTextWrapper>
+              <AddressText>
+                {selectedAddress.roadAddress || selectedAddress.jibunAddress}
+              </AddressText>
+              <DropdownImg src={DropdownIcon} alt="드롭다운" />
+            </AddressTextWrapper>
+          </LocationBox>
+        )}
+
+        <SearchResultList stores={filteredStores} />
       </MapSearchBox>
     </MapSearchWrapper>
   );
@@ -50,7 +68,6 @@ const MapSearchWrapper = styled.div`
   padding-left: 20px;
   padding-right: 20px;
   padding-top: 13px;
-  padding-bottom: 0;
 `;
 
 const BackButton = styled.button`
@@ -144,4 +161,15 @@ const AddressText = styled.span`
 const DropdownImg = styled.img`
   width: 9.5px;
   height: 8px;
+`;
+
+const SearchInfoText = styled.p`
+  font-size: 13.5px;
+  line-height: 20px;
+  font-weight: 500;
+  color: #1c1b1a;
+`;
+
+const GreenText = styled.span`
+  color: #58d748;
 `;
