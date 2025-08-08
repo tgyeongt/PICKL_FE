@@ -14,6 +14,7 @@ export default function Map() {
       <MapCategory />
       <MapContent>
         <KakaoMap key={`${selectedAddress.lat}-${selectedAddress.lng}`} />
+        {/* <div style={{ height: "300px", backgroundColor: "red" }} /> */}
       </MapContent>
     </MapWrapper>
   );
@@ -24,11 +25,12 @@ const MapWrapper = styled.div`
   max-width: 768px;
   min-height: 100vh;
   background-color: #fbfbfb;
-  display: flex;
-  flex-direction: column;
+  overflow-y: auto;
+  display: block;
 `;
 
 const MapContent = styled.div`
-  flex: 1;
   margin-top: 16px;
+  height: auto;
+  padding-bottom: 60px;
 `;

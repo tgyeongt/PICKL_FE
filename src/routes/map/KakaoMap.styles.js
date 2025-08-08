@@ -1,10 +1,12 @@
 import styled from "styled-components";
 
 export const KakaoMapWrapper = styled.div`
-  position: relative;
   width: 100%;
-  height: 435px;
+  height: 60vh;
+  /* height: calc(var(--vh, 1vh) * 70); */
+  min-height: 360px;
   overflow: hidden;
+  position: relative;
 `;
 
 export const KakaoMapBox = styled.div`

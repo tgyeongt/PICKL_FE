@@ -1,6 +1,9 @@
 import styled from "styled-components";
 import { useAtomValue } from "jotai";
 import { selectedAddressAtom } from "./state/addressAtom";
+import selectMarket from "@icon/map/selectMarket.svg";
+import selectMart from "@icon/map/selectMart.svg";
+import distanceIcon from "@icon/map/distanceMarker.svg";
 
 export default function StoreCard({ store }) {
   const address = useAtomValue(selectedAddressAtom);
@@ -15,7 +18,7 @@ export default function StoreCard({ store }) {
       Math.sin(dLat / 2) ** 2 +
       Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.round(R * c * 1000); // m
+    return Math.round(R * c * 1000);
   };
 
   const formatDistance = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)}km` : `${m}m`);
@@ -26,74 +29,115 @@ export default function StoreCard({ store }) {
   const walkMin = Math.max(1, Math.round(distance / 67));
   const driveMin = Math.max(1, Math.round(distance / 250));
 
+  const typeIcon = store.type === "market" ? selectMarket : selectMart;
+
   return (
-    <CardWrapper>
-      <Image src={store.imageUrl || "https://via.placeholder.com/100"} alt="상점 사진" />
-      <Info>
-        <Name>{store.name}</Name>
-        <Address>{store.address || "서울시 성북구"} </Address>
-        <DistanceBox>
-          <span>
-            📍 <strong>{formatDistance(distance)}</strong>
-          </span>
-          <span>
-            도보 <strong>{formatTime(walkMin)}</strong>
-          </span>
-          <span>
-            / 차로 <strong>{formatTime(driveMin)}</strong>
-          </span>
-        </DistanceBox>
-      </Info>
-    </CardWrapper>
+    <StoreCardWrapper>
+      <ImageWrapper>
+        <StoreImage src={store.imageUrl || "https://via.placeholder.com/100"} alt="상점 사진" />
+        <TypeIcon src={typeIcon} alt="타입 아이콘" />
+      </ImageWrapper>
+
+      <BottomBox>
+        <StoreName>{store.name}</StoreName>
+        <StoreAddress>{store.address || "서울시 성북구"}</StoreAddress>
+        <DetailInfoBox>
+          <InfoBox>
+            <DistanceIcon src={distanceIcon} alt="위치 아이콘" />
+            <InfoText>{formatDistance(distance)}</InfoText>
+          </InfoBox>
+          <InfoBox>
+            <ByText>도보</ByText>
+            <InfoText>{formatTime(walkMin)}</InfoText>
+          </InfoBox>
+          <InfoBox>
+            <ByText>차량</ByText>
+            <InfoText>{formatTime(driveMin)}</InfoText>
+          </InfoBox>
+        </DetailInfoBox>
+      </BottomBox>
+    </StoreCardWrapper>
   );
 }
 
-const CardWrapper = styled.div`
+const StoreCardWrapper = styled.div`
   position: absolute;
-  bottom: 0;
-  width: 100%;
+  bottom: 15px; // ✅ 하단바 위에 적절한 위치
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px); // ✅ 좌우 여백 확보
   max-width: 768px;
   background-color: white;
-  padding: 16px;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  gap: 12px;
-  align-items: center;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); // ✅ 더 진한 그림자
   z-index: 200;
 `;
 
-const Image = styled.img`
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 8px;
+const ImageWrapper = styled.div`
+  position: relative;
 `;
 
-const Info = styled.div`
+const StoreImage = styled.img`
+  width: 100%;
+  height: 132.03px; // ✅ 더 풍부한 이미지 비율
+  object-fit: cover;
+`;
+
+const TypeIcon = styled.img`
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  background: white;
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+`;
+
+const BottomBox = styled.div`
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 `;
 
-const Name = styled.h3`
-  font-size: 16px;
-  font-weight: bold;
+const StoreName = styled.h3`
+  font-size: 17px;
+  font-weight: 700;
+  color: #1c1b1a;
 `;
 
-const Address = styled.p`
-  font-size: 14px;
-  color: #555;
-`;
-
-const DistanceBox = styled.div`
+const StoreAddress = styled.p`
   font-size: 13px;
-  color: #999;
-  display: flex;
-  gap: 8px;
-  align-items: center;
+  color: #757575;
+`;
 
-  strong {
-    color: #58d748;
-    margin-left: 2px;
-  }
+const DetailInfoBox = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 4px;
+`;
+
+const InfoBox = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const DistanceIcon = styled.img`
+  width: 16px;
+  height: 16px;
+`;
+
+const InfoText = styled.p`
+  font-size: 13px;
+  color: #58d748;
+`;
+
+const ByText = styled.p`
+  font-size: 13px;
+  color: #757575;
 `;

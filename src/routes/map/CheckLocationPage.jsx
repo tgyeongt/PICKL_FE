@@ -51,7 +51,7 @@ const CheckLocationWrapper = styled.div`
 
 const KakaoMapBox = styled.div`
   width: 100%;
-  height: 435px;
+  height: 60vh;
   position: relative;
   margin-top: 10px;
 `;
