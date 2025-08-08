@@ -148,15 +148,24 @@ export default function KakaoMap() {
         prevRound.getContent()?.remove?.();
         delete overlayMapRef.current.round[`${store.latitude},${store.longitude}`];
       }
+
+      const offsetLat = 0.002;
+      const adjustedLat = store.latitude - offsetLat;
+      const adjustedCenter = new window.kakao.maps.LatLng(adjustedLat, store.longitude);
+      mapInstance.panTo(adjustedCenter);
+
       const bubbleEl = createBubbleElement(store, imageSrc);
       const bubbleOverlay = new window.kakao.maps.CustomOverlay({
         position: storePosition,
         content: bubbleEl,
         yAnchor: 1.1,
       });
+
       bubbleOverlay.setMap(mapInstance);
+
       overlayMapRef.current.bubble = bubbleOverlay;
       overlayMapRef.current.bubbleTargetKey = `${store.latitude},${store.longitude}`;
+
       setSelectedStore(store);
     },
     [mapInstance]
@@ -318,6 +327,7 @@ export default function KakaoMap() {
     const handleMapClick = () => {
       const { bubble, bubbleTargetKey } = overlayMapRef.current;
       if (!bubble || !bubbleTargetKey) return;
+
       bubble.setMap(null);
       bubble.getContent()?.remove?.();
       overlayMapRef.current.bubble = null;
@@ -339,7 +349,10 @@ export default function KakaoMap() {
       roundOverlay.setMap(mapInstance);
       overlayMapRef.current.round[bubbleTargetKey] = roundOverlay;
       markerEl.addEventListener("click", () => showBubbleOverlay(store, storePosition, imageSrc));
+
       overlayMapRef.current.bubbleTargetKey = null;
+
+      mapInstance.panTo(storePosition);
     };
 
     window.kakao.maps.event.addListener(mapInstance, "idle", handleIdle);
