@@ -1,12 +1,36 @@
-import styled from "styled-components";
+import { useEffect, useState } from "react";
 import { useAtomValue } from "jotai";
 import { selectedAddressAtom } from "./state/addressAtom";
 import selectMarket from "@icon/map/selectMarket.svg";
 import selectMart from "@icon/map/selectMart.svg";
 import distanceIcon from "@icon/map/distanceMarker.svg";
+import styled from "styled-components";
 
 export default function StoreCard({ store }) {
   const address = useAtomValue(selectedAddressAtom);
+  const [resolvedAddress, setResolvedAddress] = useState(null);
+
+  useEffect(() => {
+    if (!store || !store.latitude || !store.longitude || store.address) return;
+
+    const loadAddress = async () => {
+      if (!window.kakao?.maps?.services) return;
+
+      const geocoder = new window.kakao.maps.services.Geocoder();
+
+      geocoder.coord2Address(store.longitude, store.latitude, (result, status) => {
+        if (status === window.kakao.maps.services.Status.OK && result.length > 0) {
+          const road = result[0].road_address?.address_name;
+          const jibun = result[0].address?.address_name;
+          setResolvedAddress(road || jibun || "주소 없음");
+        } else {
+          setResolvedAddress("주소 없음");
+        }
+      });
+    };
+
+    loadAddress();
+  }, [store]);
 
   if (!store || !address.lat || !address.lng) return null;
 
@@ -40,7 +64,7 @@ export default function StoreCard({ store }) {
 
       <BottomBox>
         <StoreName>{store.name}</StoreName>
-        <StoreAddress>{store.address || "서울시 성북구"}</StoreAddress>
+        <StoreAddress>{store.address || resolvedAddress || "주소 불러오는 중..."}</StoreAddress>
         <DetailInfoBox>
           <InfoBox>
             <DistanceIcon src={distanceIcon} alt="위치 아이콘" />
@@ -62,15 +86,15 @@ export default function StoreCard({ store }) {
 
 const StoreCardWrapper = styled.div`
   position: absolute;
-  bottom: 15px; // ✅ 하단바 위에 적절한 위치
+  bottom: 15px;
   left: 50%;
   transform: translateX(-50%);
-  width: calc(100% - 32px); // ✅ 좌우 여백 확보
+  width: calc(100% - 32px);
   max-width: 768px;
   background-color: white;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); // ✅ 더 진한 그림자
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   z-index: 200;
 `;
 
@@ -80,7 +104,7 @@ const ImageWrapper = styled.div`
 
 const StoreImage = styled.img`
   width: 100%;
-  height: 132.03px; // ✅ 더 풍부한 이미지 비율
+  height: 132.03px;
   object-fit: cover;
 `;
 
