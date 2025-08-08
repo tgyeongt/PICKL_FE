@@ -59,11 +59,11 @@ export const CurrentLocationIcon = styled.img`
 
 export const StoreListButton = styled.button`
   position: absolute;
-  bottom: 40px;
   right: 16px;
+  bottom: ${(props) => (props.$isCardVisible ? "265px" : "40px")};
   z-index: 10;
-  pointer-events: auto;
 
+  pointer-events: auto;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -73,6 +73,8 @@ export const StoreListButton = styled.button`
   border: 1px solid #ccc;
   box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
   cursor: pointer;
+
+  transition: bottom 0.3s ease;
 `;
 
 export const StoreListIcon = styled.img`

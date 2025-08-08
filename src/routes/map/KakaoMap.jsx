@@ -377,7 +377,10 @@ export default function KakaoMap() {
         <CurrentLocationIcon src={CurrentLocationImg} alt="현재 위치" />
       </CurrentLocationButton>
       <StoreCard store={selectedStore} />
-      <StoreListButton onClick={() => console.log("목록보기 클릭")}>
+      <StoreListButton
+        $isCardVisible={!!selectedStore}
+        onClick={() => console.log("목록보기 클릭")}
+      >
         <StoreListIcon src={StoreListImg} alt="목록 아이콘" />
         <StoreListText>목록보기</StoreListText>
       </StoreListButton>
