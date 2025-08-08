@@ -56,3 +56,38 @@ export const CurrentLocationIcon = styled.img`
   width: 29px;
   height: 29px;
 `;
+
+export const StoreListButton = styled.button`
+  position: absolute;
+  bottom: 40px;
+  right: 16px;
+  z-index: 10;
+  pointer-events: auto;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: 30px;
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+`;
+
+export const StoreListIcon = styled.img`
+  width: 14.4px;
+  height: 10.8px;
+  flex-shrink: 0;
+  stroke-width: 1.8px;
+  stroke: #000;
+`;
+
+export const StoreListText = styled.p`
+  color: #1c1b1a;
+  font-family: Pretendard;
+  font-size: 12.6px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 19.8px;
+`;

@@ -5,7 +5,7 @@ export const StoreCardWrapper = styled.div`
   bottom: 15px;
   left: 50%;
   transform: translateX(-50%) translateY(30px);
-  width: calc(100% - 32px);
+  width: calc(100% - 35px);
   max-width: 768px;
   background-color: white;
   border-radius: 12px;

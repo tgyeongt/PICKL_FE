@@ -7,6 +7,9 @@ import {
   KakaoMapBox,
   CurrentLocationButton,
   CurrentLocationIcon,
+  StoreListButton,
+  StoreListIcon,
+  StoreListText,
 } from "./KakaoMap.styles";
 import { useQuery } from "@tanstack/react-query";
 import { APIService } from "../../shared/lib/api";
@@ -17,6 +20,7 @@ import CurrentLocationImg from "@icon/map/vector.svg";
 import marketIcon from "@icon/map/selectMarket.svg";
 import martIcon from "@icon/map/selectMart.svg";
 import currentMarkerIcon from "@icon/map/currentLocationMarker.svg";
+import StoreListImg from "@icon/map/storeListIcon.svg";
 
 export default function KakaoMap() {
   const mapRef = useRef(null);
@@ -306,6 +310,7 @@ export default function KakaoMap() {
     renderMarkers();
   }, [selectedCategory, renderMarkers, mapInstance]);
 
+  2;
   useEffect(() => {
     if (!mapInstance) return;
     const handleIdle = () => renderMarkers();
@@ -359,6 +364,10 @@ export default function KakaoMap() {
         <CurrentLocationIcon src={CurrentLocationImg} alt="현재 위치" />
       </CurrentLocationButton>
       <StoreCard store={selectedStore} />
+      <StoreListButton onClick={() => console.log("목록보기 클릭")}>
+        <StoreListIcon src={StoreListImg} alt="목록 아이콘" />
+        <StoreListText>목록보기</StoreListText>
+      </StoreListButton>
     </KakaoMapWrapper>
   );
 }

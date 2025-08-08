@@ -83,7 +83,7 @@ export default function StoreCard({ store }) {
   return (
     <StoreCardWrapper className={showClass ? "show" : ""}>
       <ImageWrapper>
-        <StoreImage src={store.imageUrl || "https://via.placeholder.com/100"} alt="상점 사진" />
+        <StoreImage src={store.imageUrl} alt="상점 사진" />
         <TypeIcon src={typeIcon} alt="타입 아이콘" />
       </ImageWrapper>
       <BottomBox>
