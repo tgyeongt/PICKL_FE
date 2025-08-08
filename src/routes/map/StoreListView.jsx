@@ -25,16 +25,19 @@ export default function StoreListView({ stores }) {
     }))
     .sort((a, b) => a.distance - b.distance);
 
-  console.log("👀 리스트에 나올 카드 수:", sortedStores.length);
-
   return (
     <StoreListViewWrapper>
-      {sortedStores.map((store, i) => {
-        console.log(`🧾 ${i + 1}번째 카드`, store.name);
+      {sortedStores.map((store) => {
         return <StoreCard key={store.id} store={store} isListMode={true} />;
       })}
     </StoreListViewWrapper>
   );
 }
 
-const StoreListViewWrapper = styled.div``;
+// StoreListView.jsx
+const StoreListViewWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 0 15px 20px; // ✅ 아래 100px 패딩 추가
+`;

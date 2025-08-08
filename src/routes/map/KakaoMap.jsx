@@ -378,6 +378,7 @@ export default function KakaoMap() {
       )}
 
       <StoreListButton
+        $isListMode={isListMode}
         $isCardVisible={!!selectedStore || isListMode}
         onClick={() => {
           setSelectedStore(null);
