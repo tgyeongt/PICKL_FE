@@ -20,7 +20,7 @@ import {
   ByText,
 } from "./StoreCard.styles";
 
-export default function StoreCard({ store }) {
+export default function StoreCard({ store, isListMode = false }) {
   const address = useAtomValue(selectedAddressAtom);
   const [resolvedAddress, setResolvedAddress] = useState(null);
   const [showClass, setShowClass] = useState(false);
@@ -36,7 +36,7 @@ export default function StoreCard({ store }) {
   }, [store]);
 
   useEffect(() => {
-    if (!store || !store.latitude || !store.longitude || store.address) return;
+    if (!store || !store.latitude || !store.longitude) return;
 
     const loadAddress = async () => {
       if (!window.kakao?.maps?.services) return;
@@ -81,7 +81,7 @@ export default function StoreCard({ store }) {
   const typeIcon = store.type === "market" ? selectMarket : selectMart;
 
   return (
-    <StoreCardWrapper className={showClass ? "show" : ""}>
+    <StoreCardWrapper className={showClass ? "show" : ""} $isListMode={isListMode}>
       <ImageWrapper>
         <StoreImage src={store.imageUrl} alt="상점 사진" />
         <TypeIcon src={typeIcon} alt="타입 아이콘" />

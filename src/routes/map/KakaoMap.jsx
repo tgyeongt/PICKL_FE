@@ -16,6 +16,7 @@ import { APIService } from "../../shared/lib/api";
 import { mockStoresData } from "../../shared/lib/mock/stores.mock";
 
 import StoreCard from "./StoreCard";
+import StoreListView from "./StoreListView";
 import CurrentLocationImg from "@icon/map/vector.svg";
 import marketIcon from "@icon/map/selectMarket.svg";
 import martIcon from "@icon/map/selectMart.svg";
@@ -27,6 +28,7 @@ export default function KakaoMap() {
   const [mapInstance, setMapInstance] = useState(null);
   const [selectedStore, setSelectedStore] = useState(null);
   const [selectedCategory] = useAtom(selectedCategoryAtom);
+  const [isListMode, setIsListMode] = useState(false);
   const addressState = useAtomValue(selectedAddressAtom);
   const setSelectedAddress = useSetAtom(selectedAddressAtom);
 
@@ -42,6 +44,12 @@ export default function KakaoMap() {
 
   const isDev = import.meta.env.MODE === "development";
   const stores = useMemo(() => storesData ?? (isDev ? mockStoresData : []), [storesData, isDev]);
+
+  const filteredStores = useMemo(() => {
+    if (!stores) return [];
+    if (selectedCategory === "all") return stores;
+    return stores.filter((store) => store.type.toLowerCase() === selectedCategory);
+  }, [stores, selectedCategory]);
 
   const loadScript = () => {
     if (document.querySelector("script[src*='dapi.kakao.com']")) return Promise.resolve();
@@ -80,29 +88,6 @@ export default function KakaoMap() {
     });
   }, [addressState.lat, addressState.lng]);
 
-  useEffect(() => {
-    const initializeMap = async () => {
-      await loadScript();
-
-      const checkKakaoLoaded = () =>
-        new Promise((resolve) => {
-          const interval = setInterval(() => {
-            if (window.kakao && window.kakao.maps) {
-              clearInterval(interval);
-              resolve();
-            }
-          }, 100);
-        });
-
-      await checkKakaoLoaded();
-
-      if (addressState.lat && addressState.lng) {
-        createMap();
-      }
-    };
-
-    initializeMap();
-  }, [addressState.lat, addressState.lng, createMap]);
   const createMarkerElement = (store, imageSrc) => {
     const marker = document.createElement("div");
     marker.style.cssText = `
@@ -319,7 +304,6 @@ export default function KakaoMap() {
     renderMarkers();
   }, [selectedCategory, renderMarkers, mapInstance]);
 
-  2;
   useEffect(() => {
     if (!mapInstance) return;
     const handleIdle = () => renderMarkers();
@@ -364,25 +348,45 @@ export default function KakaoMap() {
     };
   }, [mapInstance, renderMarkers, showBubbleOverlay, stores]);
 
+  useEffect(() => {
+    if (!isListMode && !mapInstance && addressState.lat && addressState.lng) {
+      createMap();
+    }
+  }, [isListMode, mapInstance, addressState.lat, addressState.lng, createMap]);
+
   return (
-    <KakaoMapWrapper>
-      <KakaoMapBox ref={mapRef} />
-      <CurrentLocationButton
+    <KakaoMapWrapper $isListMode={isListMode}>
+      {isListMode ? (
+        <>
+          {console.log("🔥 필터된 상점들", filteredStores)}
+          <StoreListView stores={filteredStores} />
+        </>
+      ) : (
+        <>
+          <KakaoMapBox ref={mapRef} />
+          <CurrentLocationButton
+            onClick={() => {
+              if (!mapInstance || !currentMarkerRef.current) return;
+              const currentPos = currentMarkerRef.current.getPosition();
+              mapInstance.panTo(currentPos);
+            }}
+          >
+            <CurrentLocationIcon src={CurrentLocationImg} alt="현재 위치" />
+          </CurrentLocationButton>
+          <StoreCard store={selectedStore} />
+        </>
+      )}
+
+      <StoreListButton
+        $isCardVisible={!!selectedStore || isListMode}
         onClick={() => {
-          if (!mapInstance || !currentMarkerRef.current) return;
-          const currentPos = currentMarkerRef.current.getPosition();
-          mapInstance.panTo(currentPos);
+          setSelectedStore(null);
+          setMapInstance(null);
+          setIsListMode((prev) => !prev);
         }}
       >
-        <CurrentLocationIcon src={CurrentLocationImg} alt="현재 위치" />
-      </CurrentLocationButton>
-      <StoreCard store={selectedStore} />
-      <StoreListButton
-        $isCardVisible={!!selectedStore}
-        onClick={() => console.log("목록보기 클릭")}
-      >
         <StoreListIcon src={StoreListImg} alt="목록 아이콘" />
-        <StoreListText>목록보기</StoreListText>
+        <StoreListText>{isListMode ? "지도보기" : "목록보기"}</StoreListText>
       </StoreListButton>
     </KakaoMapWrapper>
   );

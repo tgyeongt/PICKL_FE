@@ -1,10 +1,29 @@
 import styled from "styled-components";
 
 export const StoreCardWrapper = styled.div`
-  position: absolute;
-  bottom: 15px;
-  left: 50%;
-  transform: translateX(-50%) translateY(30px);
+  ${(props) =>
+    props.$isListMode
+      ? `
+    position: static;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+    margin: 12px auto;
+    `
+      : `
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%) translateY(30px);
+    opacity: 0;
+    pointer-events: none;
+    &.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+  `}
+
   width: calc(100% - 35px);
   max-width: 768px;
   background-color: white;
@@ -12,16 +31,7 @@ export const StoreCardWrapper = styled.div`
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   z-index: 200;
-
-  opacity: 0;
   transition: opacity 0.4s ease, transform 0.4s ease;
-  pointer-events: none;
-
-  &.show {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
-    pointer-events: auto;
-  }
 `;
 
 export const ImageWrapper = styled.div`

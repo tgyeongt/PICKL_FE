@@ -1,12 +1,13 @@
 import styled from "styled-components";
 
+// 기존 KakaoMapWrapper 수정
 export const KakaoMapWrapper = styled.div`
   width: 100%;
-  height: 60vh;
-  /* height: calc(var(--vh, 1vh) * 70); */
-  min-height: 360px;
-  overflow: hidden;
+  height: ${({ $isListMode }) => ($isListMode ? "100vh" : "60vh")};
+  overflow-y: ${({ $isListMode }) => ($isListMode ? "auto" : "hidden")};
+  background-color: #fff;
   position: relative;
+  min-height: 360px;
 `;
 
 export const KakaoMapBox = styled.div`

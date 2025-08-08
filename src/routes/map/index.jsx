@@ -14,7 +14,6 @@ export default function Map() {
       <MapCategory />
       <MapContent>
         <KakaoMap key={`${selectedAddress.lat}-${selectedAddress.lng}`} />
-        {/* <div style={{ height: "300px", backgroundColor: "red" }} /> */}
       </MapContent>
     </MapWrapper>
   );
