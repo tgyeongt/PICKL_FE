@@ -2,10 +2,14 @@ import styled from "styled-components";
 
 export const KakaoMapWrapper = styled.div`
   width: 100%;
-  height: ${({ $isListMode }) => ($isListMode ? "100vh" : "435px")};
+  height: ${({ $isListMode }) => ($isListMode ? "100vh" : "60vh")};
   overflow-y: ${({ $isListMode }) => ($isListMode ? "auto" : "hidden")};
   background-color: #fff;
   position: relative;
+
+  @media screen and (min-width: 768px) {
+    height: ${({ $isListMode }) => ($isListMode ? "100vh" : "500px")};
+  }
 `;
 
 export const KakaoMapBox = styled.div`
