@@ -1,15 +1,48 @@
 import styled from "styled-components";
+import { useAtomValue } from "jotai";
+import { selectedAddressAtom } from "./state/addressAtom";
 
 export default function StoreCard({ store }) {
-  if (!store) return null;
+  const address = useAtomValue(selectedAddressAtom);
+
+  if (!store || !address.lat || !address.lng) return null;
+
+  const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c * 1000); // m
+  };
+
+  const formatDistance = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)}km` : `${m}m`);
+  const formatTime = (min) =>
+    min >= 60 ? `${Math.floor(min / 60)}시간 ${min % 60}분` : `${min}분`;
+
+  const distance = getDistance(address.lat, address.lng, store.latitude, store.longitude);
+  const walkMin = Math.max(1, Math.round(distance / 67));
+  const driveMin = Math.max(1, Math.round(distance / 250));
 
   return (
     <CardWrapper>
       <Image src={store.imageUrl || "https://via.placeholder.com/100"} alt="상점 사진" />
       <Info>
         <Name>{store.name}</Name>
-        <Address>{store.address || "서울시 성북구"}</Address>
-        <Distance>431m • 도보 6분</Distance>
+        <Address>{store.address || "서울시 성북구"} </Address>
+        <DistanceBox>
+          <span>
+            📍 <strong>{formatDistance(distance)}</strong>
+          </span>
+          <span>
+            도보 <strong>{formatTime(walkMin)}</strong>
+          </span>
+          <span>
+            / 차로 <strong>{formatTime(driveMin)}</strong>
+          </span>
+        </DistanceBox>
       </Info>
     </CardWrapper>
   );
@@ -52,7 +85,15 @@ const Address = styled.p`
   color: #555;
 `;
 
-const Distance = styled.p`
+const DistanceBox = styled.div`
   font-size: 13px;
   color: #999;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  strong {
+    color: #58d748;
+    margin-left: 2px;
+  }
 `;
