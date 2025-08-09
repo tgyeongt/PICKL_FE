@@ -34,10 +34,9 @@ export default function StoreListView({ stores }) {
   );
 }
 
-// StoreListView.jsx
 const StoreListViewWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 0 15px 20px; // ✅ 아래 100px 패딩 추가
+  padding: 0 15px 20px; 
 `;
