@@ -13,7 +13,8 @@ import {
 } from "./KakaoMap.styles";
 import { useQuery } from "@tanstack/react-query";
 import { APIService } from "../../shared/lib/api";
-import { mockStoresData } from "../../shared/lib/mock/stores.mock";
+import { mapMarketFromAPI } from "../../shared/lib/storeMappers";
+import { testLoginIfNeeded } from "../../shared/lib/auth";
 
 import StoreCard from "./StoreCard";
 import StoreListView from "./StoreListView";
@@ -36,56 +37,55 @@ export default function KakaoMap() {
   const currentMarkerRef = useRef(null);
   const overlayMapRef = useRef({ round: {}, bubble: null, bubbleTargetKey: null });
 
-  const { data: storesData } = useQuery({
-    queryKey: ["stores"],
-    queryFn: async () => (await APIService.public.get("/stores")).data,
-    staleTime: 1000 * 60 * 5,
-  });
+  const [bbox, setBbox] = useState(null);
 
-  const isDev = import.meta.env.MODE === "development";
-  const stores = useMemo(() => storesData ?? (isDev ? mockStoresData : []), [storesData, isDev]);
+  const ensureKakaoReady = () =>
+    new Promise((resolve) => {
+      const onReady = () => window.kakao.maps.load(resolve);
+      if (window.kakao?.maps?.services) return onReady();
 
-  const filteredStores = useMemo(() => {
-    if (!stores) return [];
-    if (selectedCategory === "all") return stores;
-    return stores.filter((store) => store.type.toLowerCase() === selectedCategory);
-  }, [stores, selectedCategory]);
+      document.querySelectorAll("script[data-kakao-maps-sdk]").forEach((s) => s.remove());
 
-  const loadScript = () => {
-    if (document.querySelector("script[src*='dapi.kakao.com']")) return Promise.resolve();
-    return new Promise((resolve) => {
       const script = document.createElement("script");
       script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${
         import.meta.env.VITE_KAKAOMAP_APP_KEY
       }&libraries=services&autoload=false`;
       script.async = true;
-      script.onload = resolve;
+      script.setAttribute("data-kakao-maps-sdk", "true");
+      script.onload = onReady;
       document.head.appendChild(script);
     });
-  };
+
+  const waitForContainerSize = () =>
+    new Promise((resolve) => {
+      const check = () => {
+        const el = mapRef.current;
+        if (el && el.offsetWidth > 0 && el.offsetHeight > 0) return resolve();
+        requestAnimationFrame(check);
+      };
+      check();
+    });
 
   const createMap = useCallback(() => {
-    window.kakao.maps.load(() => {
-      const defaultLat = addressState.lat || 37.5665;
-      const defaultLng = addressState.lng || 126.978;
+    if (!mapRef.current || !mapRef.current.isConnected) return;
+    const defaultLat = addressState.lat || 37.5665;
+    const defaultLng = addressState.lng || 126.978;
 
-      const centerLatLng = new window.kakao.maps.LatLng(defaultLat, defaultLng);
+    const centerLatLng = new window.kakao.maps.LatLng(defaultLat, defaultLng);
 
-      const map = new window.kakao.maps.Map(mapRef.current, {
-        center: centerLatLng,
-        level: 3,
-        draggable: true,
-        scrollwheel: true,
-      });
-
-      setMapInstance(map);
-
-      map.setCenter(centerLatLng);
-
-      setTimeout(() => {
-        window.kakao.maps.event.trigger(map, "resize");
-      }, 100);
+    const map = new window.kakao.maps.Map(mapRef.current, {
+      center: centerLatLng,
+      level: 3,
+      draggable: true,
+      scrollwheel: true,
     });
+
+    setMapInstance(map);
+    map.setCenter(centerLatLng);
+
+    setTimeout(() => {
+      window.kakao.maps.event.trigger(map, "resize");
+    }, 100);
   }, [addressState.lat, addressState.lng]);
 
   const createMarkerElement = (store, imageSrc) => {
@@ -112,6 +112,15 @@ export default function KakaoMap() {
   const createBubbleElement = (store, imageSrc) => {
     const bubble = document.createElement("div");
     bubble.innerHTML = `
+      <style>
+        .custom-bubble{
+          position:relative; display:flex; gap:6px; align-items:center;
+          padding:8px 12px; border-radius:20px; background:#58D748; color:#fff;
+          box-shadow: 1px 1px 4px rgba(0,0,0,0.1); transform: translateY(6px);
+          opacity:0; transition: all .2s ease;
+        }
+        .custom-bubble.show{ opacity:1; transform: translateY(0); }
+      </style>
       <div class="custom-bubble">
         <img src="${imageSrc}" style="width: 20px; height: 20px; margin-left: 2px;" />
         <span>${store.name}</span>
@@ -137,7 +146,7 @@ export default function KakaoMap() {
       const offsetLat = 0.002;
       const adjustedLat = store.latitude - offsetLat;
       const adjustedCenter = new window.kakao.maps.LatLng(adjustedLat, store.longitude);
-      mapInstance.panTo(adjustedCenter);
+      mapInstance?.panTo(adjustedCenter);
 
       const bubbleEl = createBubbleElement(store, imageSrc);
       const bubbleOverlay = new window.kakao.maps.CustomOverlay({
@@ -145,117 +154,103 @@ export default function KakaoMap() {
         content: bubbleEl,
         yAnchor: 1.1,
       });
-
       bubbleOverlay.setMap(mapInstance);
 
       overlayMapRef.current.bubble = bubbleOverlay;
       overlayMapRef.current.bubbleTargetKey = `${store.latitude},${store.longitude}`;
-
       setSelectedStore(store);
     },
     [mapInstance]
   );
 
-  const renderMarkers = useCallback(() => {
-    if (!mapInstance || !stores) return;
+  const renderMarkers = useCallback(
+    (stores) => {
+      if (!mapInstance || !stores) return;
 
-    markersRef.current.forEach((m) => m.setMap(null));
-    Object.values(overlayMapRef.current.round).forEach((o) => o.setMap(null));
-    overlayMapRef.current.round = {};
+      markersRef.current.forEach((m) => m.setMap?.(null));
+      Object.values(overlayMapRef.current.round).forEach((o) => o.setMap?.(null));
+      overlayMapRef.current.round = {};
 
-    const bounds = mapInstance.getBounds();
-    const newMarkers = [];
+      const bounds = mapInstance.getBounds();
+      const newMarkers = [];
 
-    stores.forEach((store) => {
-      const storeKey = `${store.latitude},${store.longitude}`;
-      if (selectedCategory !== "all" && store.type.toLowerCase() !== selectedCategory) return;
+      stores.forEach((store) => {
+        const storeKey = `${store.latitude},${store.longitude}`;
+        if (selectedCategory !== "all" && (store.type || "").toLowerCase() !== selectedCategory)
+          return;
 
-      const storePosition = new window.kakao.maps.LatLng(store.latitude, store.longitude);
-      if (!bounds.contain(storePosition)) return;
+        const storePosition = new window.kakao.maps.LatLng(store.latitude, store.longitude);
+        if (!bounds.contain(storePosition)) return;
 
-      if (overlayMapRef.current.bubbleTargetKey === storeKey) {
-        if (overlayMapRef.current.bubble) newMarkers.push(overlayMapRef.current.bubble);
-        return;
-      }
+        if (overlayMapRef.current.bubbleTargetKey === storeKey) {
+          if (overlayMapRef.current.bubble) newMarkers.push(overlayMapRef.current.bubble);
+          return;
+        }
 
-      const imageSrc = store.type === "market" ? marketIcon : martIcon;
-      const markerEl = createMarkerElement(store, imageSrc);
-      const roundOverlay = new window.kakao.maps.CustomOverlay({
-        position: storePosition,
-        content: markerEl,
-        yAnchor: 1,
+        const imageSrc = (store.type || "").toLowerCase() === "market" ? marketIcon : martIcon;
+        const markerEl = createMarkerElement(store, imageSrc);
+        const roundOverlay = new window.kakao.maps.CustomOverlay({
+          position: storePosition,
+          content: markerEl,
+          yAnchor: 1,
+        });
+        roundOverlay.setMap(mapInstance);
+        overlayMapRef.current.round[storeKey] = roundOverlay;
+        markerEl.addEventListener("click", () => showBubbleOverlay(store, storePosition, imageSrc));
+        newMarkers.push(roundOverlay);
       });
-      roundOverlay.setMap(mapInstance);
-      overlayMapRef.current.round[storeKey] = roundOverlay;
-      markerEl.addEventListener("click", () => showBubbleOverlay(store, storePosition, imageSrc));
-      newMarkers.push(roundOverlay);
-    });
 
-    markersRef.current = newMarkers;
-  }, [mapInstance, stores, selectedCategory, showBubbleOverlay]);
+      markersRef.current = newMarkers;
+    },
+    [mapInstance, selectedCategory, showBubbleOverlay]
+  );
 
   useEffect(() => {
-    const loadKakaoMap = async () => {
-      await loadScript();
-
-      const checkKakaoLoaded = () =>
-        new Promise((resolve) => {
-          const interval = setInterval(() => {
-            if (window.kakao && window.kakao.maps) {
-              clearInterval(interval);
-              resolve();
-            }
-          }, 100);
-        });
-
-      await checkKakaoLoaded();
-
-      if (addressState?.isManual) {
-        createMap();
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        ({ coords }) => {
-          const { latitude, longitude } = coords;
-          const geocoder = new window.kakao.maps.services.Geocoder();
-
-          geocoder.coord2Address(longitude, latitude, (result, status) => {
-            if (status === window.kakao.maps.services.Status.OK && result.length > 0) {
-              const road = result[0].road_address?.address_name || "";
-              const jibun = result[0].address?.address_name || "";
-
-              setSelectedAddress({
-                roadAddress: road,
-                jibunAddress: jibun,
-                lat: latitude,
-                lng: longitude,
-                isManual: false,
-              });
-            }
-          });
-        },
-        (err) => {
-          console.error("최초 위치 가져오기 실패:", err);
-          setSelectedAddress({
-            roadAddress: "서울특별시 중구 세종대로",
-            jibunAddress: "",
-            lat: 37.5665,
-            lng: 126.978,
-            isManual: false,
-          });
-        }
-      );
+    let mounted = true;
+    (async () => {
+      await ensureKakaoReady();
+      if (!mounted) return;
+      await waitForContainerSize();
+      if (!mounted || isListMode) return;
 
       createMap();
-    };
 
-    loadKakaoMap();
-  }, [createMap, setSelectedAddress, addressState?.isManual]);
+      if (!addressState?.isManual) {
+        navigator.geolocation.getCurrentPosition(
+          ({ coords }) => {
+            const { latitude, longitude } = coords;
+            const geocoder = new window.kakao.maps.services.Geocoder();
+            geocoder.coord2Address(longitude, latitude, (result, status) => {
+              if (status === window.kakao.maps.services.Status.OK && result.length > 0) {
+                setSelectedAddress({
+                  roadAddress: result[0].road_address?.address_name || "",
+                  jibunAddress: result[0].address?.address_name || "",
+                  lat: latitude,
+                  lng: longitude,
+                  isManual: false,
+                });
+              }
+            });
+          },
+          () => {
+            setSelectedAddress({
+              roadAddress: "서울특별시 중구 세종대로",
+              jibunAddress: "",
+              lat: 37.5665,
+              lng: 126.978,
+              isManual: false,
+            });
+          }
+        );
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [createMap, setSelectedAddress, addressState?.isManual, isListMode]);
 
   useEffect(() => {
     if (!mapInstance || !addressState.lat || !addressState.lng) return;
-
     const newCenter = new window.kakao.maps.LatLng(addressState.lat, addressState.lng);
     mapInstance.setCenter(newCenter);
   }, [mapInstance, addressState.lat, addressState.lng]);
@@ -274,13 +269,11 @@ export default function KakaoMap() {
             new window.kakao.maps.Size(40, 40),
             { offset: new window.kakao.maps.Point(20, 40) }
           );
-
           const marker = new window.kakao.maps.Marker({
             position,
             image: markerImage,
             zIndex: 10,
           });
-
           marker.setMap(mapInstance);
           currentMarkerRef.current = marker;
         } else {
@@ -288,12 +281,8 @@ export default function KakaoMap() {
           currentMarkerRef.current.setMap(mapInstance);
         }
       },
-      (err) => console.error("위치 추적 실패:", err),
-      {
-        enableHighAccuracy: true,
-        maximumAge: 1000,
-        timeout: 5000,
-      }
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
@@ -301,12 +290,71 @@ export default function KakaoMap() {
 
   useEffect(() => {
     if (!mapInstance) return;
-    renderMarkers();
-  }, [selectedCategory, renderMarkers, mapInstance]);
+
+    const handleIdle = () => {
+      const b = mapInstance.getBounds?.();
+      if (!b) return;
+      const sw = b.getSouthWest();
+      const ne = b.getNorthEast();
+      setBbox({
+        minX: sw.getLng(),
+        minY: sw.getLat(),
+        maxX: ne.getLng(),
+        maxY: ne.getLat(),
+      });
+    };
+
+    window.kakao.maps.event.addListener(mapInstance, "idle", handleIdle);
+    handleIdle();
+
+    return () => {
+      window.kakao.maps.event.removeListener(mapInstance, "idle", handleIdle);
+    };
+  }, [mapInstance]);
+
+  const {
+    data: storesData = [],
+    refetch,
+    isFetching,
+  } = useQuery({
+    queryKey: ["markets", bbox?.minX, bbox?.minY, bbox?.maxX, bbox?.maxY],
+    enabled: !!mapInstance && !!bbox,
+    queryFn: async () => {
+      try {
+        await testLoginIfNeeded();
+      } catch (e) {
+        console.warn(
+          "[auth] test-login 실패(개발 환경 CORS 가능). 토큰 없이 진행, 빈 데이터일 수 있음.",
+          e
+        );
+      }
+
+      const params = { ...bbox, page: 1, size: 200 };
+      try {
+        const res = await APIService.private.get("/markets", { params });
+        const raw = Array.isArray(res) ? res : res?.data ?? res?.content ?? res?.items ?? res ?? [];
+
+        return Array.isArray(raw) ? raw : Array.isArray(raw?.content) ? raw.content : [];
+      } catch (e) {
+        console.warn("[/markets] 호출 실패:", e);
+        return [];
+      }
+    },
+    select: (raw) => raw.map(mapMarketFromAPI).filter(Boolean),
+    staleTime: 60 * 1000,
+  });
+
+  const filteredStores = useMemo(() => {
+    if (selectedCategory === "all") return storesData;
+    return storesData.filter((s) => (s.type || "").toLowerCase() === selectedCategory);
+  }, [storesData, selectedCategory]);
+
+  useEffect(() => {
+    renderMarkers(filteredStores);
+  }, [filteredStores, renderMarkers]);
 
   useEffect(() => {
     if (!mapInstance) return;
-    const handleIdle = () => renderMarkers();
 
     const handleMapClick = () => {
       const { bubble, bubbleTargetKey } = overlayMapRef.current;
@@ -318,10 +366,10 @@ export default function KakaoMap() {
 
       setSelectedStore(null);
 
-      const store = stores.find((s) => `${s.latitude},${s.longitude}` === bubbleTargetKey);
+      const store = filteredStores.find((s) => `${s.latitude},${s.longitude}` === bubbleTargetKey);
       if (!store) return;
 
-      const imageSrc = store.type === "market" ? marketIcon : martIcon;
+      const imageSrc = (store.type || "").toLowerCase() === "market" ? marketIcon : martIcon;
       const markerEl = createMarkerElement(store, imageSrc);
       const storePosition = new window.kakao.maps.LatLng(store.latitude, store.longitude);
 
@@ -335,22 +383,22 @@ export default function KakaoMap() {
       markerEl.addEventListener("click", () => showBubbleOverlay(store, storePosition, imageSrc));
 
       overlayMapRef.current.bubbleTargetKey = null;
-
       mapInstance.panTo(storePosition);
     };
 
-    window.kakao.maps.event.addListener(mapInstance, "idle", handleIdle);
     window.kakao.maps.event.addListener(mapInstance, "click", handleMapClick);
-
     return () => {
-      window.kakao.maps.event.removeListener(mapInstance, "idle", handleIdle);
       window.kakao.maps.event.removeListener(mapInstance, "click", handleMapClick);
     };
-  }, [mapInstance, renderMarkers, showBubbleOverlay, stores]);
+  }, [mapInstance, filteredStores, showBubbleOverlay]);
 
   useEffect(() => {
     if (!isListMode && !mapInstance && addressState.lat && addressState.lng) {
-      createMap();
+      (async () => {
+        await ensureKakaoReady();
+        await waitForContainerSize();
+        createMap();
+      })();
     }
   }, [isListMode, mapInstance, addressState.lat, addressState.lng, createMap]);
 
@@ -358,7 +406,7 @@ export default function KakaoMap() {
     <KakaoMapWrapper $isListMode={isListMode}>
       {isListMode ? (
         <>
-          {console.log("🔥 필터된 상점들", filteredStores)}
+          {console.log("🔥 필터된 상점들", filteredStores, { isFetching })}
           <StoreListView stores={filteredStores} />
         </>
       ) : (
@@ -384,6 +432,7 @@ export default function KakaoMap() {
           setSelectedStore(null);
           setMapInstance(null);
           setIsListMode((prev) => !prev);
+          setTimeout(() => refetch(), 0);
         }}
       >
         <StoreListIcon src={StoreListImg} alt="목록 아이콘" />

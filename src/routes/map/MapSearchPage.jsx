@@ -6,8 +6,11 @@ import styled from "styled-components";
 import backIcon from "@icon/map/backButtonIcon.svg";
 import clearIcon from "@icon/map/x-circle.svg";
 import DropdownIcon from "@icon/map/dropdown.svg";
-import { mockStoresData } from "../../shared/lib/mock/stores.mock";
-import SearchResultList from "./SearchResultList"; // ✅ 추가
+
+import * as mockModule from "../../shared/lib/mock/stores.mock";
+const mockStoresData = (mockModule && (mockModule.default || mockModule.mockStoresData)) || [];
+
+import SearchResultList from "./SearchResultList";
 
 export default function MapSearchPage() {
   const navigate = useNavigate();
@@ -15,7 +18,7 @@ export default function MapSearchPage() {
   const [keyword, setKeyword] = useState("");
 
   const filteredStores = keyword
-    ? mockStoresData.filter((store) => store.name.includes(keyword))
+    ? mockStoresData.filter((store) => store.name?.includes?.(keyword))
     : [];
 
   return (
@@ -31,8 +34,8 @@ export default function MapSearchPage() {
             placeholder="시장 or 마트를 검색해보세요"
           />
           {keyword && (
-            <ClearButton>
-              <ClearIcon src={clearIcon} alt="지우기" onClick={() => setKeyword("")} />
+            <ClearButton onClick={() => setKeyword("")}>
+              <ClearIcon src={clearIcon} alt="지우기" />
             </ClearButton>
           )}
         </SearchBar>
@@ -110,11 +113,8 @@ const SearchInput = styled.input`
   outline: none;
   background: transparent;
   color: #333;
-  font-family: Pretendard;
   font-size: 12px;
-  font-style: normal;
   font-weight: 500;
-  line-height: normal;
   margin-left: 11px;
 
   &::placeholder {
@@ -151,9 +151,7 @@ const AddressTextWrapper = styled.div`
 
 const AddressText = styled.span`
   color: #000;
-  font-family: Pretendard;
   font-size: 13.5px;
-  font-style: normal;
   font-weight: 700;
   line-height: 20px;
 `;
