@@ -1,6 +1,8 @@
 import { useState } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
+import TraditionalMarket from "./TraditionalMarket";
+import SuperMarket from "./SuperMarket";
 
 const tabs = ["전통시장", "대형마트"];
 
@@ -9,30 +11,39 @@ export default function CheaperView() {
 
   return (
     <Wrapper>
-      <p className="title">피클로 알뜰하게 소비하세요</p>
-      <ToggleContainer>
-        {tabs.map((tab) => (
-          <TabButton key={tab} onClick={() => setSelected(tab)} isActive={selected === tab}>
-            {selected === tab && (
-              <Highlight
-                layoutId="highlight"
-                transition={{ type: "spring", stiffness: 500, damping: 50 }}
-              />
-            )}
-            <span>{tab}</span>
-          </TabButton>
-        ))}
-      </ToggleContainer>
+      <Header>
+        <p className="title">피클로 알뜰하게 소비하세요</p>
+        <ToggleContainer>
+          {tabs.map((tab) => (
+            <TabButton key={tab} onClick={() => setSelected(tab)} isActive={selected === tab}>
+              {selected === tab && (
+                <Highlight
+                  layoutId="highlight"
+                  transition={{ type: "spring", stiffness: 500, damping: 50 }}
+                />
+              )}
+              <span>{tab}</span>
+            </TabButton>
+          ))}
+        </ToggleContainer>
+      </Header>{" "}
+      <div>
+        {selected === "전통시장" && <TraditionalMarket selected={selected} />}
+        {selected === "대형마트" && <SuperMarket selected={selected} />}
+      </div>
     </Wrapper>
   );
 }
 
 const Wrapper = styled.div`
+  width: 100%;
+  height: 100vh;
+`;
+
+const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  width: 100%;
   padding: 20px 10px;
-  height: 100vh;
 
   .title {
     font-size: 14px;
