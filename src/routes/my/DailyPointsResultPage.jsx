@@ -67,22 +67,14 @@ export default function DailyPointsResultPage() {
 }
 
 const DailyPointsResultWrapper = styled.div`
-  min-height: 100vh;
-  width: calc(100% + 40px);
-  margin-left: -20px;
-  margin-right: -20px;
-
-  @media (min-width: 768px) {
-    width: 100vw;
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
-  }
-
+  min-height: 100dvh;
+  width: 100%;
   padding: 0 0 40px;
   background: linear-gradient(180deg, #58d848 -6.04%, #fff 73.3%);
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-x: hidden;
 `;
 
 const BoxBase = styled.div`
