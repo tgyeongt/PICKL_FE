@@ -125,9 +125,9 @@ export default function KakaoMap() {
       <style>
         .custom-bubble{
           position:relative; display:flex; gap:6px; align-items:center;
-          padding:8px 12px; border-radius:20px; background:#58D748; color:#fff;
+          padding:8px 21px; border-radius:20px; background:#58D748; color:#fff;
           box-shadow: 1px 1px 4px rgba(0,0,0,0.1); transform: translateY(6px);
-          opacity:0; transition: all .2s ease;
+          opacity:0; transition: all .2s ease; z-index: 9999;
         }
         .custom-bubble.show{ opacity:1; transform: translateY(0); }
       </style>
@@ -138,7 +138,7 @@ export default function KakaoMap() {
           border-left: 6px solid transparent; border-right: 6px solid transparent;
           border-top: 6px solid #58D748;"></div>
       </div>`;
-    bubble.addEventListener("click", (e) => (e.stopPropagation()));
+    bubble.addEventListener("click", (e) => e.stopPropagation());
     setTimeout(() => {
       bubble.querySelector(".custom-bubble")?.classList.add("show");
     }, 10);
@@ -158,7 +158,7 @@ export default function KakaoMap() {
       }
 
       // 카드 안 가리게 살짝 남쪽으로 팬
-      const offsetLat = 0.002;
+      const offsetLat = 0.005;
       const adjustedLat = store.latitude - offsetLat;
       const adjustedCenter = new window.kakao.maps.LatLng(adjustedLat, store.longitude);
       mapInstance?.panTo(adjustedCenter);
@@ -170,6 +170,7 @@ export default function KakaoMap() {
         content: bubbleEl,
         yAnchor: 1.1,
         clickable: true,
+        zIndex: 10000,
       });
       bubbleOverlay.setMap(mapInstance);
 
