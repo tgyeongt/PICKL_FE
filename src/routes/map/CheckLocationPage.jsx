@@ -1,32 +1,42 @@
-import { useState } from "react";
+import { useSetAtom } from "jotai";
 import styled from "styled-components";
 import TopBar from "./TopBar";
 import LocationInfo from "./LocationInfo";
 import CheckLocationMap from "./CheckLocationMap";
-import CurrentLocationImg from "@icon/map/vector.svg";
+import { selectedAddressAtom } from "../map/state/addressAtom";
+import { useLocation } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function CheckLocationPage() {
-  const [mapInstance, setMapInstance] = useState(null);
+  const setAddress = useSetAtom(selectedAddressAtom);
+  const location = useLocation();
+
+  useEffect(() => {
+    const { state } = location;
+    if (state?.lat && state?.lng) {
+      setAddress({
+        lat: state.lat,
+        lng: state.lng,
+        roadAddress: state.roadAddress || "",
+        jibunAddress: state.jibunAddress || "",
+        isManual: true,
+      });
+    }
+  }, [location, setAddress]);
 
   return (
     <CheckLocationWrapper>
       <TopBar title="지도에서 위치 확인" />
-      <KakaoMapContainer>
-        <MapBox>
-          <CheckLocationMap setMapInstance={setMapInstance} />
-          <CurrentLocationButton
-            onClick={() => {
-              if (!mapInstance) return;
-              navigator.geolocation.getCurrentPosition(({ coords }) => {
-                const moveLatLng = new window.kakao.maps.LatLng(coords.latitude, coords.longitude);
-                mapInstance.panTo(moveLatLng);
-              });
-            }}
-          >
-            <CurrentLocationIcon src={CurrentLocationImg} alt="현재 위치" />
-          </CurrentLocationButton>
-        </MapBox>
-      </KakaoMapContainer>
+      <KakaoMapBox>
+        <CheckLocationMap
+          onAddressChange={setAddress}
+          initialCenter={
+            location.state?.lat && location.state?.lng
+              ? { lat: location.state.lat, lng: location.state.lng }
+              : undefined
+          }
+        />
+      </KakaoMapBox>
       <LocationInfo />
     </CheckLocationWrapper>
   );
@@ -35,40 +45,13 @@ export default function CheckLocationPage() {
 const CheckLocationWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
+  overflow-y: auto;
 `;
 
-const KakaoMapContainer = styled.div`
+const KakaoMapBox = styled.div`
   width: 100%;
-  height: 435px;
+  height: 60vh;
   position: relative;
   margin-top: 10px;
-`;
-
-const MapBox = styled.div`
-  width: 100%;
-  height: 100%;
-  position: relative;
-`;
-
-const CurrentLocationButton = styled.button`
-  position: absolute;
-  bottom: 16px;
-  right: 16px;
-  background-color: white;
-  border-radius: 50%;
-  width: 42px;
-  height: 42px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
-  border: none;
-  cursor: pointer;
-  z-index: 10;
-`;
-
-const CurrentLocationIcon = styled.img`
-  width: 26.04px;
-  height: 26.04px;
 `;

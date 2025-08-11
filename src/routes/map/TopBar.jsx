@@ -34,11 +34,14 @@ const BackButton = styled.button`
   padding: 5px 0;
   display: flex;
   align-items: center;
+  width: 35px;
+  height: 35px;
+`;
+
+const BackIcon = styled.img`
   width: 24px;
   height: 24px;
 `;
-
-const BackIcon = styled.img``;
 
 const TopTitle = styled.p`
   position: absolute;
