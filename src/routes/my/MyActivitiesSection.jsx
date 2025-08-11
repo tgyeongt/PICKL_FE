@@ -82,7 +82,7 @@ const MyActivitiesSectionWrapper = styled.section`
   max-width: 390px;
   margin: 0 auto;
   background: #fbfbfb;
-  padding: 0 16px 20.5px 16px;
+  padding: 0 10px 20.5px 10px;
 `;
 
 const SectionTitle = styled.h2`

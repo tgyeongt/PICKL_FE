@@ -21,7 +21,7 @@ export default function Map() {
 
 const MapWrapper = styled.div`
   width: 100%;
-  max-width: 768px;
+  max-width: 390px;
   min-height: 100vh;
   background-color: #fbfbfb;
   overflow-y: auto;

@@ -59,6 +59,8 @@ const HelloSectionWrapper = styled.div`
   max-width: 390px;
   margin: 0 auto;
   background: #fbfbfb;
+  padding-left: 10px;
+  padding-right: 10px;
   padding-bottom: 29px;
 `;
 

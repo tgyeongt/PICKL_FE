@@ -18,7 +18,10 @@ export default function My() {
   );
 }
 
-const MyWrapper = styled.div``;
+const MyWrapper = styled.div`
+  overflow-y: auto;
+  min-height: 100vh;
+`;
 
 const GreyBox = styled.div`
   width: 100%;
