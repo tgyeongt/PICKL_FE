@@ -1,30 +1,27 @@
 import useHeaderStore from "../../stores/useHeaderStore";
 import styled from "styled-components";
+import back from "@icon/common/back.svg";
+import heart_on from "@icon/common/heart_on.svg";
+import heart_off from "@icon/common/heart_off.svg";
 
 export default function Header() {
-  const { title, showBack, showHeart } = useHeaderStore;
+  const { title, showBack, showHeart, isVisible, isHeartActive, toggleHeart } = useHeaderStore();
+
+  if (!isVisible) return null;
 
   return (
     <Wrapper>
       {showBack && (
-        <button
-          onClick={() => window.history.back()}
-          style={{ marginRight: "16px", fontSize: "18px", cursor: "pointer" }}
-          aria-label="뒤로가기"
-        >
-          ←
+        <button onClick={() => window.history.back()}>
+          <img src={back} alt="뒤로가기" />
         </button>
       )}
 
-      <h1 style={{ flexGrow: 1, fontSize: "20px", margin: 0 }}>{title}</h1>
+      <Title>{title}</Title>
 
       {showHeart && (
-        <button
-          onClick={() => alert("찜하기 버튼 클릭!")}
-          style={{ fontSize: "20px", cursor: "pointer", background: "none", border: "none" }}
-          aria-label="찜하기"
-        >
-          ❤️
+        <button onClick={toggleHeart}>
+          <img src={isHeartActive ? heart_on : heart_off} />
         </button>
       )}
     </Wrapper>
@@ -33,5 +30,18 @@ export default function Header() {
 
 const Wrapper = styled.header`
   display: flex;
-  background-color: black;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 50px;
+  background-color: white;
+  min-width: 390px;
+  padding: 0 20px;
+`;
+
+const Title = styled.p`
+  font-size: 16px;
+  font-weight: 700;
+  flex: 1;
+  text-align: center;
 `;
