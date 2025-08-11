@@ -15,6 +15,8 @@ import SearchLocationPage from "./routes/map/SearchLocationPage";
 import MyIngredientsPage from "./routes/my/MyIngredientsPage";
 import MyRecipesPage from "./routes/my/MyRecipesPage";
 import MyHistoryPage from "./routes/my/MyHistoryPage";
+import DailyPointsPage from "./routes/my/DailyPointsPage";
+import ConvertPointsPage from "./routes/my/ConvertPointsPage";
 
 const router = createBrowserRouter([
   {
@@ -45,6 +47,8 @@ const router = createBrowserRouter([
               { path: "list-ingredients", Component: MyIngredientsPage },
               { path: "list-recipes", Component: MyRecipesPage },
               { path: "history", Component: MyHistoryPage },
+              { path: "points-daily", Component: DailyPointsPage },
+              { path: "points-convert", Component: ConvertPointsPage },
             ],
           },
         ],
