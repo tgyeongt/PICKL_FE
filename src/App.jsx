@@ -11,13 +11,20 @@ import My from "./routes/my";
 import MapSearchPage from "./routes/map/MapSearchPage";
 import EditLocationPage from "./routes/map/EditLocationPage";
 import CheckLocationPage from "./routes/map/CheckLocationPage";
+import MonthlyPick from "./routes/home/monthly-pick";
 
 const router = createBrowserRouter([
   {
     // RootLayout은 좌우 패딩값이 필요없는 페이지에 적용한다. (가장 기본이 되는 레이아웃)
     Component: RootLayout,
     children: [
-      { path: "/", index: true, Component: Home },
+      {
+        path: "/",
+        children: [
+          { index: true, Component: Home },
+          { path: "monthly-pick", Component: MonthlyPick },
+        ],
+      },
       {
         path: "map",
         children: [
