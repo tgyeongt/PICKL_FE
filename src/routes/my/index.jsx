@@ -12,9 +12,17 @@ export default function My() {
       <HelloSection />
       <StateSection />
       <MyActivitiesSection />
+      <GreyBox></GreyBox>
       <MyServiceSection />
     </MyWrapper>
   );
 }
 
 const MyWrapper = styled.div``;
+
+const GreyBox = styled.div`
+  width: 100%;
+  height: 9px;
+  flex-shrink: 0;
+  background: #f4f4f4;
+`;
