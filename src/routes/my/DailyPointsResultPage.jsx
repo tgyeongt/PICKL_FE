@@ -3,6 +3,14 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import successP from "@icon/my/pointP.svg";
 import upsetFace from "@icon/my/upsetFace.svg";
+import orangeIcon from "@icon/my/orangeVector.svg";
+import redIcon from "@icon/my/redVector.svg";
+import yellowIcon from "@icon/my/yellowVector.svg";
+import circleStar from "@icon/my/circleStar.svg";
+import realStar from "@icon/my/realStar.svg";
+import rectangle from "@icon/my/rectangle.svg";
+import starStar from "@icon/my/starStar.svg";
+import triangleStar from "@icon/my/triangleStar.svg";
 
 export default function DailyPointsResultPage() {
   const { state } = useLocation();
@@ -35,7 +43,64 @@ export default function DailyPointsResultPage() {
           <SmallTag>+{rewardPoint}P</SmallTag>
           <SuccessBigTitle>{rewardPoint}P 획득</SuccessBigTitle>
           <Sub>예측 성공! 포인트가 적립되었어요</Sub>
-          <SuccessImage src={successP} alt="" />
+          <ImgBox>
+            <SuccessImage src={successP} alt="" />
+            <DecoIcon
+              $variant="success"
+              src={realStar}
+              style={{
+                top: "-24px",
+                left: "-48px",
+                transform: "rotate(-12deg) scale(1.05)",
+                opacity: 0.25,
+              }}
+            />
+            <DecoIcon
+              $variant="success"
+              src={starStar}
+              style={{
+                top: "-10px",
+                right: "-40px",
+                transform: "rotate(8deg) scale(0.8)",
+                opacity: 0.22,
+              }}
+            />
+            <DecoIcon
+              $variant="success"
+              src={triangleStar}
+              style={{
+                top: "80px",
+                right: "-28px",
+                transform: "rotate(16deg) scale(0.9)",
+                opacity: 0.2,
+              }}
+            />
+            <DecoIcon
+              $variant="success"
+              src={circleStar}
+              style={{ top: "96px", left: "-22px", transform: "scale(0.7)", opacity: 0.18 }}
+            />
+            <DecoIcon
+              $variant="success"
+              src={rectangle}
+              style={{
+                bottom: "24px",
+                right: "10px",
+                transform: "rotate(14deg) scale(0.65)",
+                opacity: 0.18,
+              }}
+            />
+            <DecoIcon
+              $variant="success"
+              src={starStar}
+              style={{
+                bottom: "8px",
+                left: "60px",
+                transform: "rotate(-10deg) scale(0.55)",
+                opacity: 0.16,
+              }}
+            />
+          </ImgBox>
           <Buttons>
             <GhostBtn onClick={() => navigate("/", { replace: true })}>현재가 보기</GhostBtn>
             <PrimaryBtn onClick={() => alert("광고 SDK 연동 예정")}>
@@ -50,7 +115,35 @@ export default function DailyPointsResultPage() {
             <FailTitle>아쉽지만 틀렸어요!</FailTitle>
             <FailTitle>내일 다시 도전해주세요</FailTitle>
           </FailTitleBox>
-          <FailImage src={upsetFace} alt="" />
+          <ImgBox>
+            <FailImage src={upsetFace} alt="" />
+            <DecoIcon
+              $variant="fail"
+              src={yellowIcon}
+              style={{ top: "-40px", left: "50%", transform: "translateX(-50%) rotate(12deg)" }}
+            />
+            <DecoIcon
+              $variant="fail"
+              src={redIcon}
+              style={{ top: "6px", right: "-26px", transform: "rotate(18deg)" }}
+            />
+            <DecoIcon
+              $variant="fail"
+              src={orangeIcon}
+              style={{ top: "54px", left: "-36px", transform: "rotate(-12deg)" }}
+            />
+            <DecoIcon
+              $variant="fail"
+              src={redIcon}
+              style={{ bottom: "86px", left: "-22px", transform: "rotate(8deg)" }}
+            />
+            <DecoIcon
+              $variant="fail"
+              src={yellowIcon}
+              style={{ bottom: "80px", right: "-20px", transform: "rotate(-8deg)" }}
+            />
+          </ImgBox>
+
           <Buttons>
             <GhostBtn onClick={() => navigate("/", { replace: true })}>
               오늘의 {itemName} 가격 보러가기
@@ -135,7 +228,7 @@ const Sub = styled.p`
 `;
 
 const FailTitleBox = styled.div`
-  margin-top: 110px;
+  margin-top: 100px;
   margin-bottom: 65px;
 `;
 
@@ -155,6 +248,12 @@ const SuccessImage = styled.img`
   transform: rotate(3.335deg);
   flex-shrink: 0;
   margin: 8px auto 141.95px;
+  z-index: 1;
+`;
+
+const ImgBox = styled.div`
+  position: relative;
+  display: inline-block;
 `;
 
 const FailImage = styled.img`
@@ -163,6 +262,14 @@ const FailImage = styled.img`
   flex-shrink: 0;
   aspect-ratio: 1/1;
   margin: 8px auto 115px;
+`;
+
+const DecoIcon = styled.img`
+  position: absolute;
+  width: ${({ $variant }) => ($variant === "success" ? "52px" : "15.18px")};
+  height: ${({ $variant }) => ($variant === "success" ? "52px" : "15.26px")};
+  pointer-events: none;
+  z-index: 0;
 `;
 
 const Buttons = styled.div`
