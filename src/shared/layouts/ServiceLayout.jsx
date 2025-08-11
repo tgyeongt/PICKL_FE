@@ -1,10 +1,13 @@
-import { Outlet, ScrollRestoration } from "react-router";
+import { Outlet, ScrollRestoration, useLocation } from "react-router";
 import styled from "styled-components";
 
 export default function ServiceLayout() {
+  const { pathname } = useLocation();
+  const noPad = pathname === "/my/points-daily/result";
+
   return (
     <>
-      <Container>
+      <Container $noPad={noPad}>
         <Outlet />
       </Container>
       <ScrollRestoration />
@@ -13,5 +16,7 @@ export default function ServiceLayout() {
 }
 
 const Container = styled.div`
-  padding: 0 20px;
+  box-sizing: border-box;
+  padding: ${({ $noPad }) => ($noPad ? "0" : "0 20px")};
+  width: 100%;
 `;

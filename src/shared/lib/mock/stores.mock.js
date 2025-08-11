@@ -5,6 +5,7 @@ export const mockStoresData = [
     type: "market",
     latitude: 37.6027782265744,
     longitude: 127.02193272935449,
+    // imageUrl: "",
   },
   {
     id: 2,
@@ -19,5 +20,12 @@ export const mockStoresData = [
     type: "mart",
     latitude: 37.46675165685421,
     longitude: 126.87573850780277,
+  },
+  {
+    id: 4,
+    name: "이마트에브리데이 길음점",
+    type: "mart",
+    latitude: 37.604357116657354,
+    longitude: 127.02243997507749,
   },
 ];

@@ -6,7 +6,9 @@
 html,
 body,
 #root {
-  height: 100%;
+  height: auto;
+  min-height: 100vh;
+  overflow-y: auto;
 }
 
 html {
@@ -35,6 +37,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   max-width: 390px;
+  overflow-x: hidden;
   margin: 0 auto;
   background-color: #fbfbfb;
   color: #1c1b1a;

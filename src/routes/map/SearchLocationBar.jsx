@@ -1,29 +1,16 @@
 import styled from "styled-components";
-import { useState } from "react";
+import { useNavigate } from "react-router";
 import SearchImg from "@icon/map/searchButton.svg";
-import ClearImg from "@icon/map/x-circle.svg";
 
 export default function SearchLocationBar() {
-  const [keyword, setKeyword] = useState("");
-
-  const handleClear = () => {
-    setKeyword("");
-  };
+  const navigate = useNavigate();
 
   return (
     <SearchLocationWrapper>
       <SearchIcon src={SearchImg} alt="돋보기" />
-      <SearchInput
-        type="text"
-        placeholder="지번, 도로명, 건물명으로 검색"
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
-      />
-      {keyword && (
-        <ClearButton onClick={handleClear}>
-          <ClearIcon src={ClearImg} alt="닫기" />
-        </ClearButton>
-      )}
+      <SearchInputButton onClick={() => navigate("/map/search-location")}>
+        지번, 도로명, 건물명으로 검색
+      </SearchInputButton>
     </SearchLocationWrapper>
   );
 }
@@ -45,34 +32,21 @@ const SearchIcon = styled.img`
   margin-right: 8px;
 `;
 
-const SearchInput = styled.input`
+const SearchInputButton = styled.button`
   flex: 1;
   border: none;
   outline: none;
+  text-align: start;
   background: transparent;
-  color: #333;
+  color: #999;
   font-family: Pretendard;
-  font-size: 12px;
-  font-style: normal;
+  font-size: 14px;
   font-weight: 500;
-  line-height: normal;
-  &::placeholder {
-    color: #adadaf;
-  }
-`;
-
-const ClearButton = styled.button`
-  background: none;
-  border: none;
-  position: absolute;
-  right: 12px;
   cursor: pointer;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-`;
+  transition: color 0.2s ease, background-color 0.2s ease;
 
-const ClearIcon = styled.img`
-  width: 18px;
-  height: 18px;
+  &:hover {
+    color: #333;
+    border-radius: 8px;
+  }
 `;
