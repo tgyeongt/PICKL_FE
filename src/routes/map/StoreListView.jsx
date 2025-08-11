@@ -17,7 +17,7 @@ export default function StoreListView({ stores }) {
     return Math.round(R * c * 1000);
   };
 
-  const sortedStores = stores
+  const sortedStores = (stores || [])
     .filter((store) => store.latitude && store.longitude)
     .map((store) => ({
       ...store,
@@ -25,10 +25,18 @@ export default function StoreListView({ stores }) {
     }))
     .sort((a, b) => a.distance - b.distance);
 
+  // console.log("ListMode stores length:", sortedStores.length);
+
   return (
     <StoreListViewWrapper>
       {sortedStores.map((store) => {
-        return <StoreCard key={store.id} store={store} isListMode={true} />;
+        return (
+          <StoreCard
+            key={store.id || `${store.latitude},${store.longitude}`}
+            store={store}
+            isListMode={true}
+          />
+        );
       })}
     </StoreListViewWrapper>
   );
@@ -38,5 +46,5 @@ const StoreListViewWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 0 15px 20px; 
+  padding: 0 15px 20px;
 `;
