@@ -20,6 +20,7 @@ export default function My() {
 
 const MyWrapper = styled.div`
   overflow-y: auto;
+  overflow-x: hidden;
   min-height: 100vh;
 `;
 

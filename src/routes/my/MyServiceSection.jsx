@@ -30,23 +30,27 @@ export default function MyServiceSection() {
 
       <List>
         <ListButton onClick={() => navigate("/my/points-daily")}>
-          <Left>
-            <Icon src={todayPointIcon} alt="" />
-            <LabelBox>
-              <MainLabel>오늘의 포인트 받기</MainLabel>
-            </LabelBox>
-          </Left>
-          <RightIcon src={chevronRight} alt="" />
+          <Card>
+            <Left>
+              <Icon src={todayPointIcon} alt="" />
+              <LabelBox>
+                <MainLabel>오늘의 포인트 받기</MainLabel>
+              </LabelBox>
+            </Left>
+            <RightIcon src={chevronRight} alt="" />
+          </Card>
         </ListButton>
 
         <ListButton onClick={() => navigate("/my/points-convert")}>
-          <Left>
-            <Icon src={convertPointIcon} alt="" />
-            <LabelBox>
-              <MainLabel>포인트 전환하러 가기</MainLabel>
-            </LabelBox>
-          </Left>
-          <RightIcon src={chevronRight} alt="" />
+          <Card>
+            <Left>
+              <Icon src={convertPointIcon} alt="" />
+              <LabelBox>
+                <MainLabel>포인트 전환하러 가기</MainLabel>
+              </LabelBox>
+            </Left>
+            <RightIcon src={chevronRight} alt="" />
+          </Card>
         </ListButton>
       </List>
     </MyServiceSectionWrapper>
@@ -76,30 +80,34 @@ const List = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow-x: hidden;
+  padding: 0 8px;
 `;
 
 const ListButton = styled.button`
   width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+`;
+
+const Card = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  padding: 10px 8px;
+  padding: 12px 10px;
   background: #fbfbfb;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-
+  border-radius: 14px; 
+  overflow: hidden; 
   transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
 
   &:hover {
-    transform: scale(1.02);
+    transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-  }
-
-  &:active {
-    transform: scale(0.99);
   }
 `;
 

@@ -11,12 +11,9 @@ import chevronRight from "@icon/my/chevron-right.svg";
 export default function MyActivitiesSection() {
   const navigate = useNavigate();
 
-  // 백엔드 연결 시 변경해야 할 부분
   const { data } = useQuery({
     queryKey: ["me", "activities", "counts"],
     queryFn: async () => {
-      // 예시: GET /me/activities
-      // 응답 예: { ingredients: 20, recipes: 10, history: 10 }
       const res = await APIService.private.get("/me/activities");
       const raw = res?.data ?? res ?? {};
       return {
@@ -41,36 +38,42 @@ export default function MyActivitiesSection() {
 
       <List>
         <ListButton onClick={() => navigate("/my/list-ingredients")}>
-          <Left>
-            <Icon src={tomatoIcon} alt="" />
-            <LabelBox>
-              <MainLabel>찜한 식재료 목록</MainLabel>
-              <SubCount>{counts.ingredients}개</SubCount>
-            </LabelBox>
-          </Left>
-          <RightIcon src={chevronRight} alt="" />
+          <Card>
+            <Left>
+              <Icon src={tomatoIcon} alt="" />
+              <LabelBox>
+                <MainLabel>찜한 식재료 목록</MainLabel>
+                <SubCount>{counts.ingredients}개</SubCount>
+              </LabelBox>
+            </Left>
+            <RightIcon src={chevronRight} alt="" />
+          </Card>
         </ListButton>
 
         <ListButton onClick={() => navigate("/my/list-recipes")}>
-          <Left>
-            <Icon src={recipeIcon} alt="" />
-            <LabelBox>
-              <MainLabel>찜한 레시피 목록</MainLabel>
-              <SubCount>{counts.recipes}개</SubCount>
-            </LabelBox>
-          </Left>
-          <RightIcon src={chevronRight} alt="" />
+          <Card>
+            <Left>
+              <Icon src={recipeIcon} alt="" />
+              <LabelBox>
+                <MainLabel>찜한 레시피 목록</MainLabel>
+                <SubCount>{counts.recipes}개</SubCount>
+              </LabelBox>
+            </Left>
+            <RightIcon src={chevronRight} alt="" />
+          </Card>
         </ListButton>
 
         <ListButton onClick={() => navigate("/my/history")}>
-          <Left>
-            <Icon src={historyIcon} alt="" />
-            <LabelBox>
-              <MainLabel>피클 히스토리</MainLabel>
-              <SubCount>{counts.history}개</SubCount>
-            </LabelBox>
-          </Left>
-          <RightIcon src={chevronRight} alt="" />
+          <Card>
+            <Left>
+              <Icon src={historyIcon} alt="" />
+              <LabelBox>
+                <MainLabel>피클 히스토리</MainLabel>
+                <SubCount>{counts.history}개</SubCount>
+              </LabelBox>
+            </Left>
+            <RightIcon src={chevronRight} alt="" />
+          </Card>
         </ListButton>
       </List>
     </MyActivitiesSectionWrapper>
@@ -82,7 +85,7 @@ const MyActivitiesSectionWrapper = styled.section`
   max-width: 390px;
   margin: 0 auto;
   background: #fbfbfb;
-  padding: 0 10px 20.5px 10px;
+  padding-bottom: 20.5px;
 `;
 
 const SectionTitle = styled.h2`
@@ -93,36 +96,46 @@ const SectionTitle = styled.h2`
   font-weight: 700;
   line-height: 24px;
   margin-bottom: 25px;
+  padding: 0 8px;
 `;
 
 const List = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow-x: hidden;
+  padding: 0 8px;
 `;
 
 const ListButton = styled.button`
   width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+`;
+
+const Card = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
 
   padding: 10px 8px;
   background: #fbfbfb;
-  border: none;
   border-radius: 12px;
-  cursor: pointer;
+  overflow: hidden;
 
   transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
 
   &:hover {
-    transform: scale(1.02);
+    transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   }
 
   &:active {
-    transform: scale(0.99);
+    transform: translateY(0);
   }
 `;
 
@@ -162,7 +175,7 @@ const SubCount = styled.span`
   font-size: 14px;
   font-style: normal;
   font-weight: 500;
-  line-height: 21px; /* 150% */
+  line-height: 21px;
 `;
 
 const RightIcon = styled.img`

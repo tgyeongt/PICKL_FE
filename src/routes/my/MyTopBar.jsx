@@ -11,12 +11,15 @@ export default function MyTopBar() {
 const MyTopBarWrapper = styled.div`
   max-width: 390px;
   width: 100%;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #fbfbfb;
   position: sticky;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
   padding-bottom: 43px;

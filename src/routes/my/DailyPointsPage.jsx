@@ -57,7 +57,6 @@ const DailyPointsPageWrapper = styled.div`
   padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
   width: 100%;
-  max-width: 390px;
   margin: 0 auto;
   background: #fbfbfb;
   min-height: 100vh;
