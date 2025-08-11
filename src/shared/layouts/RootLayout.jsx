@@ -1,14 +1,19 @@
-import { Outlet, ScrollRestoration } from "react-router";
+import { Outlet, ScrollRestoration, useLocation } from "react-router";
 import Navbar from "../commons/navbar";
 import Header from "../commons/header";
 
 export default function RootLayout() {
+  const { pathname } = useLocation();
+
+  const HIDE_NAV_ROUTES = ["/my/points-daily", "/my/points-daily/result"];
+  const hideNav = HIDE_NAV_ROUTES.includes(pathname);
+
   return (
     <>
       <Header />
       <Outlet />
       <ScrollRestoration />
-      <Navbar />
+      {!hideNav && <Navbar />}
     </>
   );
 }

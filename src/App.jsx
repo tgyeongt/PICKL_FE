@@ -12,10 +12,16 @@ import MapSearchPage from "./routes/map/MapSearchPage";
 import EditLocationPage from "./routes/map/EditLocationPage";
 import CheckLocationPage from "./routes/map/CheckLocationPage";
 import SearchLocationPage from "./routes/map/SearchLocationPage";
+import MyIngredientsPage from "./routes/my/MyIngredientsPage";
+import MyRecipesPage from "./routes/my/MyRecipesPage";
+import MyHistoryPage from "./routes/my/MyHistoryPage";
+import DailyPointsPage from "./routes/my/DailyPointsPage";
+import ConvertPointsPage from "./routes/my/ConvertPointsPage";
+import DailyPointsResultPage from "./routes/my/DailyPointsResultPage";
 
 const router = createBrowserRouter([
   {
-    // RootLayout은 좌우 패딩값이 필요없는 페이지에 적용한다. (가장 기본이 되는 레이아웃)
+    // RootLayout은 좌우 패딩값이 필요없는 페이지에 적용한다.
     Component: RootLayout,
     children: [
       { path: "/", index: true, Component: Home },
@@ -35,7 +41,18 @@ const router = createBrowserRouter([
         children: [
           { path: "search", Component: Search },
           { path: "chat", Component: Chat },
-          { path: "my", Component: My },
+          {
+            path: "my",
+            children: [
+              { index: true, Component: My },
+              { path: "list-ingredients", Component: MyIngredientsPage },
+              { path: "list-recipes", Component: MyRecipesPage },
+              { path: "history", Component: MyHistoryPage },
+              { path: "points-daily", Component: DailyPointsPage },
+              { path: "points-convert", Component: ConvertPointsPage },
+              { path: "points-daily/result", Component: DailyPointsResultPage },
+            ],
+          },
         ],
       },
     ],
