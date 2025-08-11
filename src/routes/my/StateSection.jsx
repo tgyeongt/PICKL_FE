@@ -59,6 +59,7 @@ const SectionWrapper = styled.section`
   max-width: 390px;
   margin: 0 auto;
   background: #fbfbfb;
+  padding-bottom: 22px;
 `;
 
 const CardsSection = styled.div`
