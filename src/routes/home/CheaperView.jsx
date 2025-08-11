@@ -15,7 +15,7 @@ export default function CheaperView() {
         <p className="title">피클로 알뜰하게 소비하세요</p>
         <ToggleContainer>
           {tabs.map((tab) => (
-            <TabButton key={tab} onClick={() => setSelected(tab)} isActive={selected === tab}>
+            <TabButton key={tab} onClick={() => setSelected(tab)} $isActive={selected === tab}>
               {selected === tab && (
                 <Highlight
                   layoutId="highlight"
@@ -78,7 +78,7 @@ const TabButton = styled.button`
   span {
     position: relative;
     z-index: 1;
-    color: ${({ isActive }) => (isActive ? "#fff" : "#1c1b1a")};
+    color: ${({ $isActive }) => ($isActive ? "#fff" : "#1c1b1a")};
   }
 `;
 

@@ -13,11 +13,12 @@ export default function SeasonalView() {
   const swiperInstanceRef = useRef(null);
   const navigate = useNavigate();
 
+  // 더미데이터
   const seasonalList = [
     {
       title: "수박",
       img: "/src/shared/assets/icon/home/watermelon.png",
-      description: "시원한 과즙으로 더위를 날리는 \n 여름 대표 과일, 수박을 즐겨보세요!",
+      description: "시원한 과즙으로 더위를 날리는 여름 대표 과일, 수박을 즐겨보세요!",
     },
     {
       title: "망고",
