@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 
-export default function useCurrentAddress() {
+export default function useCurrentAddress(enabled = true) {
   const [address, setAddress] = useState("주소 없음");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!enabled) {
+      setIsLoading(false);
+      return;
+    }
     const loadKakaoService = async () => {
       if (!(window.kakao && window.kakao.maps && window.kakao.maps.services)) {
         await new Promise((resolve) => {
@@ -52,7 +56,7 @@ export default function useCurrentAddress() {
     };
 
     loadKakaoService();
-  }, []);
+  }, [enabled]);
 
   return { address, isLoading };
 }
