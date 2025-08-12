@@ -8,20 +8,16 @@ import {
   ButtonSectionWrapper,
   Button,
 } from "./FirstModalBar.styles";
-import CheckIcon from "@icon/map/greenCheck.svg";
 import { useConvertPoints } from "../convert/ConvertPointsContext";
+import CheckIcon from "@icon/map/greenCheck.svg";
 
 export default function FirstModalBar({ children }) {
-  return <p>{children}</p>;
+  return <>{children}</>;
 }
 
 function Overlay({ children, onClose }) {
   const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    setVisible(true);
-  }, []);
-
+  useEffect(() => setVisible(true), []);
   return (
     <OverlayBox onClick={onClose} $visible={visible}>
       {children}
@@ -44,7 +40,6 @@ function TextSection() {
     seoul: "서울사랑상품권",
     seongbuk: "성북사랑상품권",
   };
-
   const label = voucherLabelMap[state?.selectedVoucher] ?? "서울사랑상품권";
 
   const pointToWon = derived?.rules?.pointToWon ?? 0;
@@ -61,11 +56,15 @@ function TextSection() {
   );
 }
 
-function ButtonSection() {
+function ButtonSection({ onClose, onNext }) {
   return (
     <ButtonSectionWrapper>
-      <Button $value="false">취소</Button>
-      <Button $value="true">전환하기</Button>
+      <Button $value="false" onClick={onClose}>
+        취소
+      </Button>
+      <Button $value="true" onClick={onNext}>
+        전환하기
+      </Button>
     </ButtonSectionWrapper>
   );
 }

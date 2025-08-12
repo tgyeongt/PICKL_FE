@@ -30,7 +30,7 @@ export const IconSectionWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 25px;
+  padding-top: 25px;
 `;
 
 export const GreenCheck = styled.img`
@@ -83,6 +83,7 @@ export const Button = styled.button`
   letter-spacing: -0.31px;
   margin-left: 30px;
   margin-right: 30px;
+  cursor: pointer;
 
   color: ${({ $value }) => ($value === "true" ? "#FFF" : "#999")};
   border: ${({ $value }) =>

@@ -1,14 +1,14 @@
 import FirstModalBar from "./FirstModalBar";
 import { FirstModalContainer } from "./FirstModalBar.styles";
 
-export default function FirstModal({ onClose }) {
+export default function FirstModal({ onClose, onNext }) {
   return (
     <FirstModalBar>
       <FirstModalBar.Overlay onClose={onClose}>
-        <FirstModalContainer>
+        <FirstModalContainer onClick={(e) => e.stopPropagation()}>
           <FirstModalBar.IconSection />
           <FirstModalBar.TextSection />
-          <FirstModalBar.ButtonSection />
+          <FirstModalBar.ButtonSection onClose={onClose} onNext={onNext} />
         </FirstModalContainer>
       </FirstModalBar.Overlay>
     </FirstModalBar>

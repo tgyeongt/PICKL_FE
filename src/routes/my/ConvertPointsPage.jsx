@@ -5,8 +5,17 @@ import ConvertPointSection from "./ConvertPointSection";
 import ConvertTicketSection from "./ConvertTicketSection";
 import ConvertButtonSection from "./ConvertButtonSection";
 import { ConvertPointsProvider } from "./convert/ConvertPointsContext";
+import { useState } from "react";
+import FirstModal from "./modal/FirstModal";
+import TwoModal from "./modal/TwoModal";
 
 export default function ConvertPointsPage() {
+  const [modalStep, setModalStep] = useState(0); // 0: none, 1: first, 2: two
+
+  const openFirstModal = () => setModalStep(1);
+  const closeModal = () => setModalStep(0);
+  const goSecondModal = () => setModalStep(2);
+
   useHeader({
     title: "전환하기",
     showBack: true,
@@ -18,7 +27,9 @@ export default function ConvertPointsPage() {
         <PointStateSection />
         <ConvertPointSection />
         <ConvertTicketSection />
-        <ConvertButtonSection />
+        <ConvertButtonSection onRequestConvert={openFirstModal} />
+        {modalStep === 1 && <FirstModal onClose={closeModal} onNext={goSecondModal} />}
+        {modalStep === 2 && <TwoModal onClose={closeModal} />}
       </ConvertPointsPageWrapper>
     </ConvertPointsProvider>
   );
