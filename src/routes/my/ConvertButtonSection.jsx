@@ -1,8 +1,11 @@
 import styled from "styled-components";
 import { useConvertPoints } from "./convert/ConvertPointsContext";
+import { useState } from "react";
+import FirstModal from "./modal/FirstModal";
 
 export default function ConvertButtonSection() {
   const { stats, state, derived } = useConvertPoints();
+  const [isOpen, setIsOpen] = useState(false);
 
   const pointsNum = Number(state.pointAmount || 0);
   const wonAmount = pointsNum * (derived.rules?.pointToWon || 0);
@@ -24,7 +27,7 @@ export default function ConvertButtonSection() {
     if (pointsNum > maxPoints)
       return alert(`보유 포인트(${maxPoints.toLocaleString()}P)보다 많이 전환할 수 없습니다`);
 
-    alert(`${pointsNum.toLocaleString()}P(= ${wonAmount.toLocaleString()}원) 전환 진행하겠습니다`);
+    setIsOpen(true);
   };
 
   return (
@@ -37,6 +40,7 @@ export default function ConvertButtonSection() {
       >
         {wonAmount.toLocaleString()}원으로 전환하기
       </ConvertButton>
+      {isOpen && <FirstModal onClose={() => setIsOpen(false)} />}
     </ConvertButtonSectionWrapper>
   );
 }
