@@ -55,7 +55,6 @@ export default function ConvertPointSection() {
           1,000P = {(1000 * derived.rules.pointToWon).toLocaleString()}원
         </ConvertedText>
       </LabelRow>
-
       <InputRow>
         <InputWrap>
           <Input
@@ -72,7 +71,6 @@ export default function ConvertPointSection() {
           />
           <Icon src={pPointBlack} alt="" />
         </InputWrap>
-
         <AllButton type="button" onClick={handleAllConvert}>
           전부 전환
         </AllButton>
@@ -87,6 +85,7 @@ const ConvertPointSectionWrapper = styled.div`
   background: #fff;
   border-radius: 12px;
   padding: 0;
+  margin-bottom: 30px;
 `;
 
 const RateText = styled.p`
@@ -128,6 +127,7 @@ const InputRow = styled.div`
   gap: 9px;
   margin-top: 10px;
   width: 100%;
+  padding-bottom: 17px;
 `;
 
 const InputWrap = styled.div`
