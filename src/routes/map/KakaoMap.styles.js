@@ -66,7 +66,7 @@ export const StoreListButton = styled.button`
       ? `
     position: fixed;
     bottom: 90px;
-    right: 20px;
+    right: max(20px, calc((100vw - 390px) / 2 + 20px));
   `
       : `
     position: absolute;
