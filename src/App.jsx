@@ -8,6 +8,8 @@ import Map from "./routes/map";
 import Search from "./routes/search";
 import Chat from "./routes/chat";
 import My from "./routes/my";
+
+// Map 페이지
 import MapSearchPage from "./routes/map/MapSearchPage";
 import EditLocationPage from "./routes/map/EditLocationPage";
 import CheckLocationPage from "./routes/map/CheckLocationPage";
@@ -18,7 +20,10 @@ import MyHistoryPage from "./routes/my/MyHistoryPage";
 import DailyPointsPage from "./routes/my/DailyPointsPage";
 import ConvertPointsPage from "./routes/my/ConvertPointsPage";
 import DailyPointsResultPage from "./routes/my/DailyPointsResultPage";
-import MonthlyPick from "./routes/home/seasonal-tab/MonthlyPick";
+
+// Home 페이지
+import MonthlyPickPage from "./routes/home/seasonal-tab/MonthlyPickPage";
+import SeasonalDetailPage from "./routes/home/seasonal-tab/SeasonalDetailPage";
 
 const router = createBrowserRouter([
   {
@@ -29,8 +34,8 @@ const router = createBrowserRouter([
         path: "/",
         children: [
           { index: true, Component: Home },
-          { path: "monthly-pick", Component: MonthlyPick },
-          { path: "seasonal/:id", Component: MonthlyPick },
+          { path: "monthly-pick", Component: MonthlyPickPage },
+          { path: "seasonal/:id", Component: SeasonalDetailPage },
         ],
       },
       {

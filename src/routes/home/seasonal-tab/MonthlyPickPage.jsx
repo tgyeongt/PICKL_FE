@@ -4,7 +4,7 @@ import MonthlyPickList from "./MonthlyPickList";
 import useHeader from "@hooks/useHeader";
 import seasonalList from "./seasonalList";
 
-export default function MonthlyPick() {
+export default function MonthlyPickPage() {
   useHeader({
     title: "이달의 Pick",
     showBack: true,
