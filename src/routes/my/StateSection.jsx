@@ -4,7 +4,7 @@ import { useConvertPoints } from "./convert/ConvertPointsContext";
 export default function StateSection() {
   const { stats } = useConvertPoints();
 
-  const points = formatNumber(stats?.points ?? 3000);
+  const points = formatNumber(stats?.points ?? 0);
   const joinedDays = stats?.joinedDays ?? 23;
 
   return (

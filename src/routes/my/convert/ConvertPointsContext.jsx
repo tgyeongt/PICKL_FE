@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { APIService } from "../../../shared/lib/api";
 
 const DEFAULT_RULES = {
-  pointStep: 1000, // 1,000P 단위
-  minPointConvert: 1000, // 최소 1,000P
+  pointStep: 100, // 100P 단위
+  minPointConvert: 500, // 최소 500P
   pointToWon: 10, // 1P = 10원
 };
 
@@ -26,15 +26,16 @@ function reducer(state, action) {
 export function ConvertPointsProvider({ children }) {
   const qc = useQueryClient();
 
-  // ✅ API로 내 포인트와 joinedDays 가져오기
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading } = useQuery({
     queryKey: ["me", "stats"],
     queryFn: async () => {
       const res = await APIService.private.get("/me/stats");
       const raw = res?.data ?? res ?? {};
+      const pointsNum = Number(raw.points);
+      const joinedDaysNum = Number(raw.joinedDays);
       return {
-        points: Number.isFinite(raw.points) ? raw.points : 3000,
-        joinedDays: Number.isFinite(raw.joinedDays) ? raw.joinedDays : 23,
+        points: Number.isFinite(pointsNum) ? pointsNum : 0,
+        joinedDays: Number.isFinite(joinedDaysNum) ? joinedDaysNum : 23,
       };
     },
     staleTime: 60 * 1000,
@@ -42,7 +43,7 @@ export function ConvertPointsProvider({ children }) {
   });
 
   const [state, dispatch] = useReducer(reducer, {
-    pointAmount: 1000,
+    pointAmount: 0,
     selectedVoucher: "seoul",
   });
 
@@ -50,21 +51,27 @@ export function ConvertPointsProvider({ children }) {
 
   const derived = useMemo(() => {
     const maxPoint = stats?.points ?? 0;
-    const okStep = state.pointAmount % rules.pointStep === 0;
-    const okMin = state.pointAmount >= rules.minPointConvert;
-    const okMax = state.pointAmount <= maxPoint;
-    const pointOk = state.pointAmount > 0 && okStep && okMin && okMax;
+    const amt = Number(state.pointAmount) || 0;
 
-    const wonAmount = (state.pointAmount || 0) * rules.pointToWon;
-    const disabled = !pointOk || !state.selectedVoucher;
+    const okStep = amt % rules.pointStep === 0;
+    const okMin = amt >= rules.minPointConvert;
+    const okMax = amt <= maxPoint;
+    const pointOk = amt > 0 && okStep && okMin && okMax;
 
-    return { maxPoint, pointOk, disabled, wonAmount, rules };
-  }, [state.pointAmount, state.selectedVoucher, stats, rules]);
+    return {
+      maxPoint,
+      pointOk,
+      wonAmount: amt * rules.pointToWon,
+      disabled: isLoading || !pointOk || !state.selectedVoucher,
+      rules,
+      isLoading,
+    };
+  }, [state.pointAmount, state.selectedVoucher, stats, rules, isLoading]);
 
   const { mutateAsync: convert, isPending: converting } = useMutation({
     mutationFn: async () => {
       const payload = {
-        pointAmount: state.pointAmount,
+        pointAmount: Number(state.pointAmount) || 0,
         voucherType: state.selectedVoucher,
       };
       const res = await APIService.private.post("/points/convert", payload);
@@ -76,8 +83,23 @@ export function ConvertPointsProvider({ children }) {
     },
   });
 
+  const setPointAmount = (n) => dispatch({ type: "SET_POINT_AMOUNT", value: n });
+  const setVoucher = (v) => dispatch({ type: "SET_VOUCHER", value: v });
+
   return (
-    <ConvertPointsContext.Provider value={{ stats, state, dispatch, derived, convert, converting }}>
+    <ConvertPointsContext.Provider
+      value={{
+        stats,
+        state,
+        derived,
+        dispatch,
+        setPointAmount,
+        setVoucher,
+        rules,
+        convert,
+        converting,
+      }}
+    >
       {children}
     </ConvertPointsContext.Provider>
   );

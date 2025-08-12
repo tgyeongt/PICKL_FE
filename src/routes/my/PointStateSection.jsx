@@ -30,7 +30,7 @@ export default function PointStateSection() {
       <LocationText>현위치 : {shortAddr || "위치 불러오는 중"}</LocationText>
       <Label>피클POINT</Label>
       <PointRow>
-        <PointNumber>{formatNumber(stats?.points ?? 3000)}</PointNumber>
+        <PointNumber>{formatNumber(stats?.points ?? 0)}</PointNumber>
         <PointIcon src={pPoint} alt="" />
       </PointRow>
     </PointStateSectionWrapper>
@@ -47,8 +47,11 @@ function formatNumber(n) {
 
 const PointStateSectionWrapper = styled.div`
   border-radius: 16px;
+  display: flex;
+  flex-direction: column;
   height: 125px;
   margin-top: 41px;
+  margin-bottom: 0;
 `;
 
 const LocationText = styled.p`
@@ -74,7 +77,6 @@ const PointRow = styled.div`
   align-items: center;
   gap: 6px;
   margin-top: 0;
-  margin-bottom: 20px;
 `;
 
 const PointNumber = styled.span`
