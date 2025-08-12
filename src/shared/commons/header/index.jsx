@@ -34,7 +34,6 @@ const Wrapper = styled.header`
   align-items: center;
   width: 100%;
   height: 50px;
-  background-color: white;
   min-width: 390px;
   padding: 0 20px;
 `;

@@ -66,7 +66,7 @@ export default function ConvertPointSection() {
             onChange={handleChange}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            placeholder={`100P 단위 / 최소 ${derived.rules.minPointConvert}P`}
+            placeholder={`1000P 단위 / 최소 ${derived.rules.minPointConvert}P`}
             onKeyDown={(e) => e.key === "Enter" && handleConvert()}
           />
           <Icon src={pPointBlack} alt="" />
@@ -82,7 +82,6 @@ export default function ConvertPointSection() {
 const ConvertPointSectionWrapper = styled.div`
   width: 100%;
   max-width: 390px;
-  background: #fff;
   border-radius: 12px;
   padding: 0;
   margin-bottom: 30px;

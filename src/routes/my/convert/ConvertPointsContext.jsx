@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { APIService } from "../../../shared/lib/api";
 
 const DEFAULT_RULES = {
-  pointStep: 100,
-  minPointConvert: 500,
+  pointStep: 1000,
+  minPointConvert: 1000,
   pointToWon: 10,
 };
 
