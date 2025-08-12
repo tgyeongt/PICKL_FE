@@ -53,8 +53,8 @@ export const OptionCard = styled.div`
   border-radius: 30px;
   border: 2px solid
     ${({ $variant }) =>
-      $variant === "up" ? "rgba(228, 41, 56, 0.20)" : "rgba(22, 119, 255, 0.20)"};
-  background: ${({ $variant }) => ($variant === "up" ? "#FEE" : "#E8F3FF")};
+      $variant === "yes" ? "rgba(228, 41, 56, 0.20)" : "rgba(22, 119, 255, 0.20)"};
+  background: ${({ $variant }) => ($variant === "yes" ? "#FEE" : "#E8F3FF")};
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -76,7 +76,7 @@ export const OptionLabel = styled.p`
   font-style: normal;
   font-weight: 700;
   line-height: 32px;
-  color: ${({ $variant }) => ($variant === "up" ? "#E42938" : "#1677FF")};
+  color: ${({ $variant }) => ($variant === "yes" ? "#E42938" : "#1677FF")};
 `;
 
 export const SelectBtn = styled.button`
@@ -89,13 +89,13 @@ export const SelectBtn = styled.button`
   gap: 10px;
   flex-shrink: 0;
   border-radius: 30px;
-  background: ${({ $variant }) => ($variant === "up" ? "#E42938" : "#1677FF")};
+  background: ${({ $variant }) => ($variant === "yes" ? "#E42938" : "#1677FF")};
   cursor: pointer;
   margin-top: 27px;
   margin-bottom: 30px;
 
   &:hover {
-    background: ${({ $variant }) => ($variant === "up" ? "#c72a37" : "#226bd2")};
+    background: ${({ $variant }) => ($variant === "yes" ? "#c72a37" : "#226bd2")};
   }
 `;
 

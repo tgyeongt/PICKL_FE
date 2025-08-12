@@ -35,12 +35,12 @@ export default function DailyPointsResultPage() {
   const navigate = useNavigate();
 
   // DailyPointsPage에서 넘긴 값: { answer, itemName }
-  const answer = state?.answer; // 'up' | 'down'
+  const answer = state?.answer; // 'yes' | 'no'
   const itemName = state?.itemName || "토마토";
 
-  // ⚠️ 임시 판정 로직: 서버 연동 전까지 up이면 성공, down이면 실패로 가정
+  // ⚠️ 임시 판정 로직: 서버 연동 전까지 yes이면 성공, no이면 실패로 가정
   // 실제에선 DailyPointsPage에서 서버에 제출 → { isSuccess, rewardPoint } 받아와 state로 넘겨와야 함
-  const isSuccess = state?.isSuccess ?? answer === "up";
+  const isSuccess = state?.isSuccess ?? answer === "yes";
   const rewardPoint = 100;
 
   // state 없이 직접 진입한 경우 대비

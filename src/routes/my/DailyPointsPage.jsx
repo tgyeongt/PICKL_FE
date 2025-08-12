@@ -45,7 +45,6 @@ export default function DailyPointsPage() {
       // 임시 목데이터 (백 나오기 전까지)
       const raw = {
         itemName: "토마토",
-        // 없으면 폴백 아이콘 사용
         itemIconUrl: "",
         // 필요 시 서버가 바뀔 수 있도록 문구도 서버 제공 가능
         questionLines: ["오늘 {item}의 가격은", "어제에 비해 올라갔을까요?"],
@@ -66,14 +65,14 @@ export default function DailyPointsPage() {
   });
 
   const itemName = data?.itemName ?? "토마토";
-  const itemIcon = data?.itemIconUrl || defaultItemIcon; // 없으면 토마토 아이콘
+  const itemIcon = data?.itemIconUrl || defaultItemIcon;
 
   const q1 = (data?.questionLines?.[0] || "오늘 {item}의 가격은").replace("{item}", itemName);
   const q2 = data?.questionLines?.[1] || "어제에 비해 올라갔을까요?";
 
   const handleSelect = (answer /* 'up' | 'down' */) => {
     // 실제로는 서버에 answer 제출 → 결과 판정 응답 받고 페이지 이동 권장
-    // 지금은 라우팅만 연결해둘게
+    // 지금은 라우팅만 연결
     navigate("/my/points-daily/result", { state: { answer, itemName } });
   };
 
@@ -116,18 +115,18 @@ export default function DailyPointsPage() {
       </QuestionBox>
 
       <OptionBox>
-        <OptionCard $variant="up">
-          <EmojiIcon src={HappyFace} alt="up" />
-          <OptionLabel $variant="up">올랐다</OptionLabel>
-          <SelectBtn type="button" $variant="up" onClick={() => handleSelect("up")}>
+        <OptionCard $variant="yes">
+          <EmojiIcon src={HappyFace} alt="yes" />
+          <OptionLabel $variant="yes">맞다</OptionLabel>
+          <SelectBtn type="button" $variant="yes" onClick={() => handleSelect("yes")}>
             <SelectTxt>선택</SelectTxt>
           </SelectBtn>
         </OptionCard>
 
-        <OptionCard $variant="down">
-          <EmojiIcon src={SadFace} alt="down" />
-          <OptionLabel $variant="down">떨어졌다</OptionLabel>
-          <SelectBtn type="button" $variant="down" onClick={() => handleSelect("down")}>
+        <OptionCard $variant="no">
+          <EmojiIcon src={SadFace} alt="no" />
+          <OptionLabel $variant="no">아니다</OptionLabel>
+          <SelectBtn type="button" $variant="no" onClick={() => handleSelect("no")}>
             <SelectTxt>선택</SelectTxt>
           </SelectBtn>
         </OptionCard>
