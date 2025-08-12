@@ -1,27 +1,11 @@
 import styled from "styled-components";
-import { useQuery } from "@tanstack/react-query";
-import { APIService } from "../../shared/lib/api";
+import { useConvertPoints } from "./convert/ConvertPointsContext";
 
 export default function StateSection() {
-  const { data } = useQuery({
-    queryKey: ["me", "stats"],
-    queryFn: async () => {
-      /*
-        백엔드 스웨거 나오면 경로 및 필드 맞춰야 하는 부분 
-        */
-      const res = await APIService.private.get("/me/stats");
-      const raw = res?.data ?? res ?? {};
-      return {
-        points: isFinite(raw.points) ? raw.points : 3000,
-        joinedDays: isFinite(raw.joinedDays) ? raw.joinedDays : 23,
-      };
-    },
-    staleTime: 60 * 1000,
-    retry: 1,
-  });
+  const { stats } = useConvertPoints();
 
-  const points = formatNumber(data?.points ?? 3000);
-  const joinedDays = data?.joinedDays ?? 23;
+  const points = formatNumber(stats?.points ?? 3000);
+  const joinedDays = stats?.joinedDays ?? 23;
 
   return (
     <SectionWrapper>
