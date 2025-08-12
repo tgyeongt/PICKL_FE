@@ -1,8 +1,15 @@
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
-export default function SeasonalCard({ title, img, description }) {
+export default function SeasonalCard({ id, title, img, description }) {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/seasonal/${id}`);
+  };
+
   return (
-    <Card>
+    <Card onClick={handleClick}>
       <Image src={img} alt={title} />
       <TextBox>
         <Title>{title}</Title>
@@ -23,6 +30,7 @@ const Card = styled.div`
   flex-direction: column;
   background-color: #fff;
   overflow: hidden;
+  cursor: pointer;
 `;
 
 const Image = styled.img`

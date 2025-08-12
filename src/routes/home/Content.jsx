@@ -1,9 +1,9 @@
 import { useLocation, useNavigate } from "react-router-dom";
 
 import MiniNav from "./MiniNav";
-import CheaperView from "./CheaperView";
-import SeasonalView from "./SeasonalView";
-import MarketView from "./MarketView";
+import CheaperView from "./cheaper-tab/CheaperView";
+import SeasonalView from "./seasonal-tab/SeasonalView";
+import MarketView from "./stock-tab/StockView";
 
 export default function Content() {
   const location = useLocation();

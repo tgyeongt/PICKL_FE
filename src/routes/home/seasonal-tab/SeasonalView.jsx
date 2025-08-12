@@ -7,35 +7,12 @@ import "swiper/swiper-bundle.css";
 import SeasonalCard from "./SeasonalCard";
 import leftArrow from "@icon/home/arrow_left.svg";
 import rightArrow from "@icon/home/arrow_right.svg";
+import seasonalList from "./seasonalList";
 
 export default function SeasonalView() {
   const swiperContainerRef = useRef(null);
   const swiperInstanceRef = useRef(null);
   const navigate = useNavigate();
-
-  // 더미데이터
-  const seasonalList = [
-    {
-      title: "수박",
-      img: "/src/shared/assets/icon/home/watermelon.png",
-      description: "시원한 과즙으로 더위를 날리는 여름 대표 과일, 수박을 즐겨보세요!",
-    },
-    {
-      title: "망고",
-      img: "/src/shared/assets/icon/home/watermelon.png",
-      description: "부드럽고 진한 달콤함을 가득 담은 제철 과일, 망고가 제맛이에요",
-    },
-    {
-      title: "문어",
-      img: "/src/shared/assets/icon/home/watermelon.png",
-      description: "쫄깃한 식감으로 입맛을 사로잡는 제철 해산물, 문어를 챙겨보세요",
-    },
-    {
-      title: "옥수수",
-      img: "/src/shared/assets/icon/home/watermelon.png",
-      description: "부드럽고 진한 달콤함을 가득 담은 옥수수가 제맛이에요. ",
-    },
-  ];
 
   useEffect(() => {
     if (!swiperContainerRef.current) return;
@@ -80,9 +57,9 @@ export default function SeasonalView() {
         </ArrowButton>
         <SwiperWrapper className="swiper" ref={swiperContainerRef}>
           <div className="swiper-wrapper">
-            {seasonalList.map((item, i) => (
-              <div className="swiper-slide" key={`${item.title}-${i}`}>
-                <SeasonalCard {...item} />
+            {seasonalList.map((item) => (
+              <div className="swiper-slide" key={item.id}>
+                <SeasonalCard {...item} onClick={() => navigate(`/seasonal/${item.id}`)} />
               </div>
             ))}
           </div>

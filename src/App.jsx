@@ -18,7 +18,7 @@ import MyHistoryPage from "./routes/my/MyHistoryPage";
 import DailyPointsPage from "./routes/my/DailyPointsPage";
 import ConvertPointsPage from "./routes/my/ConvertPointsPage";
 import DailyPointsResultPage from "./routes/my/DailyPointsResultPage";
-import MonthlyPick from "./routes/home/monthly-pick";
+import MonthlyPick from "./routes/home/seasonal-tab/MonthlyPick";
 
 const router = createBrowserRouter([
   {
@@ -30,6 +30,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, Component: Home },
           { path: "monthly-pick", Component: MonthlyPick },
+          { path: "seasonal/:id", Component: MonthlyPick },
         ],
       },
       {

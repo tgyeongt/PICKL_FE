@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import leftArrow from "@icon/home/arrow_left_solid.svg";
 import rightArrow from "@icon/home/arrow_right_solid.svg";
-import rightArrowLight from "@icon/home/arrow_right_solid_light.svg"; // 미래 달용 아이콘
+import rightArrowLight from "@icon/home/arrow_right_solid_light.svg";
 
 export default function MonthNavigator({ currentMonth, onPrev, onNext }) {
   const todayMonth = new Date().getMonth() + 1;
