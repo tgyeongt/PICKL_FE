@@ -3,10 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { APIService } from "../../../shared/lib/api";
 
 const DEFAULT_RULES = {
-  pointStep: 100, // 100P 단위
-  minPointConvert: 500, // 최소 500P
-  pointToWon: 10, // 1P = 10원
+  pointStep: 100,
+  minPointConvert: 500,
+  pointToWon: 10,
 };
+
+// 개발용 목 스위치/기본값
+const USE_DEV_MOCK = true;
+const DEV_DEFAULT_STATS = { points: 12300, joinedDays: 23 };
 
 const ConvertPointsContext = createContext(null);
 
@@ -26,7 +30,7 @@ function reducer(state, action) {
 export function ConvertPointsProvider({ children }) {
   const qc = useQueryClient();
 
-  const { data: stats, isLoading } = useQuery({
+  const { data: statsFromApi, isLoading } = useQuery({
     queryKey: ["me", "stats"],
     queryFn: async () => {
       const res = await APIService.private.get("/me/stats");
@@ -41,6 +45,14 @@ export function ConvertPointsProvider({ children }) {
     staleTime: 60 * 1000,
     retry: 1,
   });
+
+  // 개발 중엔 0이면 목 포인트로 대체
+  const stats = USE_DEV_MOCK
+    ? {
+        points: (statsFromApi?.points ?? 0) > 0 ? statsFromApi.points : DEV_DEFAULT_STATS.points,
+        joinedDays: statsFromApi?.joinedDays ?? DEV_DEFAULT_STATS.joinedDays,
+      }
+    : statsFromApi;
 
   const [state, dispatch] = useReducer(reducer, {
     pointAmount: 0,
@@ -74,11 +86,30 @@ export function ConvertPointsProvider({ children }) {
         pointAmount: Number(state.pointAmount) || 0,
         voucherType: state.selectedVoucher,
       };
+
+      if (USE_DEV_MOCK) {
+        // 가짜 지연 후 성공 응답
+        await new Promise((r) => setTimeout(r, 400));
+        return { ok: true, mock: true, payload };
+      }
+
       const res = await APIService.private.post("/points/convert", payload);
       return res?.data ?? res;
     },
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["me", "stats"] });
+      if (USE_DEV_MOCK) {
+        // 캐시 포인트 즉시 차감
+        qc.setQueryData(["me", "stats"], (prev) => {
+          const base = prev ?? DEV_DEFAULT_STATS;
+          const next = Math.max(
+            0,
+            (base.points ?? DEV_DEFAULT_STATS.points) - (Number(state.pointAmount) || 0)
+          );
+          return { ...base, points: next };
+        });
+      } else {
+        await qc.invalidateQueries({ queryKey: ["me", "stats"] });
+      }
       dispatch({ type: "RESET" });
     },
   });
