@@ -10,6 +10,9 @@ const useHeaderStore = create((set) => ({
   onHeartOff: null,
   isHeartActive: false,
 
+  showHelp: false,
+  onHelp: null,
+
   setTitle: (title) => set({ title }),
   setShowBack: (showBack) => set({ showBack }),
   setShowHeart: (showHeart) => set({ showHeart }),
@@ -17,6 +20,8 @@ const useHeaderStore = create((set) => ({
   setOnHeartOff: (fn) => set({ onHeartOff: fn }),
   setIsVisible: (isVisible) => set({ isVisible }),
   setIsHeartActive: (isHeartActive) => set({ isHeartActive }),
+  setShowHelp: (v) => set({ showHelp: v }),
+  setOnHelp: (fn) => set({ onHelp: fn }),
 
   toggleHeart: () =>
     set((state) => {
@@ -39,6 +44,8 @@ const useHeaderStore = create((set) => ({
       onHeartOff: null,
       isVisible: false,
       isHeartActive: false,
+      showHelp: false,
+      onHelp: null,
     }),
 }));
 

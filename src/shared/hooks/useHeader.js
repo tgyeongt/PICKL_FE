@@ -8,6 +8,8 @@ export default function useHeader({
   showHeart = false,
   onHeartOn = null,
   onHeartOff = null,
+  showHelp = false,
+  onHelp = null,
 }) {
   const setTitle = useHeaderStore((state) => state.setTitle);
   const setShowBack = useHeaderStore((state) => state.setShowBack);
@@ -16,6 +18,8 @@ export default function useHeader({
   const setOnHeartOff = useHeaderStore((state) => state.setOnHeartOff);
   const setIsVisible = useHeaderStore((state) => state.setIsVisible);
   const resetHeader = useHeaderStore((state) => state.resetHeader);
+  const setShowHelp = useHeaderStore((s) => s.setShowHelp);
+  const setOnHelp = useHeaderStore((s) => s.setOnHelp);
 
   useEffect(() => {
     setTitle(title);
@@ -23,6 +27,9 @@ export default function useHeader({
     setShowHeart(showHeart);
     setOnHeartOn(onHeartOn);
     setOnHeartOff(onHeartOff);
+    setShowHelp(showHelp);
+    setOnHelp(onHelp);
+
     setIsVisible(true);
 
     return () => {
