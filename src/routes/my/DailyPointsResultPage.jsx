@@ -31,20 +31,14 @@ import starStar from "@icon/my/starStar.svg";
 import triangleStar from "@icon/my/triangleStar.svg";
 
 export default function DailyPointsResultPage() {
-  const { state } = useLocation();
+  const { state } = useLocation(); // DailyPointsPage에서 전달한 서버 응답 사용
   const navigate = useNavigate();
 
-  // DailyPointsPage에서 넘긴 값: { answer, itemName }
-  const answer = state?.answer; // 'yes' | 'no'
-  const itemName = state?.itemName || "토마토";
+  const result = state?.result; // state 객체 안에 result 속성 존재 -> result 변수에 담기
+  const awarded = state?.awarded ?? 0;
+  const itemName = state?.ingredientName || "토마토";
 
-  // ⚠️ 임시 판정 로직: 서버 연동 전까지 yes이면 성공, no이면 실패로 가정
-  // 실제에선 DailyPointsPage에서 서버에 제출 → { isSuccess, rewardPoint } 받아와 state로 넘겨와야 함
-  const isSuccess = state?.isSuccess ?? answer === "yes";
-  const rewardPoint = 100;
-
-  // state 없이 직접 진입한 경우 대비
-  if (!answer && state == null) {
+  if (!result) {
     return (
       <DailyPointsResultWrapper>
         <Title>잘못된 접근입니다</Title>
@@ -54,12 +48,14 @@ export default function DailyPointsResultPage() {
     );
   }
 
+  const isSuccess = result === "CORRECT";
+
   return (
     <DailyPointsResultWrapper>
       {isSuccess ? (
         <SuccessBox>
-          <SmallTag>+{rewardPoint}P</SmallTag>
-          <SuccessBigTitle>{rewardPoint}P 획득</SuccessBigTitle>
+          <SmallTag>+{awarded}P</SmallTag>
+          <SuccessBigTitle>{awarded}P 획득</SuccessBigTitle>
           <Sub>예측 성공! 포인트가 적립되었어요</Sub>
           <ImgBox>
             <SuccessImage src={successP} alt="" />

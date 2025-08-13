@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { APIService } from "../../shared/lib/api";
+import { testLoginIfNeeded } from "../../shared/lib/auth";
 import chevronRight from "@icon/my/chevron-right.svg";
 import todayPointIcon from "@icon/my/faceIcon.svg";
 import convertPointIcon from "@icon/my/beadIcon.svg";
@@ -24,12 +25,43 @@ export default function MyServiceSection() {
 
   const displayName = me?.displayName || "정시태근희망러";
 
+  // "오늘의 포인트 받기" 클릭 시 attempted 확인
+  const handleTodayClick = async () => {
+    try {
+      await testLoginIfNeeded();
+      const res = await APIService.private.get("/quiz/daily");
+      const raw = res?.data ?? res;
+
+      if (raw?.attempted) {
+        alert("오늘은 이미 참여했어요! 내일 다시 도전해주세요😊");
+        return;
+      }
+      navigate("/my/points-daily");
+    } catch (e) {
+      const code = e?.response?.status;
+      if (code === 404) {
+        alert("오늘의 퀴즈가 아직 준비 중이에요. 잠시 후 다시 시도해주세요!");
+      } else if (code === 401 || code === 403) {
+        // 인증 이슈일 수 있으니 한 번 더 로그인 시도 후 진입 허용(선택)
+        try {
+          await testLoginIfNeeded();
+          navigate("/my/points-daily");
+        } catch {
+          alert("로그인이 필요해요. 다시 시도해주세요.");
+        }
+      } else {
+        alert("잠시 후 다시 시도해주세요.");
+        console.error(e);
+      }
+    }
+  };
+
   return (
     <MyServiceSectionWrapper>
       <SectionTitle>{displayName}님을 위한 맞춤형 서비스</SectionTitle>
 
       <List>
-        <ListButton onClick={() => navigate("/my/points-daily")}>
+        <ListButton onClick={handleTodayClick}>
           <Card>
             <Left>
               <Icon src={todayPointIcon} alt="" />
@@ -99,8 +131,8 @@ const Card = styled.div`
 
   padding: 12px 10px;
   background: #fbfbfb;
-  border-radius: 14px; 
-  overflow: hidden; 
+  border-radius: 14px;
+  overflow: hidden;
   transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center;

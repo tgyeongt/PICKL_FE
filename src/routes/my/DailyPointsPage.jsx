@@ -1,6 +1,5 @@
 import useHeader from "../../shared/hooks/useHeader";
-import { useQuery } from "@tanstack/react-query";
-// import { APIService } from "../../shared/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
   DailyPointsPageWrapper,
@@ -26,55 +25,59 @@ import defaultItemIcon from "@icon/my/tomatoIcon.svg";
 import HappyFace from "@icon/my/happyFace.svg";
 import SadFace from "@icon/my/sadIcon.svg";
 
+import { APIService } from "../../shared/lib/api";
+import { testLoginIfNeeded } from "../../shared/lib/auth";
+
 export default function DailyPointsPage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   useHeader({
     title: "",
     showBack: true,
   });
 
-  // 오늘의 예측 문제 데이터 불러오기
   const { data, isLoading, isError } = useQuery({
     queryKey: ["dailyPoints", "today"],
     queryFn: async () => {
-      // 실제 연동 시 엔드포인트 예시: /daily-points/today
-      // const res = await APIService.private.get("/daily-points/today");
-      // const raw = res?.data ?? res;
-
-      // 임시 목데이터 (백 나오기 전까지)
-      const raw = {
-        itemName: "토마토",
-        itemIconUrl: "",
-        // 필요 시 서버가 바뀔 수 있도록 문구도 서버 제공 가능
-        questionLines: ["오늘 {item}의 가격은", "어제에 비해 올라갔을까요?"],
-        // 서버가 정답 판단을 하는 구조라면 여기선 안 씀
-      };
+      await testLoginIfNeeded();
+      const res = await APIService.private.get("/quiz/daily");
+      const raw = res?.data ?? res;
 
       return {
-        itemName: raw?.itemName || "토마토",
-        itemIconUrl: raw?.itemIconUrl || "",
-        questionLines:
-          Array.isArray(raw?.questionLines) && raw.questionLines.length > 0
-            ? raw.questionLines
-            : ["오늘 {item}의 가격은", "어제에 비해 올라갔을까요?"],
+        itemName: raw?.ingredient?.name ?? "토마토",
+        itemIconUrl: raw?.ingredient?.iconUrl ?? "",
+        questionLines: raw?.statement
+          ? [raw.statement]
+          : [`오늘 ${raw?.ingredient?.name ?? "토마토"}의 가격은`, "어제에 비해 올라갔을까요?"],
+        options: raw?.options ?? ["O", "X"],
+        attempted: !!raw?.attempted,
       };
     },
     staleTime: 60 * 1000,
     retry: 1,
   });
 
-  const itemName = data?.itemName ?? "토마토";
-  const itemIcon = data?.itemIconUrl || defaultItemIcon;
+  // 정답 제출
+  const { mutate: submitAnswer } = useMutation({
+    mutationFn: async (answer) => {
+      await testLoginIfNeeded();
+      const payload = {
+        answer,
+        idempotencyKey: crypto.randomUUID(),
+      };
+      const res = await APIService.private.post("/quiz/daily/answer", payload);
+      return res?.data ?? res;
+    },
+    onSuccess: (result) => {
+      // 포인트/통계 invalidate
+      qc.invalidateQueries({ queryKey: ["me", "stats"] });
 
-  const q1 = (data?.questionLines?.[0] || "오늘 {item}의 가격은").replace("{item}", itemName);
-  const q2 = data?.questionLines?.[1] || "어제에 비해 올라갔을까요?";
-
-  const handleSelect = (answer /* 'yes' | 'no' */) => {
-    // 실제로는 서버에 answer 제출 → 결과 판정 응답 받고 페이지 이동 권장
-    // 지금은 라우팅만 연결
-    navigate("/my/points-daily/result", { state: { answer, itemName } });
-  };
+      navigate("/my/points-daily/result", {
+        state: result, // 결과 페이지로 서버 응답 그대로 전달
+      });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -103,6 +106,18 @@ export default function DailyPointsPage() {
     );
   }
 
+  const itemName = data?.itemName ?? "토마토";
+  const itemIcon = data?.itemIconUrl || defaultItemIcon;
+
+  const q1 = data?.questionLines?.[0] || `오늘 ${itemName}의 가격은`;
+  const q2 =
+    data?.questionLines?.[1] ||
+    (data?.questionLines?.length > 1 ? data.questionLines[1] : "어제에 비해 올라갔을까요?");
+
+  const handleSelect = (answer) => {
+    submitAnswer(answer);
+  };
+
   return (
     <DailyPointsPageWrapper>
       <IconDiv>
@@ -111,14 +126,14 @@ export default function DailyPointsPage() {
 
       <QuestionBox>
         <QTextStrong>{q1}</QTextStrong>
-        <QTextStrong>{q2}</QTextStrong>
+        {q2 && <QTextStrong>{q2}</QTextStrong>}
       </QuestionBox>
 
       <OptionBox>
         <OptionCard $variant="yes">
           <EmojiIcon src={HappyFace} alt="yes" />
           <OptionLabel $variant="yes">맞다</OptionLabel>
-          <SelectBtn type="button" $variant="yes" onClick={() => handleSelect("yes")}>
+          <SelectBtn type="button" $variant="yes" onClick={() => handleSelect("O")}>
             <SelectTxt>선택</SelectTxt>
           </SelectBtn>
         </OptionCard>
@@ -126,7 +141,7 @@ export default function DailyPointsPage() {
         <OptionCard $variant="no">
           <EmojiIcon src={SadFace} alt="no" />
           <OptionLabel $variant="no">아니다</OptionLabel>
-          <SelectBtn type="button" $variant="no" onClick={() => handleSelect("no")}>
+          <SelectBtn type="button" $variant="no" onClick={() => handleSelect("X")}>
             <SelectTxt>선택</SelectTxt>
           </SelectBtn>
         </OptionCard>
