@@ -1,6 +1,6 @@
 import { useState } from "react";
 import styled from "styled-components";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Icon1 from "@icon/home/detail_icon_1.svg";
 import Icon2 from "@icon/home/detail_icon_2.svg";
 import Icon3 from "@icon/home/detail_icon_3.svg";
@@ -26,6 +26,8 @@ export default function SeasonalDetailPage() {
 
   const icons = [Icon1, Icon2, Icon3, Icon4];
 
+  const navigate = useNavigate();
+
   return (
     <Wrapper>
       <MainCard>
@@ -34,9 +36,9 @@ export default function SeasonalDetailPage() {
           <TitleRow>
             <div className="left">
               <p className="title">{item.title}</p>
-              <span className="calorie">100g / 86kcal</span>
+              <span className="calorie">{item.calorie}</span>
             </div>
-            <div className="label">탄수화물</div>
+            <div className="label">{item.label}</div>
           </TitleRow>
           <p className="desc">{item.description}</p>
         </TextBox>
@@ -54,11 +56,26 @@ export default function SeasonalDetailPage() {
           />
         ))}
       </DetailWrapper>
+
+      <RecipeWrapper>
+        <span className="text_500">건강을 챙기는</span>
+        <span className="text_700">{item.title}</span>
+        <span className="text_500">요리 추천</span>
+        <RecipeCardWrapper>
+          {item.recipes.map((recipe) => (
+            <RecipeCard key={recipe.id}>
+              <p className="title">{recipe.title}</p>
+              <div className="btn" onClick={() => navigate(`/seasonal/${item.id}/${recipe.id}`)}>
+                레시피 보기
+              </div>
+            </RecipeCard>
+          ))}
+        </RecipeCardWrapper>
+      </RecipeWrapper>
     </Wrapper>
   );
 }
 
-/* 스타일 */
 const Wrapper = styled.div`
   min-height: 100vh;
   background-color: #f5f5f7;
@@ -127,6 +144,54 @@ const TitleRow = styled.div`
 
 const DetailWrapper = styled.div`
   width: 100%;
-  max-width: 400px;
   margin-top: 15px;
+`;
+
+const RecipeWrapper = styled.div`
+  width: 100%;
+  margin-top: 15px;
+  font-size: 18px;
+
+  .text_500 {
+    font-weight: 500;
+  }
+
+  .text_700 {
+    font-weight: 700;
+    margin: 0 3px;
+  }
+`;
+
+const RecipeCardWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+  margin-top: 15px;
+`;
+
+const RecipeCard = styled.div`
+  padding: 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 15px;
+  min-width: 160px;
+
+  .title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .btn {
+    padding: 5px 20px;
+    color: #fff;
+    background-color: #292a31;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
 `;

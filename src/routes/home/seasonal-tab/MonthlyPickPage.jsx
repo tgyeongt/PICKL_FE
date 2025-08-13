@@ -21,12 +21,12 @@ export default function MonthlyPickPage() {
     setCurrentMonth((prev) => (prev === 12 ? 1 : prev + 1));
   };
 
-  const picks = seasonalList.filter((item) => item.month === currentMonth);
+  const items = seasonalList.filter((item) => item.month === currentMonth);
 
   return (
     <>
       <MonthNavigator currentMonth={currentMonth} onPrev={handlePrev} onNext={handleNext} />
-      <MonthlyPickList picks={picks} />
+      <MonthlyPickList items={items} />
     </>
   );
 }

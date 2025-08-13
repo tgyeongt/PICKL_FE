@@ -1,15 +1,18 @@
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 
-export default function MonthlyPickList({ picks }) {
+export default function MonthlyPickList({ items }) {
+  const navigate = useNavigate();
+
   return (
     <ListWrapper>
-      {picks.map((pick) => (
-        <PickCard key={pick.id}>
-          <Image src={pick.img} alt={pick.title} />
+      {items.map((item) => (
+        <PickCard key={item.id} onClick={() => navigate(`/seasonal/${item.id}`)}>
+          <Image src={item.img} alt={item.title} />
           <TextBox>
-            <Title>{pick.title}</Title>
+            <Title>{item.title}</Title>
             <Line />
-            <Desc>{pick.description}</Desc>
+            <Desc>{item.description}</Desc>
           </TextBox>
         </PickCard>
       ))}
