@@ -70,7 +70,7 @@ export default function DailyPointsPage() {
   const q1 = (data?.questionLines?.[0] || "오늘 {item}의 가격은").replace("{item}", itemName);
   const q2 = data?.questionLines?.[1] || "어제에 비해 올라갔을까요?";
 
-  const handleSelect = (answer /* 'up' | 'down' */) => {
+  const handleSelect = (answer /* 'yes' | 'no' */) => {
     // 실제로는 서버에 answer 제출 → 결과 판정 응답 받고 페이지 이동 권장
     // 지금은 라우팅만 연결
     navigate("/my/points-daily/result", { state: { answer, itemName } });
