@@ -75,7 +75,7 @@ export default function SeasonalView() {
 
 const Wrapper = styled.div`
   width: 100%;
-  height: 100vh;
+  height: 70vh;
   text-align: center;
 `;
 

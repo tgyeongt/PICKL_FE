@@ -25,6 +25,7 @@ import DailyPointsResultPage from "./routes/my/DailyPointsResultPage";
 import MonthlyPickPage from "./routes/home/seasonal-tab/MonthlyPickPage";
 import SeasonalDetailPage from "./routes/home/seasonal-tab/SeasonalDetailPage";
 import SeasonalRecipePage from "./routes/home/seasonal-tab/SeasonalRecipePage";
+import CategoryDetailPage from "./routes/home/stock-tab/CategoryDetailPage";
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,7 @@ const router = createBrowserRouter([
           { path: "monthly-pick", Component: MonthlyPickPage },
           { path: "seasonal/:id", Component: SeasonalDetailPage },
           { path: "seasonal/:id/:recipeId", Component: SeasonalRecipePage },
+          { path: "category/:title", Component: CategoryDetailPage },
         ],
       },
       {
