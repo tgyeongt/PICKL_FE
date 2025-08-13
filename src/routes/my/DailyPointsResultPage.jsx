@@ -34,9 +34,10 @@ export default function DailyPointsResultPage() {
   const { state } = useLocation(); // DailyPointsPage에서 전달한 서버 응답 사용
   const navigate = useNavigate();
 
-  const result = state?.result; // state 객체 안에 result 속성 존재 -> result 변수에 담기
-  const awarded = state?.awarded ?? 0;
-  const itemName = state?.ingredientName || "토마토";
+  const payload = state ?? {};
+  const result = payload.result ?? payload.status;
+  const awarded = payload.awarded ?? payload.points ?? 0;
+  const itemName = payload.ingredientName ?? payload.itemName ?? "토마토";
 
   if (!result) {
     return (

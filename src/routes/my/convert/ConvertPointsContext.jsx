@@ -59,26 +59,33 @@ export function ConvertPointsProvider({ children }) {
     selectedVoucher: "seoul",
   });
 
-  const rules = DEFAULT_RULES;
-
   const derived = useMemo(() => {
     const maxPoint = stats?.points ?? 0;
     const amt = Number(state.pointAmount) || 0;
 
-    const okStep = amt % rules.pointStep === 0;
-    const okMin = amt >= rules.minPointConvert;
-    const okMax = amt <= maxPoint;
-    const pointOk = amt > 0 && okStep && okMin && okMax;
+    const reasons = [];
+    if (amt <= 0) reasons.push("전환 포인트를 입력해주세요");
+    if (amt > 0 && amt < DEFAULT_RULES.minPointConvert)
+      reasons.push(
+        `${DEFAULT_RULES.minPointConvert.toLocaleString()}P 이상부터 전환할 수 있습니다`
+      );
+    if (amt > 0 && amt % DEFAULT_RULES.pointStep !== 0)
+      reasons.push(`${DEFAULT_RULES.pointStep}P 단위로 입력해주세요`);
+    if (amt > (stats?.points ?? 0))
+      reasons.push(
+        `보유 포인트(${(stats?.points ?? 0).toLocaleString()}P)보다 많이 전환할 수 없습니다`
+      );
 
     return {
       maxPoint,
-      pointOk,
-      wonAmount: amt * rules.pointToWon,
-      disabled: isLoading || !pointOk || !state.selectedVoucher,
-      rules,
+      wonAmount: amt * DEFAULT_RULES.pointToWon,
+      canSubmit: reasons.length === 0 && !!state.selectedVoucher,
+      reasons,
+      disabled: isLoading || reasons.length > 0 || !state.selectedVoucher,
+      rules: DEFAULT_RULES,
       isLoading,
     };
-  }, [state.pointAmount, state.selectedVoucher, stats, rules, isLoading]);
+  }, [state.pointAmount, state.selectedVoucher, stats?.points, isLoading]);
 
   const { mutateAsync: convert, isPending: converting } = useMutation({
     mutationFn: async () => {
@@ -126,7 +133,7 @@ export function ConvertPointsProvider({ children }) {
         dispatch,
         setPointAmount,
         setVoucher,
-        rules,
+        rules: DEFAULT_RULES,
         convert,
         converting,
       }}

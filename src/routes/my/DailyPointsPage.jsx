@@ -69,12 +69,16 @@ export default function DailyPointsPage() {
       const res = await APIService.private.post("/quiz/daily/answer", payload);
       return res?.data ?? res;
     },
-    onSuccess: (result) => {
+    onSuccess: (res) => {
       // 포인트/통계 invalidate
       qc.invalidateQueries({ queryKey: ["me", "stats"] });
 
       navigate("/my/points-daily/result", {
-        state: result, // 결과 페이지로 서버 응답 그대로 전달
+        state: {
+          result: res?.result, // "CORRECT" | "WRONG"
+          awarded: res?.awarded ?? 0, // 적립 포인트
+          ingredientName: res?.ingredientName || res?.item?.name, // 백엔드 변동 대비
+        },
       });
     },
   });

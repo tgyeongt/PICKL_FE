@@ -33,16 +33,10 @@ export default function ConvertPointSection() {
   const displayValue = editing || pointsNum > 0 ? String(pointsNum) : "";
 
   const handleConvert = () => {
-    const { minPointConvert, pointStep } = derived.rules;
-    const max = Number(stats?.points || 0);
-
-    if (!pointsNum) return alert("전환 포인트를 입력해주세요");
-    if (pointsNum < minPointConvert)
-      return alert(`${minPointConvert.toLocaleString()}P 이상부터 전환할 수 있습니다`);
-    if (pointsNum % pointStep !== 0) return alert(`${pointStep}P 단위로 입력해주세요`);
-    if (pointsNum > max)
-      return alert(`보유 포인트(${max.toLocaleString()}P)보다 많이 전환할 수 없습니다`);
-
+    if (!derived.canSubmit) {
+      alert(derived.reasons?.[0] || "입력 값을 확인해주세요");
+      return;
+    }
     alert(`${toComma(String(pointsNum))}P 전환 진행하겠습니다`);
   };
 
