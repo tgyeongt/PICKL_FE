@@ -4,7 +4,7 @@ import superMarketIcon from "@icon/home/super_market.svg";
 import traditionalMarketIcon from "@icon/home/traditional_market.svg";
 import lineIcon from "@icon/home/line.svg";
 
-export default function CheaperCard({ selected, name, weight, marketPrice, martPrice }) {
+export default function CheaperCard({ selected, name, unit, marketPrice, superMarketPrice }) {
   const mainIcon = selected === "전통시장" ? traditionalMarketIcon : superMarketIcon;
   const mainCategory = selected;
 
@@ -13,7 +13,7 @@ export default function CheaperCard({ selected, name, weight, marketPrice, martP
       <NameWrapper>
         <img src={grapeIcon} alt="상품 이미지" />
         <p className="name">{name}</p>
-        <span className="weight">/ {weight}</span>
+        <span className="weight">/ {unit}</span>
       </NameWrapper>
 
       <PriceWrapper>
@@ -21,14 +21,14 @@ export default function CheaperCard({ selected, name, weight, marketPrice, martP
 
         <AccentBox selected={selected}>
           <p className="category">{mainCategory}</p>
-          <p className="price">{selected === "전통시장" ? marketPrice : martPrice}</p>
+          <p className="price">{selected === "전통시장" ? marketPrice : superMarketPrice}원</p>
         </AccentBox>
 
-        <img src={lineIcon} alt="구분선" />
+        <Line src={lineIcon} alt="구분선" />
 
         <NormalBox>
           <p className="category">{selected === "전통시장" ? "대형마트" : "전통시장"}</p>
-          <p className="price">{selected === "전통시장" ? martPrice : marketPrice}</p>
+          <p className="price">{selected === "전통시장" ? superMarketPrice : marketPrice}원</p>
         </NormalBox>
       </PriceWrapper>
     </CardWrapper>
@@ -66,6 +66,15 @@ const PriceWrapper = styled.div`
   flex-direction: row;
   margin-top: 12px;
   align-items: center;
+  justify-content: space-between;
+  position: relative;
+`;
+
+const Line = styled.img`
+  position: absolute;
+  top: 50%;
+  left: 69%;
+  transform: translate(-50%, -50%);
 `;
 
 const AccentBox = styled.div`
@@ -91,7 +100,8 @@ const NormalBox = styled.div`
   display: flex;
   flex-direction: column;
   color: #adadaf;
-  margin-left: 20px;
+  margin-left: auto;
+  margin-right: 10px;
 
   .category {
     font-weight: 400;
@@ -104,5 +114,9 @@ const NormalBox = styled.div`
     font-size: 17px;
     line-height: normal;
     margin-top: 5px;
+  }
+
+  .line {
+    margin: 0 20px;
   }
 `;

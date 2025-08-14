@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import Swiper from "swiper";
@@ -7,16 +7,29 @@ import "swiper/swiper-bundle.css";
 import SeasonalCard from "./SeasonalCard";
 import leftArrow from "@icon/home/arrow_left.svg";
 import rightArrow from "@icon/home/arrow_right.svg";
-import seasonalList from "./seasonalList";
+import { APIService } from "../../../shared/lib/api";
 
 export default function SeasonalView() {
   const swiperContainerRef = useRef(null);
   const swiperInstanceRef = useRef(null);
   const navigate = useNavigate();
 
+  const [seasonalList, setSeasonalList] = useState([]);
+
+  useEffect(() => {
+    async function fetchSeasonItems() {
+      try {
+        const res = await APIService.public.get("/season-items");
+        setSeasonalList(res.data);
+      } catch (error) {
+        console.error("Failed to fetch season items:", error);
+      }
+    }
+    fetchSeasonItems();
+  }, []);
+
   useEffect(() => {
     if (!swiperContainerRef.current) return;
-
     swiperInstanceRef.current?.destroy();
 
     const timeout = setTimeout(() => {
@@ -43,7 +56,6 @@ export default function SeasonalView() {
       clearTimeout(timeout);
       swiperInstanceRef.current?.destroy();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seasonalList]);
 
   return (
@@ -60,7 +72,13 @@ export default function SeasonalView() {
           <div className="swiper-wrapper">
             {seasonalList.map((item) => (
               <div className="swiper-slide" key={item.id}>
-                <SeasonalCard {...item} onClick={() => navigate(`/seasonal/${item.id}`)} />
+                <SeasonalCard
+                  id={item.id}
+                  title={item.itemname}
+                  description={item.shortDescription}
+                  img={item.imageUrl}
+                  onClick={() => navigate(`/seasonal/${item.id}`)}
+                />
               </div>
             ))}
           </div>

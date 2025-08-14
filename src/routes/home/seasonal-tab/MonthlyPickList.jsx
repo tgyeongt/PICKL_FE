@@ -8,11 +8,11 @@ export default function MonthlyPickList({ items }) {
     <ListWrapper>
       {items.map((item) => (
         <PickCard key={item.id} onClick={() => navigate(`/seasonal/${item.id}`)}>
-          <Image src={item.img} alt={item.title} />
+          <Image src={item.imageUrl} alt={item.itemname} />
           <TextBox>
-            <Title>{item.title}</Title>
+            <Title>{item.itemname}</Title>
             <Line />
-            <Desc>{item.description}</Desc>
+            <Desc>{item.shortDescription}</Desc>
           </TextBox>
         </PickCard>
       ))}

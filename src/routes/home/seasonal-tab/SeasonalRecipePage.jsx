@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { APIService } from "../../../shared/lib/api";
 import styled from "styled-components";
-import seasonalList from "./seasonalList";
 import DetailItem from "./DetailItem";
 import useHeader from "@hooks/useHeader";
 
@@ -12,10 +12,6 @@ import Timer from "@icon/home/time_icon.svg";
 import Knife from "@icon/home/knife_icon.svg";
 
 export default function SeasonalRecipePage() {
-  const { id, recipeId } = useParams();
-  const item = seasonalList.find((el) => el.id === Number(id));
-  const recipe = item?.recipes.find((r) => r.id === Number(recipeId));
-
   useHeader({
     title: "레시피",
     showBack: true,
@@ -32,6 +28,23 @@ export default function SeasonalRecipePage() {
     alert("찜하기 삭제 완료");
   }
 
+  const { id, recipeId } = useParams();
+  const [recipe, setRecipe] = useState([]);
+
+  useEffect(() => {
+    async function fetchRecipe() {
+      try {
+        const res = await APIService.public.get(`/season-items/${id}/recipes`);
+        // 🔹 클릭한 recipeId와 같은 데이터만 찾기
+        const selectedRecipe = res.data.find((r) => String(r.id) === recipeId);
+        setRecipe(selectedRecipe);
+      } catch (error) {
+        console.error("Failed to fetch recipe:", error);
+      }
+    }
+    fetchRecipe();
+  }, [id, recipeId]);
+
   const [openStates, setOpenStates] = useState([false, false, false]);
   const toggleSection = (index) => {
     setOpenStates((prev) => prev.map((isOpen, i) => (i === index ? !isOpen : isOpen)));
@@ -39,9 +52,15 @@ export default function SeasonalRecipePage() {
 
   const icons = [Icon1, Icon3, Icon4];
 
+  const questions = [
+    { q: "준비물", a: recipe.ingredients },
+    { q: "조리 방법", a: recipe.instructions },
+    { q: "꿀팁", a: recipe.tip },
+  ];
+
   return (
     <Wrapper>
-      <Title>{recipe.title}</Title>
+      <Title>{recipe.recipeName}</Title>
       <AboutBox>
         <AboutLineDiv>
           <img src={Timer} />
@@ -57,7 +76,7 @@ export default function SeasonalRecipePage() {
       </AboutBox>
 
       <DetailWrapper>
-        {recipe.questions.map((detail, i) => (
+        {questions.map((detail, i) => (
           <DetailItem
             key={i}
             icon={icons[i]}
@@ -78,13 +97,15 @@ const Wrapper = styled.div`
   align-items: center;
   padding: 0 20px;
   background-color: #f6f6f6;
-  height: 100vh;
+  height: auto;
+  min-height: 800px;
+  padding-bottom: 80px;
 `;
 
 const Title = styled.p`
   font-size: 24px;
   font-weight: 700;
-  margin-top: 20px;
+  margin-top: 30px;
 `;
 
 const AboutBox = styled.div`

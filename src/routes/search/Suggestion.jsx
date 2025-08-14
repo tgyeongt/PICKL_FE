@@ -32,14 +32,14 @@ export default function Suggestion() {
 }
 
 const RecommendedSection = styled.div`
-  margin: 20px 0;
-  margin-left: 8px;
+  margin: 25px 0;
 `;
 
 const SubTitle = styled.p`
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 15px;
+  margin-left: 3px;
 `;
 
 const KeywordWrapper = styled.div`
