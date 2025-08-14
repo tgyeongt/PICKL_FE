@@ -30,6 +30,7 @@ import CategoryDetailPage from "./routes/home/stock-tab/CategoryDetailPage";
 
 // Chat 페이지
 import ChatbotPage from "./routes/chat/ChatbotPage";
+import ItemDetailPage from "./routes/search/ItemDetailPage";
 
 const router = createBrowserRouter([
   {
@@ -67,7 +68,13 @@ const router = createBrowserRouter([
       {
         Component: ServiceLayout,
         children: [
-          { path: "search", Component: Search },
+          {
+            path: "search",
+            children: [
+              { index: true, Component: Search },
+              { path: "ingredients/:id", Component: ItemDetailPage },
+            ],
+          },
 
           {
             path: "my",
