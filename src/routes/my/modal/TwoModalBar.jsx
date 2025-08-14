@@ -18,8 +18,6 @@ function Overlay({ children, onClose }) {
 
   useEffect(() => {
     setVisible(true);
-    const t = setTimeout(onClose, 1500);
-    return () => clearTimeout(t);
   }, [onClose]);
 
   return (
@@ -37,16 +35,19 @@ function IconSection() {
   );
 }
 
-function TextSection() {
-  const { state, derived } = useConvertPoints();
+function TextSection({ snapshot }) {
+  const { converting } = useConvertPoints();
+  const wonAmount = Number(snapshot?.won || 0);
 
-  const pointToWon = Number(derived?.rules?.pointToWon ?? 0);
-  const pointsNum = Number(state?.pointAmount ?? 0);
-  const wonAmount = Number(pointsNum * pointToWon) || 0;
+  const text = converting
+    ? "전환 중..."
+    : wonAmount > 0
+    ? `${wonAmount.toLocaleString()}원 지역화폐로 전환 완료!🎉`
+    : "전환이 완료되었어요!🎉";
 
   return (
     <TextSectionWrapper>
-      <Text>{wonAmount.toLocaleString()}원 지역화폐로 전환 완료!🎉</Text>
+      <Text>{text}</Text>
     </TextSectionWrapper>
   );
 }

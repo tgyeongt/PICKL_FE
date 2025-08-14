@@ -12,9 +12,13 @@ import ConvertHelpSheet from "./modal/ConvertHelpSheet";
 
 export default function ConvertPointsPage() {
   const [modalStep, setModalStep] = useState(0);
+  const [snapshot, setSnapshot] = useState({ points: 0, won: 0 });
   const [helpOpen, setHelpOpen] = useState(false);
 
-  const openFirstModal = () => setModalStep(1);
+  const openFirstModal = (snap) => {
+    if (snap) setSnapshot(snap);
+    setModalStep(1);
+  };
   const closeModal = () => setModalStep(0);
   const goSecondModal = () => setModalStep(2);
 
@@ -36,7 +40,7 @@ export default function ConvertPointsPage() {
         <ConvertTicketSection />
         <ConvertButtonSection onRequestConvert={openFirstModal} />
         {modalStep === 1 && <FirstModal onClose={closeModal} onNext={goSecondModal} />}
-        {modalStep === 2 && <TwoModal onClose={closeModal} />}
+        {modalStep === 2 && <TwoModal onClose={closeModal} snapshot={snapshot} />}
         <ConvertHelpSheet open={helpOpen} onClose={closeHelp} />
       </ConvertPointsPageWrapper>
     </ConvertPointsProvider>

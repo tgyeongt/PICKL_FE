@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useReducer } from "react";
+import { createContext, useContext, useMemo, useReducer, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { APIService } from "../../../shared/lib/api";
 
@@ -8,7 +8,7 @@ const DEFAULT_RULES = {
   pointToWon: 10,
 };
 
-// 개발용 목 스위치/기본값
+// 🔹 개발용 목 스위치/기본값
 const USE_DEV_MOCK = true;
 const DEV_DEFAULT_STATS = { points: 12300, joinedDays: 23 };
 
@@ -30,35 +30,37 @@ function reducer(state, action) {
 export function ConvertPointsProvider({ children }) {
   const qc = useQueryClient();
 
+  useEffect(() => {
+    if (USE_DEV_MOCK && !qc.getQueryData(["me", "stats"])) {
+      qc.setQueryData(["me", "stats"], DEV_DEFAULT_STATS);
+    }
+  }, []);
+
+  // 📌 유저 포인트 불러오기
   const { data: statsFromApi, isLoading } = useQuery({
     queryKey: ["me", "stats"],
     queryFn: async () => {
       const res = await APIService.private.get("/me/stats");
       const raw = res?.data ?? res ?? {};
-      const pointsNum = Number(raw.points);
-      const joinedDaysNum = Number(raw.joinedDays);
       return {
-        points: Number.isFinite(pointsNum) ? pointsNum : 0,
-        joinedDays: Number.isFinite(joinedDaysNum) ? joinedDaysNum : 23,
+        points: Number.isFinite(Number(raw.points)) ? Number(raw.points) : 0,
+        joinedDays: Number.isFinite(Number(raw.joinedDays)) ? Number(raw.joinedDays) : 23,
       };
     },
     staleTime: 60 * 1000,
     retry: 1,
+    enabled: !USE_DEV_MOCK,
   });
 
-  // 개발 중엔 0이면 목 포인트로 대체
-  const stats = USE_DEV_MOCK
-    ? {
-        points: (statsFromApi?.points ?? 0) > 0 ? statsFromApi.points : DEV_DEFAULT_STATS.points,
-        joinedDays: statsFromApi?.joinedDays ?? DEV_DEFAULT_STATS.joinedDays,
-      }
-    : statsFromApi;
+  const cachedStats = qc.getQueryData(["me", "stats"]);
+  const stats = USE_DEV_MOCK ? cachedStats ?? DEV_DEFAULT_STATS : statsFromApi ?? DEV_DEFAULT_STATS;
 
   const [state, dispatch] = useReducer(reducer, {
     pointAmount: 0,
     selectedVoucher: "seoul",
   });
 
+  // 📌 파생 값 계산
   const derived = useMemo(() => {
     const maxPoint = stats?.points ?? 0;
     const amt = Number(state.pointAmount) || 0;
@@ -71,31 +73,30 @@ export function ConvertPointsProvider({ children }) {
       );
     if (amt > 0 && amt % DEFAULT_RULES.pointStep !== 0)
       reasons.push(`${DEFAULT_RULES.pointStep}P 단위로 입력해주세요`);
-    if (amt > (stats?.points ?? 0))
-      reasons.push(
-        `보유 포인트(${(stats?.points ?? 0).toLocaleString()}P)보다 많이 전환할 수 없습니다`
-      );
+    if (amt > maxPoint)
+      reasons.push(`보유 포인트(${maxPoint.toLocaleString()}P)보다 많이 전환할 수 없습니다`);
 
     return {
       maxPoint,
       wonAmount: amt * DEFAULT_RULES.pointToWon,
       canSubmit: reasons.length === 0 && !!state.selectedVoucher,
       reasons,
-      disabled: isLoading || reasons.length > 0 || !state.selectedVoucher,
+      disabled: (USE_DEV_MOCK ? false : isLoading) || reasons.length > 0 || !state.selectedVoucher,
       rules: DEFAULT_RULES,
-      isLoading,
+      isLoading: USE_DEV_MOCK ? false : isLoading,
     };
   }, [state.pointAmount, state.selectedVoucher, stats?.points, isLoading]);
 
+  // 📌 전환 mutation
   const { mutateAsync: convert, isPending: converting } = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (amountOverride) => {
+      const pointAmount = Number(amountOverride ?? state.pointAmount) || 0;
       const payload = {
-        pointAmount: Number(state.pointAmount) || 0,
+        pointAmount,
         voucherType: state.selectedVoucher,
       };
 
       if (USE_DEV_MOCK) {
-        // 가짜 지연 후 성공 응답
         await new Promise((r) => setTimeout(r, 400));
         return { ok: true, mock: true, payload };
       }
@@ -103,20 +104,23 @@ export function ConvertPointsProvider({ children }) {
       const res = await APIService.private.post("/points/convert", payload);
       return res?.data ?? res;
     },
-    onSuccess: async () => {
+    onSuccess: async (_data, amountOverride) => {
+      const amount = Number(amountOverride ?? state.pointAmount) || 0;
+
       if (USE_DEV_MOCK) {
-        // 캐시 포인트 즉시 차감
         qc.setQueryData(["me", "stats"], (prev) => {
-          const base = prev ?? DEV_DEFAULT_STATS;
-          const next = Math.max(
-            0,
-            (base.points ?? DEV_DEFAULT_STATS.points) - (Number(state.pointAmount) || 0)
+          const basePoints = Number(
+            prev && prev.points != null ? prev.points : DEV_DEFAULT_STATS.points
           );
-          return { ...base, points: next };
+          return {
+            ...(prev ?? DEV_DEFAULT_STATS),
+            points: Math.max(0, basePoints - amount),
+          };
         });
       } else {
         await qc.invalidateQueries({ queryKey: ["me", "stats"] });
       }
+
       dispatch({ type: "RESET" });
     },
   });

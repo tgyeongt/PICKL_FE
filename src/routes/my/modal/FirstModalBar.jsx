@@ -57,13 +57,28 @@ function TextSection() {
 }
 
 function ButtonSection({ onClose, onNext }) {
+  const { convert, converting, derived, state } = useConvertPoints();
+  const handleConfirm = async () => {
+    if (!derived?.canSubmit) {
+      alert(derived?.reasons?.[0] || "입력 값을 확인해줘");
+      return;
+    }
+    try {
+      await convert(Number(state?.pointAmount || 0));
+      onNext?.();
+    } catch (e) {
+      alert("전환에 실패했어. 잠시 후 다시 시도해줘");
+      onClose?.();
+    }
+  };
+
   return (
     <ButtonSectionWrapper>
-      <Button $value="false" onClick={onClose}>
+      <Button $value="false" onClick={onClose} disabled={converting}>
         취소
       </Button>
-      <Button $value="true" onClick={onNext}>
-        전환하기
+      <Button $value="true" onClick={handleConfirm} disabled={converting}>
+        {converting ? "전환 중..." : "전환하기"}
       </Button>
     </ButtonSectionWrapper>
   );

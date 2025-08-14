@@ -2,7 +2,7 @@ import styled from "styled-components";
 import { useConvertPoints } from "./convert/ConvertPointsContext";
 
 export default function ConvertButtonSection({ onRequestConvert }) {
-  const { derived, converting } = useConvertPoints();
+  const { derived, converting, state } = useConvertPoints();
   const wonAmount = derived.wonAmount || 0;
 
   const handleClick = () => {
@@ -10,7 +10,10 @@ export default function ConvertButtonSection({ onRequestConvert }) {
       alert(derived.reasons?.[0] || "입력 값을 확인해주세요");
       return;
     }
-    if (typeof onRequestConvert === "function") onRequestConvert();
+    onRequestConvert?.({
+      points: Number(state.pointAmount || 0),
+      won: Number(derived.wonAmount || 0),
+    });
   };
 
   return (

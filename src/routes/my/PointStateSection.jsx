@@ -30,7 +30,7 @@ export default function PointStateSection() {
       <LocationText>현위치 : {shortAddr || "위치 불러오는 중"}</LocationText>
       <Label>피클POINT</Label>
       <PointRow>
-        <PointNumber>{formatNumber(stats?.points ?? 0)}</PointNumber>
+        <PointNumber>{formatNumber(Number(stats?.points ?? 0))}</PointNumber>
         <PointIcon src={pPoint} alt="" />
       </PointRow>
     </PointStateSectionWrapper>
