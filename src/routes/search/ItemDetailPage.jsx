@@ -1,15 +1,16 @@
 import useHeader from "@hooks/useHeader";
 import styled from "styled-components";
 
-export default function CategoryDetailPage() {
+export default function ItemDetailPage() {
   useHeader({
     title: "상세 정보",
     showBack: true,
+    showHeart: true,
   });
 
   return (
     <Wrapper>
-      <p className="title">식량작물</p>
+      <p className="title">식재료이름</p>
       <span className="price">21,108.31</span>
       <span className="rate">+50.36(0.2%)</span>
     </Wrapper>
@@ -17,7 +18,7 @@ export default function CategoryDetailPage() {
 }
 
 const Wrapper = styled.div`
-  padding: 0 25px;
+  padding: 0 10px;
 
   .title {
     font-size: 22px;
