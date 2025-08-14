@@ -71,8 +71,18 @@ export default function StoreCard({ store, isListMode = false }) {
   };
 
   const formatDistance = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)}km` : `${m}m`);
-  const formatTime = (min) =>
-    min >= 60 ? `${Math.floor(min / 60)}시간 ${min % 60}분` : `${min}분`;
+  const formatTime = (min) => {
+    if (min >= 1440) {
+      const days = Math.floor(min / 1440);
+      const hours = Math.floor((min % 1440) / 60);
+      const minutes = min % 60;
+      return `${days}일 ${hours}시간 ${minutes}분`;
+    } else if (min >= 60) {
+      return `${Math.floor(min / 60)}시간 ${min % 60}분`;
+    } else {
+      return `${min}분`;
+    }
+  };
 
   const distance = getDistance(address.lat, address.lng, store.latitude, store.longitude);
   const walkMin = Math.max(1, Math.round(distance / 67));
