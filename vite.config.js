@@ -44,6 +44,7 @@ export default defineConfig({
       { find: "@font", replacement: "/src/shared/assets/font" },
       { find: "@icon", replacement: "/src/shared/assets/icon" },
       { find: "@image", replacement: "/src/shared/assets/image" },
+      { find: "@hooks", replacement: "/src/shared/hooks/" },
     ],
   },
 });

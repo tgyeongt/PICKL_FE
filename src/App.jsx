@@ -8,6 +8,8 @@ import Map from "./routes/map";
 import Search from "./routes/search";
 import Chat from "./routes/chat";
 import My from "./routes/my";
+
+// Map 페이지
 import MapSearchPage from "./routes/map/MapSearchPage";
 import EditLocationPage from "./routes/map/EditLocationPage";
 import CheckLocationPage from "./routes/map/CheckLocationPage";
@@ -19,12 +21,30 @@ import DailyPointsPage from "./routes/my/DailyPointsPage";
 import ConvertPointsPage from "./routes/my/ConvertPointsPage";
 import DailyPointsResultPage from "./routes/my/DailyPointsResultPage";
 
+// Home 페이지
+import MonthlyPickPage from "./routes/home/seasonal-tab/MonthlyPickPage";
+import SeasonalDetailPage from "./routes/home/seasonal-tab/SeasonalDetailPage";
+import SeasonalRecipePage from "./routes/home/seasonal-tab/SeasonalRecipePage";
+import CategoryDetailPage from "./routes/home/stock-tab/CategoryDetailPage";
+
+// Chat 페이지
+import ChatbotPage from "./routes/chat/ChatbotPage";
+
 const router = createBrowserRouter([
   {
     // RootLayout은 좌우 패딩값이 필요없는 페이지에 적용한다.
     Component: RootLayout,
     children: [
-      { path: "/", index: true, Component: Home },
+      {
+        path: "/",
+        children: [
+          { index: true, Component: Home },
+          { path: "monthly-pick", Component: MonthlyPickPage },
+          { path: "seasonal/:id", Component: SeasonalDetailPage },
+          { path: "seasonal/:id/:recipeId", Component: SeasonalRecipePage },
+          { path: "category/:title", Component: CategoryDetailPage },
+        ],
+      },
       {
         path: "map",
         children: [
@@ -35,12 +55,19 @@ const router = createBrowserRouter([
           { path: "search-location", Component: SearchLocationPage },
         ],
       },
+      {
+        path: "chat",
+        children: [
+          { index: true, Component: Chat },
+          { path: "new-chat", Component: ChatbotPage },
+        ],
+      },
       // ServiceLayout은 좌우 패딩값이 20px로 되어있다.
       {
         Component: ServiceLayout,
         children: [
           { path: "search", Component: Search },
-          { path: "chat", Component: Chat },
+
           {
             path: "my",
             children: [
