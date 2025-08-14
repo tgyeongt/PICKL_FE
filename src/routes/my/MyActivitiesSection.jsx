@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { APIService } from "../../shared/lib/api";
+import useMySummary from "./hooks/useMySummary";
 
 import tomatoIcon from "@icon/my/tomatoIcon.svg";
 import recipeIcon from "@icon/my/saladIcon.svg";
@@ -10,32 +9,16 @@ import chevronRight from "@icon/my/chevron-right.svg";
 
 export default function MyActivitiesSection() {
   const navigate = useNavigate();
-
-  const { data } = useQuery({
-    queryKey: ["me", "activities", "counts"],
-    queryFn: async () => {
-      const res = await APIService.private.get("/me/activities");
-      const raw = res?.data ?? res ?? {};
-      return {
-        ingredients: Number.isFinite(raw.ingredients) ? raw.ingredients : 20,
-        recipes: Number.isFinite(raw.recipes) ? raw.recipes : 10,
-        history: Number.isFinite(raw.history) ? raw.history : 10,
-      };
-    },
-    staleTime: 60 * 1000,
-    retry: 1,
-  });
-
+  const { data: summary } = useMySummary();
   const counts = {
-    ingredients: data?.ingredients ?? 20,
-    recipes: data?.recipes ?? 10,
-    history: data?.history ?? 10,
+    ingredients: summary?.favoriteIngredientCount ?? 0,
+    recipes: summary?.favoriteRecipeCount ?? 0,
+    history: summary?.pickleHistoryCount ?? 0,
   };
 
   return (
     <MyActivitiesSectionWrapper>
       <SectionTitle>내 활동</SectionTitle>
-
       <List>
         <ListButton onClick={() => navigate("/my/list-ingredients")}>
           <Card>

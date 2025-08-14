@@ -1,11 +1,10 @@
 import styled from "styled-components";
-import { useConvertPoints } from "./convert/ConvertPointsContext";
+import useMySummary from "./hooks/useMySummary";
 
 export default function StateSection() {
-  const { stats } = useConvertPoints();
-
-  const points = formatNumber(stats?.points ?? 0);
-  const joinedDays = stats?.joinedDays ?? 23;
+  const { data: summary } = useMySummary();
+  const points = formatNumber(summary?.points ?? 0);
+  const joinedDays = summary?.daysSinceFriend ?? 0;
 
   return (
     <SectionWrapper>
