@@ -33,14 +33,14 @@ export default function KakaoMap() {
   const addressState = useAtomValue(selectedAddressAtom);
   const setSelectedAddress = useSetAtom(selectedAddressAtom);
 
-  const markersRef = useRef([]); // 둥근 마커 overlays만 관리
+  const markersRef = useRef([]);
   const currentMarkerRef = useRef(null);
   const overlayMapRef = useRef({
-    round: {}, // key: "lat,lng" -> CustomOverlay(동그란 마커)
-    bubble: null, // 말풍선 CustomOverlay
-    bubbleTargetKey: null, // 현재 말풍선 대상 key
+    round: {},
+    bubble: null,
+    bubbleTargetKey: null,
   });
-  const justOpenedAtRef = useRef(0); // 말풍선 방금 열린 시각(지도 클릭 무시용)
+  const justOpenedAtRef = useRef(0);
 
   const [bbox, setBbox] = useState(null);
 
@@ -110,7 +110,7 @@ export default function KakaoMap() {
     icon.style.width = "30px";
     icon.style.height = "30px";
     marker.appendChild(icon);
-    marker.addEventListener("click", (e) => e.stopPropagation()); // 전파 차단
+    marker.addEventListener("click", (e) => e.stopPropagation());
 
     setTimeout(() => {
       marker.style.opacity = "1";
@@ -157,7 +157,6 @@ export default function KakaoMap() {
         delete overlayMapRef.current.round[key];
       }
 
-      // 카드 안 가리게 살짝 남쪽으로 팬
       const offsetLat = 0.005;
       const adjustedLat = store.latitude - offsetLat;
       const adjustedCenter = new window.kakao.maps.LatLng(adjustedLat, store.longitude);
@@ -186,7 +185,6 @@ export default function KakaoMap() {
     (stores) => {
       if (!mapInstance || !stores) return;
 
-      // 마커만 정리(말풍선은 유지)
       markersRef.current.forEach((m) => m.setMap?.(null));
       markersRef.current = [];
       Object.values(overlayMapRef.current.round).forEach((o) => o.setMap?.(null));
@@ -202,7 +200,6 @@ export default function KakaoMap() {
         const pos = new window.kakao.maps.LatLng(store.latitude, store.longitude);
         if (!bounds.contain(pos)) return;
 
-        // 현재 말풍선 대상이면 마커 생성 스킵
         if (overlayMapRef.current.bubbleTargetKey === key) return;
 
         const imageSrc = (store.type || "").toLowerCase() === "market" ? marketIcon : martIcon;
@@ -333,7 +330,6 @@ export default function KakaoMap() {
         maxY: snap(ne.getLat()),
       };
 
-      // 동일 BBOX면 스킵
       setBbox((prev) => {
         if (
           prev &&
@@ -375,19 +371,16 @@ export default function KakaoMap() {
     }
   }, [isListMode, bbox, addressState?.lat, addressState?.lng]);
 
-  // =========================================================
   // API 파라미터 변환
-  // =========================================================
   const buildMarketParams = (bbox) => ({
     minX: bbox.minX,
     minY: bbox.minY,
     maxX: bbox.maxX,
     maxY: bbox.maxY,
     page: 1,
-    size: 50, // markets는 50 유지
+    size: 50,
   });
 
-  // 👉 marts: 스웨거 스타일(넓은 bbox + 소수 3자리 + size = 5)
   const buildMartParams = (bbox) => {
     const ensureMinSpan = (src, minLon = 0.3, minLat = 0.3) => {
       const cx = (src.minX + src.maxX) / 2;
@@ -404,14 +397,13 @@ export default function KakaoMap() {
       maxX: round3(bb.maxX),
       maxY: round3(bb.maxY),
       page: 1,
-      size: 5, // 기본값 5
+      size: 5,
     };
   };
 
   // ---------- 전통시장 ----------
   const { data: storesData = [], refetch } = useQuery({
     queryKey: ["markets", bbox?.minX, bbox?.minY, bbox?.maxX, bbox?.maxY],
-    // ✅ 리스트 모드에서도 동작하도록 enabled 조건 수정
     enabled: !!bbox && (!!mapInstance || isListMode),
     retry: false,
     keepPreviousData: true,
@@ -441,7 +433,6 @@ export default function KakaoMap() {
   // ---------- 대형마트 ----------
   const { data: martsData = [], refetch: refetchMarts } = useQuery({
     queryKey: ["marts", bbox?.minX, bbox?.minY, bbox?.maxX, bbox?.maxY],
-    // ✅ 리스트 모드에서도 동작하도록 enabled 조건 수정
     enabled: !!bbox && (!!mapInstance || isListMode),
     retry: false,
     keepPreviousData: true,
@@ -542,7 +533,6 @@ export default function KakaoMap() {
     }
   }, [isListMode, mapInstance, addressState.lat, addressState.lng, createMap]);
 
-  // ---------- 렌더 ----------
   return (
     <KakaoMapWrapper $isListMode={isListMode}>
       {isListMode ? (
@@ -570,9 +560,7 @@ export default function KakaoMap() {
         $isCardVisible={!!selectedStore || isListMode}
         onClick={() => {
           setSelectedStore(null);
-          // ❌ setMapInstance(null) 제거: 리스트 모드에서도 캐시/쿼리 유지
           setIsListMode((prev) => !prev);
-          // 굳이 없어도 되지만, 남겨도 무해함
           setTimeout(() => {
             refetch();
             refetchMarts();
