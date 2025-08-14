@@ -103,7 +103,7 @@ const AlertText = styled.p`
 
 const LocationSetButton = styled.button`
   width: 100%;
-  padding: 11px 100px;
+  padding: 2px 0px;
   height: 50px;
   border-radius: 10px;
   background: #000;
