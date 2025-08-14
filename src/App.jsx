@@ -27,6 +27,9 @@ import SeasonalDetailPage from "./routes/home/seasonal-tab/SeasonalDetailPage";
 import SeasonalRecipePage from "./routes/home/seasonal-tab/SeasonalRecipePage";
 import CategoryDetailPage from "./routes/home/stock-tab/CategoryDetailPage";
 
+// Chat 페이지
+import ChatbotPage from "./routes/chat/ChatbotPage";
+
 const router = createBrowserRouter([
   {
     // RootLayout은 좌우 패딩값이 필요없는 페이지에 적용한다.
@@ -52,12 +55,19 @@ const router = createBrowserRouter([
           { path: "search-location", Component: SearchLocationPage },
         ],
       },
+      {
+        path: "chat",
+        children: [
+          { index: true, Component: Chat },
+          { path: "new-chat", Component: ChatbotPage },
+        ],
+      },
       // ServiceLayout은 좌우 패딩값이 20px로 되어있다.
       {
         Component: ServiceLayout,
         children: [
           { path: "search", Component: Search },
-          { path: "chat", Component: Chat },
+
           {
             path: "my",
             children: [

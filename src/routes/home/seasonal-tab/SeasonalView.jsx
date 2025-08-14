@@ -43,6 +43,7 @@ export default function SeasonalView() {
       clearTimeout(timeout);
       swiperInstanceRef.current?.destroy();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seasonalList]);
 
   return (
