@@ -16,9 +16,9 @@ export default function NavBar() {
   return (
     <NavBarWrapper>
       <NavItem icon={HomeIcon} activeIcon={HomeActive} to="/" label={"홈"} />
-      <NavItem icon={MapIcon} activeIcon={MapActive} to="/map" label={"동네"} />
+      <NavItem icon={MapIcon} activeIcon={MapActive} to="/map" label={"지도"} />
       <NavItem icon={SearchIcon} activeIcon={SearchActive} to="/search" label={"PICK"} />
-      <NavItem icon={ChatIcon} activeIcon={ChatActive} to="/chat" label={"피클이"} />
+      <NavItem icon={ChatIcon} activeIcon={ChatActive} to="/chat" label={"AI피클"} />
       <NavItem icon={MyIcon} activeIcon={MyActive} to="/my" label={"마이"} />
     </NavBarWrapper>
   );
