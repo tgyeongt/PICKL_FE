@@ -18,6 +18,7 @@ import MyHistoryPage from "./routes/my/MyHistoryPage";
 import DailyPointsPage from "./routes/my/DailyPointsPage";
 import ConvertPointsPage from "./routes/my/ConvertPointsPage";
 import DailyPointsResultPage from "./routes/my/DailyPointsResultPage";
+import DailyPointsClosedPage from "./routes/my/DailyPointsClosedPage";
 
 const router = createBrowserRouter([
   {
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
               { path: "points-daily", Component: DailyPointsPage },
               { path: "points-convert", Component: ConvertPointsPage },
               { path: "points-daily/result", Component: DailyPointsResultPage },
+              { path: "points-daily/closed", Component: DailyPointsClosedPage },
             ],
           },
         ],

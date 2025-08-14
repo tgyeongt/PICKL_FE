@@ -7,7 +7,11 @@ export default function RootLayout() {
   const { pathname } = useLocation();
   const helpSheetOpen = useConvertHelpSheetStore((s) => s.isOpen);
 
-  const HIDE_NAV_ROUTES = ["/my/points-daily", "/my/points-daily/result"];
+  const HIDE_NAV_ROUTES = [
+    "/my/points-daily",
+    "/my/points-daily/result",
+    "/my/points-daily/closed",
+  ];
   const hideNav = HIDE_NAV_ROUTES.includes(pathname) || helpSheetOpen;
 
   return (

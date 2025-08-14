@@ -31,7 +31,7 @@ import starStar from "@icon/my/starStar.svg";
 import triangleStar from "@icon/my/triangleStar.svg";
 
 export default function DailyPointsResultPage() {
-  const { state } = useLocation(); // DailyPointsPage에서 전달한 서버 응답 사용
+  const { state } = useLocation();
   const navigate = useNavigate();
 
   const payload = state ?? {};

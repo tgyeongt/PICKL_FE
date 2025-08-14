@@ -32,9 +32,8 @@ export default function MyServiceSection() {
       const res = await APIService.private.get("/quiz/daily");
       const raw = res?.data ?? res;
 
-      if (raw?.attempted) {
-        alert("오늘은 이미 참여했어요! 내일 다시 도전해주세요😊");
-        return;
+      if (!raw || raw?.status === "CLOSED" || raw?.attempted) {
+        return navigate("/my/points-daily/closed");
       }
       navigate("/my/points-daily");
     } catch (e) {
