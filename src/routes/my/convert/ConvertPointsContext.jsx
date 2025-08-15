@@ -66,8 +66,27 @@ export function ConvertPointsProvider({ children }) {
       const res = await APIService.private.post("/points/convert", payload);
       return res?.data ?? res;
     },
+
+    onMutate: async (amountOverride) => {
+      const pointAmount = Number(amountOverride ?? state.pointAmount) || 0;
+      await qc.cancelQueries({ queryKey: ["me", "summary"] });
+      const previous = qc.getQueryData(["me", "summary"]);
+      qc.setQueryData(["me", "summary"], (current) => ({
+        ...(current || {}),
+        points: Math.max(0, (current?.points ?? 0) - pointAmount),
+      }));
+      return { previous };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.previous) {
+        qc.setQueryData(["me", "summary"], context.previous);
+      }
+    },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["me", "summary"] });
+      await qc.refetchQueries({ queryKey: ["me", "summary"], type: "active" });
+    },
+    onSettled: () => {
       dispatch({ type: "RESET" });
     },
   });
