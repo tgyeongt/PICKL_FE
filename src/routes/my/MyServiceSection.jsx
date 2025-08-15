@@ -68,7 +68,8 @@ const MyServiceSectionWrapper = styled.section`
   max-width: 390px;
   margin: 0 auto;
   background: #fbfbfb;
-  padding: 14px 10px 104px 10px;
+  padding-top: 14px;
+  padding-bottom: 104px;
 `;
 
 const SectionTitle = styled.p`
@@ -80,6 +81,7 @@ const SectionTitle = styled.p`
   line-height: 24px;
   padding-bottom: 10px;
   padding-top: 10px;
+  padding-left: 10px;
 `;
 
 const List = styled.div`

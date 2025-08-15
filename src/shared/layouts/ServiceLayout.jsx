@@ -3,7 +3,10 @@ import styled from "styled-components";
 
 export default function ServiceLayout() {
   const { pathname } = useLocation();
-  const noPad = pathname === "/my/points-daily/result";
+  const noPad =
+    pathname === "/my/points-daily/result" ||
+    pathname === "/my/points-daily/closed" ||
+    pathname === "/my/points-daily/ad";
 
   return (
     <>

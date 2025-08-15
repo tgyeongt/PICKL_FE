@@ -112,6 +112,7 @@ export const ConfirmBar = styled.div`
   background: #fff;
   border-top: 1px solid #eceff1;
   box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.04);
+  padding-bottom: 35px;
 `;
 
 export const Confirm = styled.button`
