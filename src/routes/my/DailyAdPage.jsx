@@ -2,6 +2,8 @@ import styled from "styled-components";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import DailyAdImg from "@icon/my/Advertisement.svg";
+import { APIService } from "../../shared/lib/api";
+import { testLoginIfNeeded } from "../../shared/lib/auth";
 
 export default function DailyAdPage() {
   const navigate = useNavigate();
@@ -10,6 +12,7 @@ export default function DailyAdPage() {
   const DURATION = 5;
   const [left, setLeft] = useState(DURATION);
   const [canClose, setCanClose] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -33,12 +36,31 @@ export default function DailyAdPage() {
     if (left === 0) setCanClose(true);
   }, [left]);
 
-  const handleClose = () => {
-    const adNonce = crypto.randomUUID();
-    navigate(returnTo, {
-      replace: true,
-      state: { adWatched: true, adNonce },
-    });
+  const handleClose = async () => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+    try {
+      // 광고 시청 완료 후 추가 시도 API 호출
+      await testLoginIfNeeded();
+      await APIService.private.post("/quiz/attempts/extra");
+
+      const adNonce = crypto.randomUUID();
+      navigate(returnTo, {
+        replace: true,
+        state: { adWatched: true, adNonce },
+      });
+    } catch (error) {
+      console.error("추가 시도 요청 실패:", error);
+      // API 호출 실패 시에도 광고는 시청한 것으로 처리
+      const adNonce = crypto.randomUUID();
+      navigate(returnTo, {
+        replace: true,
+        state: { adWatched: true, adNonce },
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -49,8 +71,8 @@ export default function DailyAdPage() {
             {left}
           </Circle>
         ) : (
-          <CloseBtn onClick={handleClose} aria-label="닫기">
-            닫기 ×
+          <CloseBtn onClick={handleClose} aria-label="닫기" disabled={isLoading}>
+            {isLoading ? "처리중..." : "닫기 ×"}
           </CloseBtn>
         )}
       </TimeBox>
@@ -107,6 +129,11 @@ const CloseBtn = styled.button`
 
   &:active {
     transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 `;
 

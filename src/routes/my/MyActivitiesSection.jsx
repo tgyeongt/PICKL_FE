@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import useMySummary from "./hooks/useMySummary";
+import useFavoriteCounts from "./hooks/useFavoriteCounts";
 
 import tomatoIcon from "@icon/my/tomatoIcon.svg";
 import recipeIcon from "@icon/my/saladIcon.svg";
@@ -10,9 +11,11 @@ import chevronRight from "@icon/my/chevron-right.svg";
 export default function MyActivitiesSection() {
   const navigate = useNavigate();
   const { data: summary } = useMySummary();
+  const { counts: favoriteCounts } = useFavoriteCounts();
+
   const counts = {
-    ingredients: summary?.favoriteIngredientCount ?? 0,
-    recipes: summary?.favoriteRecipeCount ?? 0,
+    ingredients: favoriteCounts.ingredients,
+    recipes: favoriteCounts.recipes,
     history: summary?.pickleHistoryCount ?? 0,
   };
 
