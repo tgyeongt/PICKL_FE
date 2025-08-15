@@ -1,4 +1,3 @@
-// src/routes/my/hooks/useMySummary.js
 import { useQuery } from "@tanstack/react-query";
 import { APIService } from "../../../shared/lib/api";
 import { testLoginIfNeeded } from "../../../shared/lib/auth";
@@ -60,7 +59,9 @@ export default function useMySummary(options = {}) {
       const res = await APIService.private.get("/users/me/summary");
       return mapSummary(res?.data ?? res);
     },
-    staleTime: 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
     retry: 1,
     ...options,
   });

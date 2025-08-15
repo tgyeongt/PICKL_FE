@@ -31,6 +31,7 @@ import CategoryDetailPage from "./routes/home/stock-tab/CategoryDetailPage";
 // Chat 페이지
 import ChatbotPage from "./routes/chat/ChatbotPage";
 import ItemDetailPage from "./routes/search/ItemDetailPage";
+import DailyAdPage from "./routes/my/DailyAdPage";
 
 const router = createBrowserRouter([
   {
@@ -87,6 +88,7 @@ const router = createBrowserRouter([
               { path: "points-convert", Component: ConvertPointsPage },
               { path: "points-daily/result", Component: DailyPointsResultPage },
               { path: "points-daily/closed", Component: DailyPointsClosedPage },
+              { path: "points-daily/ad", Component: DailyAdPage },
             ],
           },
         ],

@@ -1,6 +1,7 @@
 import useHeader from "../../shared/hooks/useHeader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
   DailyPointsPageWrapper,
   IconDiv,
@@ -30,6 +31,10 @@ import { testLoginIfNeeded } from "../../shared/lib/auth";
 
 export default function DailyPointsPage() {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const adWatched = !!state?.adWatched;
+  const adNonceFromNav = state?.adNonce;
+  const [retryToken, setRetryToken] = useState(null);
   const qc = useQueryClient();
 
   useHeader({
@@ -37,11 +42,28 @@ export default function DailyPointsPage() {
     showBack: true,
   });
 
+  // 광고에서 돌아온 경우: 토큰 저장 + 캐시 무효화 + 히스토리 state 제거
+  useEffect(() => {
+    if (adWatched) {
+      const token = adNonceFromNav || String(Date.now());
+      setRetryToken(token);
+      // 안전망: 기존 캐시 invalidate + 활성 쿼리 즉시 refetch
+      qc.invalidateQueries({ queryKey: ["dailyPoints", "today"] });
+      qc.refetchQueries({ queryKey: ["dailyPoints", "today"], type: "active" });
+      // 뒤로가기/새로고침 시 중복 방지
+      navigate(".", { replace: true });
+    }
+  }, [adWatched, adNonceFromNav, navigate, qc]);
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["dailyPoints", "today"],
+    // retryToken이 바뀌면 다른 캐시로 간주 → 강제 refetch
+    queryKey: ["dailyPoints", "today", retryToken],
     queryFn: async () => {
       await testLoginIfNeeded();
-      const res = await APIService.private.get("/quiz/daily");
+      const path = retryToken
+        ? `/quiz/daily?retry=1&nonce=${encodeURIComponent(retryToken)}`
+        : `/quiz/daily`;
+      const res = await APIService.private.get(path);
       const raw = res?.data ?? res;
 
       return {
@@ -69,15 +91,15 @@ export default function DailyPointsPage() {
       const res = await APIService.private.post("/quiz/daily/answer", payload);
       return res?.data ?? res;
     },
-    onSuccess: (res) => {
-      // 포인트/통계 invalidate
-      qc.invalidateQueries({ queryKey: ["me", "stats"] });
+    onSuccess: async (res) => {
+      await qc.invalidateQueries({ queryKey: ["me", "summary"] });
+      await qc.refetchQueries({ queryKey: ["me", "summary"], type: "active" });
 
       navigate("/my/points-daily/result", {
         state: {
-          result: res?.result, // "CORRECT" | "WRONG"
-          awarded: res?.awarded ?? 0, // 적립 포인트
-          ingredientName: res?.ingredientName || res?.item?.name, // 백엔드 변동 대비
+          result: res?.result,
+          awarded: res?.awarded ?? 0,
+          ingredientName: res?.ingredientName || res?.item?.name,
         },
       });
     },

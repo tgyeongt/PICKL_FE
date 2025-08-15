@@ -11,6 +11,7 @@ export default function RootLayout() {
     "/my/points-daily",
     "/my/points-daily/result",
     "/my/points-daily/closed",
+    "/my/points-daily/ad",
   ];
   const hideNav = HIDE_NAV_ROUTES.includes(pathname) || helpSheetOpen;
 

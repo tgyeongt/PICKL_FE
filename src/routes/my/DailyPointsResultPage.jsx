@@ -118,11 +118,17 @@ export default function DailyPointsResultPage() {
           </ImgBox>
           <Buttons>
             <GhostBtn onClick={() => navigate("/", { replace: true })}>현재가 보기</GhostBtn>
-            <PrimaryBtn onClick={() => alert("광고 SDK 연동 예정")}>
+            <PrimaryBtn
+              onClick={() =>
+                navigate("/my/points-daily/ad", {
+                  state: { returnTo: "/my/points-daily" },
+                })
+              }
+            >
               광고 보고 한 번 더 하기
             </PrimaryBtn>
           </Buttons>
-          <CloseBtn onClick={() => navigate(-1)}>닫기 ×</CloseBtn>
+          <CloseBtn onClick={() => navigate("/my")}>닫기 ×</CloseBtn>
         </SuccessBox>
       ) : (
         <FailBox>
@@ -167,7 +173,7 @@ export default function DailyPointsResultPage() {
               홈으로 돌아가기
             </PrimaryBtn>
           </Buttons>
-          <CloseBtn onClick={() => navigate(-1)}>닫기 ×</CloseBtn>
+          <CloseBtn onClick={() => navigate("/my")}>닫기 ×</CloseBtn>
         </FailBox>
       )}
     </DailyPointsResultWrapper>
