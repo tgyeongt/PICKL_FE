@@ -19,4 +19,6 @@ const Container = styled.div`
   box-sizing: border-box;
   padding: ${({ $noPad }) => ($noPad ? "0" : "0 20px")};
   width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 `;

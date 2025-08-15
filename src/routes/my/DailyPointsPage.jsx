@@ -47,16 +47,13 @@ export default function DailyPointsPage() {
     if (adWatched) {
       const token = adNonceFromNav || String(Date.now());
       setRetryToken(token);
-      // 안전망: 기존 캐시 invalidate + 활성 쿼리 즉시 refetch
       qc.invalidateQueries({ queryKey: ["dailyPoints", "today"] });
       qc.refetchQueries({ queryKey: ["dailyPoints", "today"], type: "active" });
-      // 뒤로가기/새로고침 시 중복 방지
       navigate(".", { replace: true });
     }
   }, [adWatched, adNonceFromNav, navigate, qc]);
 
   const { data, isLoading, isError } = useQuery({
-    // retryToken이 바뀌면 다른 캐시로 간주 → 강제 refetch
     queryKey: ["dailyPoints", "today", retryToken],
     queryFn: async () => {
       await testLoginIfNeeded();
@@ -66,13 +63,16 @@ export default function DailyPointsPage() {
       const res = await APIService.private.get(path);
       const raw = res?.data ?? res;
 
+      const lines = Array.isArray(raw?.questionLines)
+        ? raw.questionLines
+        : raw?.statement
+        ? [raw.statement]
+        : [];
+
       return {
-        itemName: raw?.ingredient?.name ?? "토마토",
+        itemName: raw?.ingredient?.name ?? "",
         itemIconUrl: raw?.ingredient?.iconUrl ?? "",
-        questionLines: raw?.statement
-          ? [raw.statement]
-          : [`오늘 ${raw?.ingredient?.name ?? "토마토"}의 가격은`, "어제에 비해 올라갔을까요?"],
-        options: raw?.options ?? ["O", "X"],
+        questionLines: lines,
         attempted: !!raw?.attempted,
       };
     },
@@ -132,13 +132,11 @@ export default function DailyPointsPage() {
     );
   }
 
-  const itemName = data?.itemName ?? "토마토";
+  const itemName = data?.itemName || "";
   const itemIcon = data?.itemIconUrl || defaultItemIcon;
 
-  const q1 = data?.questionLines?.[0] || `오늘 ${itemName}의 가격은`;
-  const q2 =
-    data?.questionLines?.[1] ||
-    (data?.questionLines?.length > 1 ? data.questionLines[1] : "어제에 비해 올라갔을까요?");
+  const q1 = data?.questionLines?.[0] || "";
+  const q2 = data?.questionLines?.[1] || null;
 
   const handleSelect = (answer) => {
     submitAnswer(answer);
@@ -147,13 +145,15 @@ export default function DailyPointsPage() {
   return (
     <DailyPointsPageWrapper>
       <IconDiv>
-        <ItemIcon src={itemIcon} alt={itemName} />
+        <ItemIcon src={itemIcon} alt={itemName || "item"} />
       </IconDiv>
 
-      <QuestionBox>
-        <QTextStrong>{q1}</QTextStrong>
-        {q2 && <QTextStrong>{q2}</QTextStrong>}
-      </QuestionBox>
+      {(q1 || q2) && (
+        <QuestionBox>
+          {q1 && <QTextStrong>{q1}</QTextStrong>}
+          {q2 && <QTextStrong>{q2}</QTextStrong>}
+        </QuestionBox>
+      )}
 
       <OptionBox>
         <OptionCard $variant="yes">

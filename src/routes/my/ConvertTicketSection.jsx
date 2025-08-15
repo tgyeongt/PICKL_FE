@@ -52,12 +52,12 @@ export default function ConvertTicketSection() {
 }
 
 const ConvertTicketSectionWrapper = styled.div`
+  box-sizing: border-box;
   width: 100%;
   max-width: 390px;
   margin: 0 auto;
   background-color: #fbfbfb;
-  padding-right: 20px;
-  padding-bottom: 62px;
+  margin-bottom: 62px;
 `;
 
 const SectionTitle = styled.p`
@@ -81,6 +81,7 @@ const Card = styled.button`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-sizing: border-box;
 
   background: #fff;
   border: ${({ $active }) => ($active ? "1px solid #58D848" : "1px solid #ECEFF1")};

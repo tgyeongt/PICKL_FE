@@ -10,6 +10,7 @@ export const DailyPointsPageWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow-x: hidden;
 `;
 
 export const IconDiv = styled.div`
@@ -42,13 +43,18 @@ export const OptionBox = styled.div`
   display: flex;
   gap: 13px;
   margin-top: 57px;
-  padding: 0;
+  box-sizing: border-box; /* ← 패딩 포함해서 390px 안에 맞추기 */
   width: 100%;
+  max-width: 390px; /* 중앙 컨텐트 폭 제한 */
+  padding: 0 16px;
   justify-content: center;
+  min-width: 0;
 `;
 
 export const OptionCard = styled.div`
-  width: 170px;
+  box-sizing: border-box; /* 경계선 포함해서 계산 */
+  width: calc((100% - 13px) / 2); /* 2열 반응형 */
+  max-width: 170px;
   height: 210px;
   border-radius: 30px;
   border: 2px solid
@@ -169,7 +175,9 @@ export const SkeletonLine = styled.div`
 `;
 
 export const SkeletonCard = styled.div`
-  width: 170px;
+  box-sizing: border-box;
+  width: calc((100% - 13px) / 2);
+  max-width: 170px;
   height: 210px;
   border-radius: 30px;
   background: #f2f2f2;

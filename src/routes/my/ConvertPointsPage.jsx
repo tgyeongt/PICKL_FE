@@ -48,9 +48,11 @@ export default function ConvertPointsPage() {
 }
 
 const ConvertPointsPageWrapper = styled.div`
+  box-sizing: border-box;
   width: 100%;
   max-width: 390px;
   margin: 0 auto;
   background: #fbfbfb;
   padding: 0 10px;
+  overflow-x: hidden; /* 안전망 */
 `;

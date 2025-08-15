@@ -5,15 +5,23 @@ import heart_on from "@icon/common/heart_on.svg";
 import heart_off from "@icon/common/heart_off.svg";
 import helpIcon from "@icon/my/QIcon.svg";
 
+import { useLayoutEffect, useRef, useState } from "react";
+
 export default function Header() {
   const { title, showBack, showHeart, isVisible, isHeartActive, toggleHeart, showHelp, onHelp } =
     useHeaderStore();
+
+  const titleRef = useRef(null);
+  const [titleW, setTitleW] = useState(0);
+
+  useLayoutEffect(() => {
+    if (titleRef.current) setTitleW(titleRef.current.clientWidth);
+  }, [title]);
 
   if (!isVisible) return null;
 
   return (
     <Wrapper>
-      {/* 왼쪽: 뒤로가기 */}
       {showBack ? (
         <IconButton aria-label="뒤로가기" onClick={() => window.history.back()}>
           <img src={back} alt="" />
@@ -22,17 +30,18 @@ export default function Header() {
         <IconSpacer />
       )}
 
-      {/* 중앙: 제목 + 물음표 (항상 중앙 고정) */}
-      <TitleWrapper>
-        <Title>{title}</Title>
-        {showHelp && (
-          <HelpButton aria-label="도움말" onClick={onHelp}>
-            <img src={helpIcon} alt="" />
-          </HelpButton>
-        )}
-      </TitleWrapper>
+      <TitleOnly ref={titleRef}>{title}</TitleOnly>
 
-      {/* 오른쪽: 찜 (오른쪽 끝으로 밀기) */}
+      {showHelp && (
+        <HelpButton
+          aria-label="도움말"
+          onClick={onHelp}
+          style={{ left: `calc(50% + ${titleW / 2.3}px)` }}
+        >
+          <img src={helpIcon} alt="" />
+        </HelpButton>
+      )}
+
       <RightSlot>
         {showHeart ? (
           <IconButton aria-label="찜하기" onClick={toggleHeart}>
@@ -50,9 +59,11 @@ const Wrapper = styled.header`
   position: relative;
   display: flex;
   align-items: center;
+  box-sizing: border-box;
   width: 100%;
+  max-width: 390px;
+  margin: 0 auto;
   height: 50px;
-  min-width: 390px;
   padding: 0 20px;
 `;
 
@@ -65,41 +76,36 @@ const IconButton = styled.button`
   border: 0;
   padding: 0;
   cursor: pointer;
-
   img {
-    display: block;
     width: 20px;
     height: 20px;
+    display: block;
   }
 `;
-
 const IconSpacer = styled.div`
   width: 32px;
   height: 32px;
 `;
-
 const RightSlot = styled.div`
   margin-left: auto;
   display: flex;
   align-items: center;
 `;
 
-const TitleWrapper = styled.div`
+const TitleOnly = styled.p`
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 0px;
-`;
-
-const Title = styled.p`
   font-size: 16px;
   font-weight: 700;
   line-height: 24px;
+  white-space: nowrap;
 `;
 
 const HelpButton = styled(IconButton)`
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
   opacity: 0.85;
   img {
     width: 14px;
