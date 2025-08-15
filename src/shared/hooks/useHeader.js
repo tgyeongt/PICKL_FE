@@ -19,24 +19,19 @@ export default function useHeader({
 
   const handleHeartToggle = useCallback(async () => {
     const state = useHeaderStore.getState();
-    console.log("현재 찜하기 상태:", state.isHeartActive);
 
     try {
       if (!state.isHeartActive) {
-        console.log("찜하기 추가 시작");
         await APIService.private.post("/favorites", {
           type: targetType,
           targetId: String(targetId),
         });
         setIsHeartActive(true);
-        console.log("찜 추가 완료");
       } else {
-        console.log("찜하기 삭제 시작");
         await APIService.private.delete("/favorites", {
           params: { type: targetType, targetId },
         });
         setIsHeartActive(false);
-        console.log("찜 삭제 완료");
       }
     } catch (err) {
       console.error("찜하기 처리 실패:", err);
@@ -44,8 +39,6 @@ export default function useHeader({
   }, [targetType, targetId, setIsHeartActive]);
 
   useEffect(() => {
-    console.log("useHeader 설정:", { title, showBack, showHeart, targetType, targetId });
-
     setTitle(title);
     setShowBack(showBack);
     setShowHeart(showHeart);

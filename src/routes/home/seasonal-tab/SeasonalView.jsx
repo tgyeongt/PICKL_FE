@@ -94,8 +94,9 @@ export default function SeasonalView() {
 
 const Wrapper = styled.div`
   width: 100%;
-  height: 70vh;
   text-align: center;
+  padding-bottom: 80px;
+  height: auto;
 `;
 
 const TextBox = styled.div`

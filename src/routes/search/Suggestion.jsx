@@ -53,6 +53,8 @@ const KeywordWrapper = styled.div`
     border-radius: 15px;
     font-size: 14px;
     font-weight: 500;
+    text-align: center;
+    justify-content: center;
   }
 `;
 

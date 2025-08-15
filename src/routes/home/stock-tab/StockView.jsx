@@ -57,7 +57,8 @@ export default function StockView() {
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
-  height: 70vh;
+  padding-bottom: 80px;
+  height: auto;
 `;
 
 const Header = styled.div`
