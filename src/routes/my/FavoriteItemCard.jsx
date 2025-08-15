@@ -1,23 +1,33 @@
 import styled from "styled-components";
 import heartOn from "@icon/common/heart_on.svg";
+import heartOff from "@icon/common/heart_off.svg";
+import { useLocation } from "react-router-dom";
+import { useState } from "react";
 
-export default function FavoriteItemCard({
-  img,
-  title,
-  description,
-  onClick,
-  rightTopIcon = heartOn,
-}) {
+export default function FavoriteItemCard({ img, title, description, onClick }) {
+  const { pathname } = useLocation();
+  const hideDesc = pathname === "/my/list-recipes";
+  const [isLiked, setIsLiked] = useState(true);
+
+  const toggleLike = (e) => {
+    e.stopPropagation();
+    setIsLiked((prev) => !prev);
+  };
+
   return (
     <CardWrapper role="button" onClick={onClick}>
       <ThumbWrapper>
         <Thumb src={img} alt={title} />
-        {rightTopIcon && <RightTopIcon src={rightTopIcon} alt="icon" />}
+        <RightTopIcon src={isLiked ? heartOn : heartOff} alt="heart" onClick={toggleLike} />
       </ThumbWrapper>
       <TextBox>
         <Title>{title}</Title>
-        <Divider />
-        <Desc>{description}</Desc>
+        {!hideDesc && (
+          <>
+            <Divider />
+            <Desc>{description}</Desc>
+          </>
+        )}
       </TextBox>
     </CardWrapper>
   );
