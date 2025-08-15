@@ -2,9 +2,45 @@ import styled from "styled-components";
 import useMySummary from "./hooks/useMySummary";
 
 export default function StateSection() {
-  const { data: summary } = useMySummary();
+  const { data: summary, isLoading, error } = useMySummary();
   const points = formatNumber(summary?.points ?? 0);
   const joinedDays = summary?.daysSinceFriend ?? 0;
+
+  // 디버깅을 위한 로깅
+  console.log("🔍 StateSection - Summary:", summary);
+  console.log("🔍 StateSection - Points:", points);
+  console.log("🔍 StateSection - Loading:", isLoading);
+  console.log("🔍 StateSection - Error:", error);
+
+  if (isLoading) {
+    return (
+      <SectionWrapper>
+        <CardsSection>
+          <StatCard>
+            <Label>포인트</Label>
+            <ValueRow>
+              <ValueHighlight>로딩 중...</ValueHighlight>
+            </ValueRow>
+          </StatCard>
+        </CardsSection>
+      </SectionWrapper>
+    );
+  }
+
+  if (error) {
+    return (
+      <SectionWrapper>
+        <CardsSection>
+          <StatCard>
+            <Label>포인트</Label>
+            <ValueRow>
+              <ValueHighlight style={{ color: "red" }}>에러 발생</ValueHighlight>
+            </ValueRow>
+          </StatCard>
+        </CardsSection>
+      </SectionWrapper>
+    );
+  }
 
   return (
     <SectionWrapper>
@@ -15,6 +51,11 @@ export default function StateSection() {
             <ValueHighlight>{points}</ValueHighlight>
             <Unit> P</Unit>
           </ValueRow>
+          {points === "0" && (
+            <div style={{ fontSize: "10px", color: "red", marginTop: "5px" }}>
+              포인트가 0입니다. API 응답을 확인해주세요.
+            </div>
+          )}
         </StatCard>
 
         <StatCard>
