@@ -12,32 +12,23 @@ import Timer from "@icon/home/time_icon.svg";
 import Knife from "@icon/home/knife_icon.svg";
 
 export default function SeasonalRecipePage() {
+  const { id, recipeId } = useParams();
+  const [recipe, setRecipe] = useState({});
+
   useHeader({
     title: "레시피",
     showBack: true,
     showHeart: true,
-    onHeartOn: HeartOn,
-    onHeartOff: HeartOff,
+    targetType: "RECIPE",
+    targetId: recipeId,
   });
-
-  function HeartOn() {
-    alert("찜하기 추가 완료");
-  }
-
-  function HeartOff() {
-    alert("찜하기 삭제 완료");
-  }
-
-  const { id, recipeId } = useParams();
-  const [recipe, setRecipe] = useState([]);
 
   useEffect(() => {
     async function fetchRecipe() {
       try {
         const res = await APIService.public.get(`/season-items/${id}/recipes`);
-        // 🔹 클릭한 recipeId와 같은 데이터만 찾기
         const selectedRecipe = res.data.find((r) => String(r.id) === recipeId);
-        setRecipe(selectedRecipe);
+        setRecipe(selectedRecipe || {});
       } catch (error) {
         console.error("Failed to fetch recipe:", error);
       }
@@ -45,13 +36,12 @@ export default function SeasonalRecipePage() {
     fetchRecipe();
   }, [id, recipeId]);
 
-  const [openStates, setOpenStates] = useState([false, false, false]);
+  const [openStates, setOpenStates] = useState([true, true, true]);
   const toggleSection = (index) => {
     setOpenStates((prev) => prev.map((isOpen, i) => (i === index ? !isOpen : isOpen)));
   };
 
   const icons = [Icon1, Icon3, Icon4];
-
   const questions = [
     { q: "준비물", a: recipe.ingredients },
     { q: "조리 방법", a: recipe.instructions },
@@ -61,14 +51,15 @@ export default function SeasonalRecipePage() {
   return (
     <Wrapper>
       <Title>{recipe.recipeName}</Title>
+
       <AboutBox>
         <AboutLineDiv>
-          <img src={Timer} />
+          <img src={Timer} alt="조리시간" />
           <span className="title">조리시간</span>
           <span className="time">약 7~8분</span>
         </AboutLineDiv>
         <AboutLineDiv>
-          <img src={Knife} />
+          <img src={Knife} alt="추천 분류" />
           <span className="title">추천 분류</span>
           <div className="category">간식</div>
           <div className="category">아침</div>
@@ -97,7 +88,6 @@ const Wrapper = styled.div`
   align-items: center;
   padding: 0 20px;
   background-color: #f6f6f6;
-  height: auto;
   min-height: 800px;
   padding-bottom: 80px;
 `;

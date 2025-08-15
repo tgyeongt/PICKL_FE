@@ -26,7 +26,7 @@ export default function MonthlyPickPage() {
   useEffect(() => {
     async function fetchSeasonItems() {
       try {
-        const res = await APIService.public.get("/season-items");
+        const res = await APIService.private.get("/season-items");
         setSeasonalList(res.data);
       } catch (error) {
         console.error("Failed to fetch season items:", error);

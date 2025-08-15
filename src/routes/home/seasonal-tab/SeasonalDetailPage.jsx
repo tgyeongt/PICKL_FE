@@ -23,9 +23,9 @@ export default function SeasonalDetailPage() {
   useEffect(() => {
     async function fetchSeasonItems() {
       try {
-        const res = await APIService.public.get(`/season-items/${id}`);
+        const res = await APIService.private.get(`/season-items/${id}`);
         setItem(res.data);
-        const resRecipes = await APIService.public.get(`/season-items/${id}/recipes`);
+        const resRecipes = await APIService.private.get(`/season-items/${id}/recipes`);
         setRecipes(resRecipes.data);
       } catch (error) {
         console.error("Failed to fetch season items:", error);

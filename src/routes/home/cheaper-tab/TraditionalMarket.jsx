@@ -8,7 +8,7 @@ export default function TraditionalMarket({ selected }) {
   useEffect(() => {
     async function fetchMarketItems() {
       try {
-        const res = await APIService.public.get("/market-prices");
+        const res = await APIService.private.get("/market-prices");
         const filtered = res.data.filter((item) => {
           const superPrice = Number(item.superMarketPrice);
           const marketPrice = Number(item.marketPrice);
