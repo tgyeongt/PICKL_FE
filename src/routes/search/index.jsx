@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import styled from "styled-components";
 import useDebounce from "@hooks/useDebounce";
 import ItemCard from "./ItemCard";
@@ -11,6 +12,7 @@ export default function Search() {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery.trim(), 200);
   const showClearButton = searchQuery.length > 0;
+  const navigate = useNavigate();
 
   const [itemList] = useState(sampleItems);
   const isSearching = debouncedSearchQuery.length > 0;
@@ -18,6 +20,10 @@ export default function Search() {
   const filteredList = itemList.filter((item) =>
     item.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
+
+  const handleSelectItem = (itemId) => {
+    navigate(`/search/ingredients/${itemId}`);
+  };
 
   // API 호출 예시
   // useEffect(() => {
@@ -45,7 +51,7 @@ export default function Search() {
         </SearchBtn>
       </SearchSection>
 
-      {!isSearching && <Suggestion />}
+      {!isSearching && <Suggestion onSelectItem={handleSelectItem} />}
 
       {isSearching && (
         <ItemWrapper>

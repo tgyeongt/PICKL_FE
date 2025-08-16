@@ -99,7 +99,7 @@ export default function SeasonalDetailPage() {
 }
 
 const Wrapper = styled.div`
-  height: 90vh;
+  height: 92vh;
   background-color: #f5f5f7;
   display: flex;
   flex-direction: column;
