@@ -54,6 +54,8 @@ const Wrapper = styled.div`
   padding: 130px 30px 30px 30px;
   background-color: #58d848;
   height: 100vh;
+  max-width: 390px;
+  position: relative;
 `;
 
 const TextWrapper = styled.div`

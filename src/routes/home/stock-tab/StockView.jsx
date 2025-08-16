@@ -58,7 +58,7 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   padding-bottom: 80px;
-  height: auto;
+  height: 75vh;
 `;
 
 const Header = styled.div`

@@ -96,7 +96,7 @@ const Wrapper = styled.div`
   width: 100%;
   text-align: center;
   padding-bottom: 80px;
-  height: auto;
+  height: 75vh;
 `;
 
 const TextBox = styled.div`

@@ -56,13 +56,16 @@ export default function SeasonalRecipePage() {
         <AboutLineDiv>
           <img src={Timer} alt="조리시간" />
           <span className="title">조리시간</span>
-          <span className="time">약 7~8분</span>
+          <span className="time">{recipe.cookingTime}</span>
         </AboutLineDiv>
         <AboutLineDiv>
           <img src={Knife} alt="추천 분류" />
           <span className="title">추천 분류</span>
-          <div className="category">간식</div>
-          <div className="category">아침</div>
+          {recipe.recommendTags?.map((tag, i) => (
+            <div key={i} className="category">
+              {tag}
+            </div>
+          ))}
         </AboutLineDiv>
       </AboutBox>
 
@@ -88,7 +91,7 @@ const Wrapper = styled.div`
   align-items: center;
   padding: 0 20px;
   background-color: #f6f6f6;
-  min-height: 800px;
+  height: 90vh;
   padding-bottom: 80px;
 `;
 
