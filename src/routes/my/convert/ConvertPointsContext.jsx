@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useReducer } from "react";
+import { createContext, useContext, useMemo, useReducer, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { atom } from "jotai";
@@ -35,7 +35,14 @@ export function ConvertPointsProvider({ children }) {
   // 전역 포인트 상태 사용
   const [globalPoints, setGlobalPoints] = useAtom(pointsAtom);
 
-  // 전역 상태가 없으면 API 데이터 사용, 있으면 전역 상태 사용
+  // 전역 포인트가 아직 없고, API에서 값이 오면 한 번만 세팅
+  useEffect(() => {
+    if (globalPoints === null && summary?.points !== undefined) {
+      setGlobalPoints(summary.points);
+    }
+  }, [globalPoints, summary?.points, setGlobalPoints]);
+
+  // 전역 상태가 세팅되기 전엔 fallback으로 summary.points 사용
   const currentPoints = globalPoints !== null ? globalPoints : summary?.points ?? 0;
 
   const stats = {
@@ -48,15 +55,11 @@ export function ConvertPointsProvider({ children }) {
     selectedVoucher: "seoul",
   });
 
-  // 전역 상태 초기화 (API 데이터로)
-  if (globalPoints === null && summary?.points !== undefined) {
-    setGlobalPoints(summary.points);
-  }
-
   const derived = useMemo(() => {
     const maxPoint = stats.points;
     const amt = Number(state.pointAmount) || 0;
     const reasons = [];
+
     if (amt <= 0) reasons.push("전환 포인트를 입력해주세요");
     if (amt > 0 && amt < DEFAULT_RULES.minPointConvert)
       reasons.push(
