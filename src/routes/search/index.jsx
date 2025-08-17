@@ -40,8 +40,6 @@ export default function Search() {
           },
         });
 
-        console.log(res);
-
         if (res.success) {
           const mapped = res.data.map((item) => ({
             id: item.id,
@@ -146,7 +144,7 @@ const SearchBtn = styled.button`
 const ItemWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  padding: 20px 0;
+  padding: 20px 0 80px 0;
 `;
 
 const NoResultMessage = styled.div`
