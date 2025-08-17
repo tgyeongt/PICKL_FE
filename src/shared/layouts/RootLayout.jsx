@@ -7,13 +7,18 @@ export default function RootLayout() {
   const { pathname } = useLocation();
   const helpSheetOpen = useConvertHelpSheetStore((s) => s.isOpen);
 
+  const hasToken = !!localStorage.getItem("accessToken");
+
   const HIDE_NAV_ROUTES = [
     "/my/points-daily",
     "/my/points-daily/result",
     "/my/points-daily/closed",
     "/my/points-daily/ad",
+    "/chat/new-chat",
   ];
-  const hideNav = HIDE_NAV_ROUTES.includes(pathname) || helpSheetOpen;
+
+  const hideNav =
+    (!hasToken && pathname === "/") || HIDE_NAV_ROUTES.includes(pathname) || helpSheetOpen;
 
   return (
     <>

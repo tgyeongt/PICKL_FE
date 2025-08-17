@@ -1,23 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useParams, useNavigate } from "react-router-dom";
+import { APIService } from "../../../shared/lib/api";
 import Icon1 from "@icon/home/detail_icon_1.svg";
 import Icon2 from "@icon/home/detail_icon_2.svg";
 import Icon3 from "@icon/home/detail_icon_3.svg";
 import Icon4 from "@icon/home/detail_icon_4.svg";
-
-import seasonalList from "./seasonalList";
 import useHeader from "@hooks/useHeader";
 import DetailItem from "./DetailItem";
 
 export default function SeasonalDetailPage() {
   const { id } = useParams();
-  const item = seasonalList.find((el) => el.id === Number(id));
+  const [item, setItem] = useState(null);
+  const [recipes, setRecipes] = useState([]);
+  const navigate = useNavigate();
 
   useHeader({
     title: "상세 정보",
     showBack: true,
   });
+
+  useEffect(() => {
+    async function fetchSeasonItems() {
+      try {
+        const res = await APIService.private.get(`/season-items/${id}`);
+        setItem(res.data);
+        const resRecipes = await APIService.private.get(`/season-items/${id}/recipes`);
+        setRecipes(resRecipes.data);
+      } catch (error) {
+        console.error("Failed to fetch season items:", error);
+      }
+    }
+    fetchSeasonItems();
+  }, [id]);
 
   const [openStates, setOpenStates] = useState([false, false, false, false]);
   const toggleSection = (index) => {
@@ -26,26 +41,33 @@ export default function SeasonalDetailPage() {
 
   const icons = [Icon1, Icon2, Icon3, Icon4];
 
-  const navigate = useNavigate();
+  if (!item) return <p>Loading...</p>;
+
+  const questions = [
+    { q: "선택 방법", a: item.howToChoose },
+    { q: "보관 방법", a: item.howToStore },
+    { q: "손질 방법", a: item.howToTrim },
+    { q: "팁", a: item.tip },
+  ];
 
   return (
     <Wrapper>
       <MainCard>
-        <Image src={item.img} alt={item.title} />
+        <Image src={item.imageUrl} alt={item.itemname} />
         <TextBox>
           <TitleRow>
             <div className="left">
-              <p className="title">{item.title}</p>
+              <p className="title">{item.itemname}</p>
               <span className="calorie">{item.calorie}</span>
             </div>
-            <div className="label">{item.label}</div>
+            <div className="label">{item.representativeNutrient}</div>
           </TitleRow>
-          <p className="desc">{item.description}</p>
+          <p className="desc">{item.shortDescription}</p>
         </TextBox>
       </MainCard>
 
       <DetailWrapper>
-        {item.questions.map((detail, i) => (
+        {questions.map((detail, i) => (
           <DetailItem
             key={i}
             icon={icons[i]}
@@ -59,12 +81,12 @@ export default function SeasonalDetailPage() {
 
       <RecipeWrapper>
         <span className="text_500">건강을 챙기는</span>
-        <span className="text_700">{item.title}</span>
+        <span className="text_700">{item.itemname}</span>
         <span className="text_500">요리 추천</span>
         <RecipeCardWrapper>
-          {item.recipes.map((recipe) => (
+          {recipes.map((recipe) => (
             <RecipeCard key={recipe.id}>
-              <p className="title">{recipe.title}</p>
+              <p className="title">{recipe.recipeName}</p>
               <div className="btn" onClick={() => navigate(`/seasonal/${item.id}/${recipe.id}`)}>
                 레시피 보기
               </div>
@@ -77,12 +99,13 @@ export default function SeasonalDetailPage() {
 }
 
 const Wrapper = styled.div`
-  min-height: 100vh;
+  height: auto;
   background-color: #f5f5f7;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px;
+  padding-bottom: 120px;
 `;
 
 const MainCard = styled.div`
@@ -172,7 +195,7 @@ const RecipeCardWrapper = styled.div`
 `;
 
 const RecipeCard = styled.div`
-  padding: 20px 20px;
+  padding: 20px 10px 10px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -181,16 +204,16 @@ const RecipeCard = styled.div`
   min-width: 160px;
 
   .title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     margin-bottom: 10px;
   }
 
   .btn {
-    padding: 5px 20px;
+    padding: 5px 35px;
     color: #fff;
     background-color: #292a31;
-    font-size: 14px;
+    font-size: 13px;
     border-radius: 8px;
     cursor: pointer;
   }

@@ -1,37 +1,42 @@
+import { useEffect, useState } from "react";
 import CheaperCard from "./CheaperCard";
+import { APIService } from "../../../shared/lib/api";
 
 export default function SuperMarket({ selected }) {
-  const dummyData = [
-    {
-      name: "포도(샤인머스캣)",
-      weight: "2kg",
-      marketPrice: "36,037 원",
-      martPrice: "27,164 원",
-    },
-    {
-      name: "사과(부사)",
-      weight: "5개",
-      marketPrice: "10,200 원",
-      martPrice: "8,500 원",
-    },
-    {
-      name: "감자(수미)",
-      weight: "1kg",
-      marketPrice: "4,500 원",
-      martPrice: "3,200 원",
-    },
-    {
-      name: "대파",
-      weight: "300g",
-      marketPrice: "1,800 원",
-      martPrice: "1,200 원",
-    },
-  ];
+  const [superMarketList, setSuperMarketList] = useState([]);
+
+  useEffect(() => {
+    async function fetchSuperMarketItems() {
+      try {
+        const res = await APIService.private.get("/market-prices");
+        const filtered = res.data.filter((item) => {
+          const superPrice = Number(item.superMarketPrice);
+          const marketPrice = Number(item.marketPrice);
+          return superPrice < marketPrice;
+        });
+        setSuperMarketList(filtered);
+      } catch (error) {
+        console.error("Failed to fetch supermarket items:", error);
+      }
+    }
+    fetchSuperMarketItems();
+  }, []);
+
+  if (superMarketList.length === 0) {
+    return <p>저렴한 상품이 없습니다.</p>;
+  }
 
   return (
     <>
-      {dummyData.map((item, idx) => (
-        <CheaperCard key={idx} selected={selected} {...item} />
+      {superMarketList.map((item) => (
+        <CheaperCard
+          key={item.productName}
+          selected={selected}
+          name={item.productName}
+          unit={item.unit}
+          marketPrice={Number(item.marketPrice).toLocaleString()}
+          superMarketPrice={Number(item.superMarketPrice).toLocaleString()}
+        />
       ))}
     </>
   );

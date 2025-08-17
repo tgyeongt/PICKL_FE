@@ -35,7 +35,7 @@ const Card = styled.div`
 
 const Image = styled.img`
   width: 100%;
-  height: 60%;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
 `;
 

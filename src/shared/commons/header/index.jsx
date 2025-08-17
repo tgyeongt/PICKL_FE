@@ -4,7 +4,6 @@ import back from "@icon/common/back.svg";
 import heart_on from "@icon/common/heart_on.svg";
 import heart_off from "@icon/common/heart_off.svg";
 import helpIcon from "@icon/my/QIcon.svg";
-
 import { useLayoutEffect, useRef, useState } from "react";
 
 export default function Header() {
@@ -41,7 +40,7 @@ export default function Header() {
           <img src={helpIcon} alt="" />
         </HelpButton>
       )}
-
+      
       <RightSlot>
         {showHeart ? (
           <IconButton aria-label="찜하기" onClick={toggleHeart}>
@@ -82,10 +81,12 @@ const IconButton = styled.button`
     display: block;
   }
 `;
+
 const IconSpacer = styled.div`
   width: 32px;
   height: 32px;
 `;
+
 const RightSlot = styled.div`
   margin-left: auto;
   display: flex;
