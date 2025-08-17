@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useEffect, useState } from "react";
-import { privateAPI } from "../../shared/lib/api";
+import { APIService } from "../../shared/lib/api";
 import ItemCard from "./ItemCard";
 
 export default function Suggestion({ onSelectItem }) {
@@ -15,7 +15,7 @@ export default function Suggestion({ onSelectItem }) {
   useEffect(() => {
     async function fetchSeasonItems() {
       try {
-        const res = await privateAPI.get("/season-items");
+        const res = await APIService.private.get("/season-items");
         setSeasonalList(res.data);
       } catch (error) {
         console.error("Failed to fetch season items:", error);

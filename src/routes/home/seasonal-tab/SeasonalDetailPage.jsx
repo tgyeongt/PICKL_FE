@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useParams, useNavigate } from "react-router-dom";
-import { privateAPI } from "../../../shared/lib/api";
+import { APIService } from "../../../shared/lib/api";
 import Icon1 from "@icon/home/detail_icon_1.svg";
 import Icon2 from "@icon/home/detail_icon_2.svg";
 import Icon3 from "@icon/home/detail_icon_3.svg";
@@ -23,9 +23,9 @@ export default function SeasonalDetailPage() {
   useEffect(() => {
     async function fetchSeasonItems() {
       try {
-        const res = await privateAPI.get(`/season-items/${id}`);
+        const res = await APIService.private.get(`/season-items/${id}`);
         setItem(res.data);
-        const resRecipes = await privateAPI.get(`/season-items/${id}/recipes`);
+        const resRecipes = await APIService.private.get(`/season-items/${id}/recipes`);
         setRecipes(resRecipes.data);
       } catch (error) {
         console.error("Failed to fetch season items:", error);
@@ -99,13 +99,13 @@ export default function SeasonalDetailPage() {
 }
 
 const Wrapper = styled.div`
-  height: 92vh;
+  height: auto;
   background-color: #f5f5f7;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  padding-bottom: 80px;
+  padding-bottom: 120px;
 `;
 
 const MainCard = styled.div`

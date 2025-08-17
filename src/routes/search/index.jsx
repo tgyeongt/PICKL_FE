@@ -7,7 +7,7 @@ import Suggestion from "./Suggestion";
 import SearchIcon from "@icon/search/search_icon.svg";
 import ClearIcon from "@icon/search/clear_icon.svg";
 import sampleItems from "./sampleItems";
-import { privateAPI } from "../../shared/lib/api";
+import { APIService } from "../../shared/lib/api";
 
 export default function Search() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,7 +28,9 @@ export default function Search() {
 
   useEffect(() => {
     const fetchItems = async () => {
-      const { data } = await privateAPI.get("items", { params: { q: debouncedSearchQuery } });
+      const { data } = await APIService.private.get("items", {
+        params: { q: debouncedSearchQuery },
+      });
       setItemList(data);
     };
     fetchItems();

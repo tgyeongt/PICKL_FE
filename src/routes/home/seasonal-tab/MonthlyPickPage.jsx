@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { privateAPI } from "../../../shared/lib/api";
+import { APIService } from "../../../shared/lib/api";
 import MonthNavigator from "./MonthNavigator";
 import MonthlyPickList from "./MonthlyPickList";
 import useHeader from "@hooks/useHeader";
@@ -26,7 +26,7 @@ export default function MonthlyPickPage() {
   useEffect(() => {
     async function fetchSeasonItems() {
       try {
-        const res = await privateAPI.get("/season-items");
+        const res = await APIService.private.get("/season-items");
         setSeasonalList(res.data);
       } catch (error) {
         console.error("Failed to fetch season items:", error);
