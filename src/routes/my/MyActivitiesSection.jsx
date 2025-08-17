@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import useMySummary from "./hooks/useMySummary";
-import useFavoriteCounts from "./hooks/useFavoriteCounts";
 
 import tomatoIcon from "@icon/my/tomatoIcon.svg";
 import recipeIcon from "@icon/my/saladIcon.svg";
@@ -11,11 +10,10 @@ import chevronRight from "@icon/my/chevron-right.svg";
 export default function MyActivitiesSection() {
   const navigate = useNavigate();
   const { data: summary } = useMySummary();
-  const { counts: favoriteCounts } = useFavoriteCounts();
 
   const counts = {
-    ingredients: favoriteCounts.ingredients,
-    recipes: favoriteCounts.recipes,
+    ingredients: summary?.favoriteIngredientCount ?? 0,
+    recipes: summary?.favoriteRecipeCount ?? 0,
     history: summary?.pickleHistoryCount ?? 0,
   };
 
@@ -78,9 +76,7 @@ const SectionTitle = styled.h2`
   color: #0f1c0d;
   font-family: Pretendard;
   font-size: 20px;
-  font-style: normal;
   font-weight: 700;
-  line-height: 24px;
   margin-bottom: 25px;
   padding: 0 8px;
 `;
@@ -89,7 +85,6 @@ const List = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
-  overflow-x: hidden;
   padding: 0 8px;
 `;
 
@@ -105,23 +100,14 @@ const Card = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   padding: 10px 8px;
   background: #fbfbfb;
   border-radius: 12px;
-  overflow: hidden;
-
-  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  transform-origin: center;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-  }
-
-  &:active {
-    transform: translateY(0);
   }
 `;
 
@@ -134,8 +120,6 @@ const Left = styled.div`
 const Icon = styled.img`
   width: 40px;
   height: 40px;
-  aspect-ratio: 1/1;
-  object-fit: contain;
 `;
 
 const LabelBox = styled.div`
@@ -146,27 +130,19 @@ const LabelBox = styled.div`
 
 const MainLabel = styled.p`
   color: #0f1c0d;
-  font-feature-settings: "dlig" on;
   font-family: Pretendard;
   font-size: 16px;
-  font-style: normal;
   font-weight: 600;
-  line-height: 24px;
 `;
 
 const SubCount = styled.span`
   color: #45a639;
-  font-feature-settings: "dlig" on;
   font-family: Pretendard;
   font-size: 14px;
-  font-style: normal;
   font-weight: 500;
-  line-height: 21px;
 `;
 
 const RightIcon = styled.img`
   width: 24px;
   height: 24px;
-  flex-shrink: 0;
-  aspect-ratio: 1/1;
 `;

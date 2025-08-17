@@ -1,78 +1,45 @@
-import { useState, useEffect } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { APIService } from "../../../shared/lib/api";
 
-const useFavoriteRecipes = (page = 0, size = 20) => {
-  const [recipes, setRecipes] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [totalCount, setTotalCount] = useState(0);
+const PAGE_SIZE = 20;
 
-  const fetchFavoriteRecipes = async (pageNum = 0) => {
-    try {
-      setLoading(true);
-      setError(null);
+export default function useFavoriteRecipes() {
+  const query = useInfiniteQuery({
+    queryKey: ["favorites", "recipes"],
+    queryFn: async ({ pageParam = 0 }) => {
+      const res = await APIService.private.get("/favorites/recipes", {
+        params: {
+          page: pageParam,
+          size: PAGE_SIZE,
+          sort: "createdAt,desc",
+        },
+      });
 
-      const response = await fetch(
-        `https://api.picklocal.site/api/favorites/recipes?page=${pageNum}&size=${size}&sort=createdAt,desc`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const data = res?.data ?? {};
+      return {
+        content: data.content || [],
+        totalElements: data.totalElements || 0,
+        totalPages: data.totalPages || 1,
+        page: data.number ?? pageParam,
+      };
+    },
+    getNextPageParam: (lastPage) => {
+      if (lastPage.page < lastPage.totalPages - 1) {
+        return lastPage.page + 1;
       }
+      return undefined;
+    },
+  });
 
-      const data = await response.json();
-
-      console.log("API Response for recipes:", data); // 응답 구조 확인용 로그
-
-      if (pageNum === 0) {
-        setRecipes(data.content || data);
-        // 총 개수 설정
-        setTotalCount(data.totalElements || (Array.isArray(data) ? data.length : 0));
-      } else {
-        setRecipes((prev) => [...prev, ...(data.content || data)]);
-      }
-
-      // 페이지네이션 정보가 있는 경우
-      if (data.content && data.totalPages) {
-        setHasMore(pageNum < data.totalPages - 1);
-      } else {
-        // 단순 배열인 경우
-        setHasMore((data.content || data).length === size);
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error("Failed to fetch favorite recipes:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadMore = () => {
-    if (!loading && hasMore) {
-      fetchFavoriteRecipes(page + 1);
-    }
-  };
-
-  useEffect(() => {
-    fetchFavoriteRecipes(0);
-  }, []);
+  const recipes = query.data?.pages.flatMap((p) => p.content) ?? [];
+  const totalCount = query.data?.pages[0]?.totalElements ?? 0;
 
   return {
     recipes,
-    loading,
-    error,
-    hasMore,
     totalCount,
-    refetch: () => fetchFavoriteRecipes(0),
-    loadMore,
+    loading: query.isLoading || query.isFetchingNextPage,
+    error: query.isError ? query.error : null,
+    hasMore: query.hasNextPage,
+    loadMore: query.fetchNextPage,
   };
-};
-
-export default useFavoriteRecipes;
+}
