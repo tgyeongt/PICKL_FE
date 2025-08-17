@@ -10,6 +10,7 @@ import convertPointIcon from "@icon/my/beadIcon.svg";
 export default function MyServiceSection() {
   const navigate = useNavigate();
   const { data: summary } = useMySummary();
+
   const displayName = summary?.nickname || "";
 
   const handleTodayClick = async () => {

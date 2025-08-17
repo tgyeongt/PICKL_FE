@@ -3,9 +3,14 @@ import { useAtomValue } from "jotai";
 import { selectedAddressAtom } from "../map/state/addressAtom";
 import useCurrentAddress from "../map/hooks/useCurrentAddress";
 import useMySummary from "./hooks/useMySummary";
+import { pointsAtom } from "./convert/ConvertPointsContext";
 
 export default function HelloSection() {
   const { data: summary } = useMySummary();
+
+  // 전역 포인트 상태 사용
+  const globalPoints = useAtomValue(pointsAtom);
+
   const selectedAddress = useAtomValue(selectedAddressAtom);
   const hasGlobalAddr = !!(selectedAddress?.jibunAddress || selectedAddress?.roadAddress);
   const { address: fallbackAddr } = useCurrentAddress(!hasGlobalAddr);

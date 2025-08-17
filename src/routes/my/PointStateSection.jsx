@@ -3,6 +3,8 @@ import { useConvertPoints } from "./convert/ConvertPointsContext";
 import { useAtomValue } from "jotai";
 import { selectedAddressAtom } from "../map/state/addressAtom";
 import useCurrentAddress from "../map/hooks/useCurrentAddress";
+import { pointsAtom } from "./convert/ConvertPointsContext";
+import useMySummary from "./hooks/useMySummary";
 import pPoint from "@icon/my/pPointIcon.svg";
 
 function deriveGuDong(addr = "") {
@@ -17,6 +19,13 @@ export default function PointStateSection() {
   const { stats } = useConvertPoints();
   const selectedAddress = useAtomValue(selectedAddressAtom);
 
+  // 전역 포인트 상태 사용
+  const globalPoints = useAtomValue(pointsAtom);
+  const { data: summary } = useMySummary();
+
+  // 전역 상태가 있으면 사용, 없으면 API 데이터 사용
+  const currentPoints = globalPoints !== null ? globalPoints : summary?.points ?? 0;
+
   const hasGlobalAddr = !!(selectedAddress?.jibunAddress || selectedAddress?.roadAddress);
   const { address: fallbackAddr } = useCurrentAddress(!hasGlobalAddr);
 
@@ -30,7 +39,7 @@ export default function PointStateSection() {
       <LocationText>현위치 : {shortAddr || "위치 불러오는 중"}</LocationText>
       <Label>피클POINT</Label>
       <PointRow>
-        <PointNumber>{formatNumber(Number(stats?.points ?? 0))}</PointNumber>
+        <PointNumber>{formatNumber(currentPoints)}</PointNumber>
         <PointIcon src={pPoint} alt="" />
       </PointRow>
     </PointStateSectionWrapper>

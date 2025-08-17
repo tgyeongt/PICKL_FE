@@ -36,14 +36,12 @@ function IconSection() {
 }
 
 function TextSection({ snapshot }) {
-  const { converting } = useConvertPoints();
   const wonAmount = Number(snapshot?.won || 0);
 
-  const text = converting
-    ? "전환 중..."
-    : wonAmount > 0
-    ? `${wonAmount.toLocaleString()}원 지역화폐로 전환 완료!🎉`
-    : "전환이 완료되었어요!🎉";
+  const text =
+    wonAmount > 0
+      ? `${wonAmount.toLocaleString()}원 지역화폐로 전환 완료!🎉`
+      : "전환이 완료되었어요!🎉";
 
   return (
     <TextSectionWrapper>

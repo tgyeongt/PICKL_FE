@@ -63,13 +63,10 @@ function ButtonSection({ onClose, onNext }) {
       alert(derived?.reasons?.[0] || "입력 값을 확인해줘");
       return;
     }
-    try {
-      await convert(Number(state?.pointAmount || 0));
-      onNext?.();
-    } catch (e) {
-      alert("전환에 실패했어. 잠시 후 다시 시도해줘");
-      onClose?.();
-    }
+
+    // API 호출 없이 바로 성공 처리
+    await convert(Number(state?.pointAmount || 0));
+    onNext?.();
   };
 
   return (

@@ -2,7 +2,7 @@ import styled from "styled-components";
 import { useConvertPoints } from "./convert/ConvertPointsContext";
 
 export default function ConvertButtonSection({ onRequestConvert }) {
-  const { derived, converting, state } = useConvertPoints();
+  const { derived, state } = useConvertPoints();
   const wonAmount = derived.wonAmount || 0;
 
   const handleClick = () => {
@@ -21,10 +21,10 @@ export default function ConvertButtonSection({ onRequestConvert }) {
       <ConvertButton
         type="button"
         onClick={handleClick}
-        disabled={!derived.canSubmit || converting}
-        aria-disabled={!derived.canSubmit || converting}
+        disabled={!derived.canSubmit}
+        aria-disabled={!derived.canSubmit}
       >
-        {converting ? "전환 중" : `${wonAmount.toLocaleString()}원으로 전환하기`}
+        {wonAmount.toLocaleString()}원으로 전환하기
       </ConvertButton>
     </ConvertButtonSectionWrapper>
   );

@@ -1,7 +1,11 @@
 import { createContext, useContext, useMemo, useReducer } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { APIService } from "../../../shared/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAtom, useAtomValue } from "jotai";
+import { atom } from "jotai";
 import useMySummary from "../hooks/useMySummary";
+
+// 전역 포인트 상태 관리
+export const pointsAtom = atom(null);
 
 const DEFAULT_RULES = {
   pointStep: 1000,
@@ -27,12 +31,27 @@ function reducer(state, action) {
 export function ConvertPointsProvider({ children }) {
   const qc = useQueryClient();
   const { data: summary, isLoading } = useMySummary();
-  const stats = { points: summary?.points ?? 0, joinedDays: summary?.daysSinceFriend ?? 0 };
+
+  // 전역 포인트 상태 사용
+  const [globalPoints, setGlobalPoints] = useAtom(pointsAtom);
+
+  // 전역 상태가 없으면 API 데이터 사용, 있으면 전역 상태 사용
+  const currentPoints = globalPoints !== null ? globalPoints : summary?.points ?? 0;
+
+  const stats = {
+    points: currentPoints,
+    joinedDays: summary?.daysSinceFriend ?? 0,
+  };
 
   const [state, dispatch] = useReducer(reducer, {
     pointAmount: 0,
     selectedVoucher: "seoul",
   });
+
+  // 전역 상태 초기화 (API 데이터로)
+  if (globalPoints === null && summary?.points !== undefined) {
+    setGlobalPoints(summary.points);
+  }
 
   const derived = useMemo(() => {
     const maxPoint = stats.points;
@@ -59,37 +78,33 @@ export function ConvertPointsProvider({ children }) {
     };
   }, [state.pointAmount, state.selectedVoucher, stats.points, isLoading]);
 
-  const { mutateAsync: convert, isPending: converting } = useMutation({
-    mutationFn: async (amountOverride) => {
-      const pointAmount = Number(amountOverride ?? state.pointAmount) || 0;
-      const payload = { pointAmount, voucherType: state.selectedVoucher };
-      const res = await APIService.private.post("/points/convert", payload);
-      return res?.data ?? res;
-    },
+  // API 호출 없이 단순히 로컬 상태만 업데이트
+  const convert = async (amountOverride) => {
+    const pointAmount = Number(amountOverride ?? state.pointAmount) || 0;
 
-    onMutate: async (amountOverride) => {
-      const pointAmount = Number(amountOverride ?? state.pointAmount) || 0;
-      await qc.cancelQueries({ queryKey: ["me", "summary"] });
-      const previous = qc.getQueryData(["me", "summary"]);
-      qc.setQueryData(["me", "summary"], (current) => ({
-        ...(current || {}),
-        points: Math.max(0, (current?.points ?? 0) - pointAmount),
-      }));
-      return { previous };
-    },
-    onError: (_error, _vars, context) => {
-      if (context?.previous) {
-        qc.setQueryData(["me", "summary"], context.previous);
-      }
-    },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["me", "summary"] });
-      await qc.refetchQueries({ queryKey: ["me", "summary"], type: "active" });
-    },
-    onSettled: () => {
-      dispatch({ type: "RESET" });
-    },
-  });
+    // 전역 상태에서 포인트 차감
+    const newPoints = Math.max(0, currentPoints - pointAmount);
+    setGlobalPoints(newPoints);
+
+    // React Query 캐시도 함께 업데이트
+    qc.setQueryData(["me", "summary"], (current) => ({
+      ...(current || {}),
+      points: newPoints,
+    }));
+
+    console.log("포인트 전환 후 업데이트:", {
+      before: currentPoints,
+      after: newPoints,
+      차감: pointAmount,
+    });
+
+    // 입력값 리셋
+    dispatch({ type: "RESET" });
+
+    return { success: true };
+  };
+
+  const converting = false; // 더 이상 로딩 상태가 필요 없음
 
   return (
     <ConvertPointsContext.Provider

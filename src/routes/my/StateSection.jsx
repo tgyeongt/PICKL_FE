@@ -1,13 +1,24 @@
 import styled from "styled-components";
 import useMySummary from "./hooks/useMySummary";
+import { useAtomValue } from "jotai";
+import { pointsAtom } from "./convert/ConvertPointsContext";
 
 export default function StateSection() {
   const { data: summary, isLoading, error } = useMySummary();
-  const points = formatNumber(summary?.points ?? 0);
+
+  // 전역 포인트 상태 사용
+  const globalPoints = useAtomValue(pointsAtom);
+
+  // 전역 상태가 있으면 사용, 없으면 API 데이터 사용
+  const currentPoints = globalPoints !== null ? globalPoints : summary?.points ?? 0;
+
+  const points = formatNumber(currentPoints);
   const joinedDays = summary?.daysSinceFriend ?? 0;
 
   // 디버깅을 위한 로깅
   console.log("🔍 StateSection - Summary:", summary);
+  console.log("🔍 StateSection - Global Points:", globalPoints);
+  console.log("🔍 StateSection - Current Points:", currentPoints);
   console.log("🔍 StateSection - Points:", points);
   console.log("🔍 StateSection - Loading:", isLoading);
   console.log("🔍 StateSection - Error:", error);
