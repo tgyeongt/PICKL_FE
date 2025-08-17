@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import CheaperCard from "./CheaperCard";
-import { APIService } from "../../../shared/lib/api";
+import { privateAPI } from "../../../shared/lib/api";
 
 export default function TraditionalMarket({ selected }) {
   const [marketList, setMarketList] = useState([]);
@@ -8,7 +8,7 @@ export default function TraditionalMarket({ selected }) {
   useEffect(() => {
     async function fetchMarketItems() {
       try {
-        const res = await APIService.private.get("/market-prices");
+        const res = await privateAPI.get("/market-prices");
         const filtered = res.data.filter((item) => {
           const superPrice = Number(item.superMarketPrice);
           const marketPrice = Number(item.marketPrice);

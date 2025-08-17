@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { APIService } from "../../../shared/lib/api";
+import { privateAPI } from "../../../shared/lib/api";
 import styled from "styled-components";
 import DetailItem from "./DetailItem";
 import useHeader from "@hooks/useHeader";
@@ -26,7 +26,7 @@ export default function SeasonalRecipePage() {
   useEffect(() => {
     async function fetchRecipe() {
       try {
-        const res = await APIService.public.get(`/season-items/${id}/recipes`);
+        const res = await privateAPI.get(`/season-items/${id}/recipes`);
         const selectedRecipe = res.data.find((r) => String(r.id) === recipeId);
         setRecipe(selectedRecipe || {});
       } catch (error) {

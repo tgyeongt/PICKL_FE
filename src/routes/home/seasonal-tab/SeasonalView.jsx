@@ -7,7 +7,7 @@ import "swiper/swiper-bundle.css";
 import SeasonalCard from "./SeasonalCard";
 import leftArrow from "@icon/home/arrow_left.svg";
 import rightArrow from "@icon/home/arrow_right.svg";
-import { APIService } from "../../../shared/lib/api";
+import { privateAPI } from "../../../shared/lib/api";
 
 export default function SeasonalView() {
   const swiperContainerRef = useRef(null);
@@ -19,7 +19,7 @@ export default function SeasonalView() {
   useEffect(() => {
     async function fetchSeasonItems() {
       try {
-        const res = await APIService.private.get("/season-items");
+        const res = await privateAPI.get("/season-items");
         setSeasonalList(res.data);
       } catch (error) {
         console.error("Failed to fetch season items:", error);

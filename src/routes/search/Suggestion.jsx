@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useEffect, useState } from "react";
-import { APIService } from "../../shared/lib/api";
+import { privateAPI } from "../../shared/lib/api";
 import ItemCard from "./ItemCard";
 
 export default function Suggestion({ onSelectItem }) {
@@ -15,7 +15,7 @@ export default function Suggestion({ onSelectItem }) {
   useEffect(() => {
     async function fetchSeasonItems() {
       try {
-        const res = await APIService.private.get("/season-items");
+        const res = await privateAPI.get("/season-items");
         setSeasonalList(res.data);
       } catch (error) {
         console.error("Failed to fetch season items:", error);
@@ -37,7 +37,7 @@ export default function Suggestion({ onSelectItem }) {
         </KeywordWrapper>
       </RecommendedSection>
       <TodaypickWrapper>
-        <SubTitle>오늘 Pick</SubTitle>
+        <SubTitle>이달의 Pick</SubTitle>
         {seasonalList.map((item) => (
           <ItemCard
             key={item.id}

@@ -1,4 +1,4 @@
-import { APIService } from "../../shared/lib/api";
+import { publicAPI } from "../../shared/lib/api";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import PicklImg from "@image/pickl_motion.png";
@@ -6,7 +6,7 @@ import PicklImg from "@image/pickl_motion.png";
 export default function StartPage() {
   const handleStart = async () => {
     try {
-      const res = await APIService.public.post("/auths/test-login");
+      const res = await publicAPI.post("/auths/test-login");
 
       if (res?.success) {
         const { accessToken, refreshToken } = res.data;
