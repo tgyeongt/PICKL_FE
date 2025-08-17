@@ -1,12 +1,17 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import styled from "styled-components";
+import useHeader from "../../shared/hooks/useHeader";
 import Arrow from "@icon/chat/arrow.svg";
 
 export default function ChatbotPage() {
+  useHeader({
+    title: "피클이와 대화중",
+    showBack: true,
+  });
+
   const location = useLocation();
   const [searchText, setSearchText] = useState("");
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   useEffect(() => {
     if (location.state?.question) {
@@ -22,15 +27,13 @@ export default function ChatbotPage() {
 
   return (
     <Wrapper>
-      <SearchBox className={isKeyboardOpen ? "up" : ""}>
+      <SearchBox>
         <input
           type="text"
           placeholder="피클이에게 궁금한 걸 물어보세요!"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          onFocus={() => setIsKeyboardOpen(true)}
-          onBlur={() => setIsKeyboardOpen(false)}
         />
         <button onClick={() => handleSearch()}>
           <img src={Arrow} alt="" />
@@ -48,7 +51,7 @@ const Wrapper = styled.div`
 
 const SearchBox = styled.div`
   position: fixed;
-  bottom: 75px;
+  bottom: 20px;
   display: flex;
   gap: 8px;
   width: 90%;
@@ -70,9 +73,5 @@ const SearchBox = styled.div`
     height: 40px;
     width: 40px;
     cursor: pointer;
-  }
-
-  &.up {
-    bottom: 300px;
   }
 `;

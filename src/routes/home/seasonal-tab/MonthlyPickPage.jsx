@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { APIService } from "../../../shared/lib/api";
 import MonthNavigator from "./MonthNavigator";
 import MonthlyPickList from "./MonthlyPickList";
 import useHeader from "@hooks/useHeader";
-import seasonalList from "./seasonalList";
 
 export default function MonthlyPickPage() {
   useHeader({
@@ -11,7 +11,7 @@ export default function MonthlyPickPage() {
   });
 
   const now = new Date();
-  const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1); // 1~12
+  const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
 
   const handlePrev = () => {
     setCurrentMonth((prev) => (prev === 1 ? 12 : prev - 1));
@@ -21,7 +21,21 @@ export default function MonthlyPickPage() {
     setCurrentMonth((prev) => (prev === 12 ? 1 : prev + 1));
   };
 
-  const items = seasonalList.filter((item) => item.month === currentMonth);
+  const [seasonalList, setSeasonalList] = useState([]);
+
+  useEffect(() => {
+    async function fetchSeasonItems() {
+      try {
+        const res = await APIService.private.get("/season-items");
+        setSeasonalList(res.data);
+      } catch (error) {
+        console.error("Failed to fetch season items:", error);
+      }
+    }
+    fetchSeasonItems();
+  }, []);
+
+  const items = seasonalList.filter((item) => item.seasonMonth === currentMonth);
 
   return (
     <>

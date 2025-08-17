@@ -21,7 +21,7 @@ export default function Header() {
 
       {showHeart && (
         <button onClick={toggleHeart}>
-          <img src={isHeartActive ? heart_on : heart_off} />
+          <img src={isHeartActive ? heart_on : heart_off} alt="찜하기" />
         </button>
       )}
     </Wrapper>

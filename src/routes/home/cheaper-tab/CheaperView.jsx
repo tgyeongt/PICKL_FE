@@ -37,7 +37,8 @@ export default function CheaperView() {
 
 const Wrapper = styled.div`
   width: 100%;
-  height: 95vh;
+  height: 75vh;
+  padding-bottom: 80px;
 `;
 
 const Header = styled.div`

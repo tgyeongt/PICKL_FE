@@ -1,28 +1,50 @@
 import styled from "styled-components";
+import { useEffect, useState } from "react";
+import { APIService } from "../../shared/lib/api";
 import ItemCard from "./ItemCard";
-import sampleItems from "./sampleItems";
 
-export default function Suggestion() {
+export default function Suggestion({ onSelectItem }) {
+  const keywordList = [
+    { id: 4, title: "감자" },
+    { id: 2, title: "양파" },
+    { id: 3, title: "토마토" },
+  ];
+
+  const [seasonalList, setSeasonalList] = useState([]);
+
+  useEffect(() => {
+    async function fetchSeasonItems() {
+      try {
+        const res = await APIService.private.get("/season-items");
+        setSeasonalList(res.data);
+      } catch (error) {
+        console.error("Failed to fetch season items:", error);
+      }
+    }
+    fetchSeasonItems();
+  }, []);
+
   return (
     <>
       <RecommendedSection>
         <SubTitle>추천 검색어</SubTitle>
         <KeywordWrapper>
-          <div className="keyword">쌀</div>
-          <div className="keyword">사과</div>
-          <div className="keyword">포도</div>
-          <div className="keyword">수박</div>
+          {keywordList.map((item) => (
+            <div key={item.id} className="keyword" onClick={() => onSelectItem(item.id)}>
+              {item.title}
+            </div>
+          ))}
         </KeywordWrapper>
       </RecommendedSection>
       <TodaypickWrapper>
-        <SubTitle>오늘 Pick</SubTitle>
-        {sampleItems.map((item) => (
+        <SubTitle>이달의 Pick</SubTitle>
+        {seasonalList.map((item) => (
           <ItemCard
             key={item.id}
             id={item.id}
-            title={item.title}
+            title={item.itemname}
             unit={item.unit}
-            img={item.img}
+            img={item.imageUrl}
             price={item.price}
           />
         ))}
@@ -32,14 +54,14 @@ export default function Suggestion() {
 }
 
 const RecommendedSection = styled.div`
-  margin: 20px 0;
-  margin-left: 8px;
+  margin: 25px 0;
 `;
 
 const SubTitle = styled.p`
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 15px;
+  margin-left: 3px;
 `;
 
 const KeywordWrapper = styled.div`
@@ -53,6 +75,8 @@ const KeywordWrapper = styled.div`
     border-radius: 15px;
     font-size: 14px;
     font-weight: 500;
+    text-align: center;
+    justify-content: center;
   }
 `;
 
