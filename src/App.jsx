@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RootLayout from "./shared/layouts/RootLayout";
 import ServiceLayout from "./shared/layouts/ServiceLayout";
 import ProtectedRoute from "./shared/layouts/ProtectedRoute";
-import Loading from "./shared/commons/loading";
 
 import RootPage from "./routes/home";
 import Map from "./routes/map";
@@ -41,8 +40,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, Component: RootPage },
 
-      /*  토큰이 필요한 페이지를 ProtectedRoute로 감싼다.
-          url로 접근 불가 */
+      /*  토큰이 필요한 페이지들, url로 접근 불가 */
       {
         Component: ProtectedRoute,
         children: [
@@ -114,7 +112,6 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
-      <Loading />
     </QueryClientProvider>
   );
 }

@@ -7,7 +7,7 @@ export default function RootLayout() {
 
   const hasToken = !!localStorage.getItem("accessToken");
 
-  const HIDE_NAV_ROUTES = ["/my/points-daily", "/my/points-daily/result"];
+  const HIDE_NAV_ROUTES = ["/my/points-daily", "/my/points-daily/result", "/chat/new-chat"];
   const hideNav = (!hasToken && pathname === "/") || HIDE_NAV_ROUTES.includes(pathname);
 
   return (
