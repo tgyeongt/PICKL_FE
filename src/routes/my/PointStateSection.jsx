@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { useConvertPoints } from "./convert/ConvertPointsContext";
 import { useAtomValue } from "jotai";
 import { selectedAddressAtom } from "../map/state/addressAtom";
 import useCurrentAddress from "../map/hooks/useCurrentAddress";
@@ -16,7 +15,6 @@ function deriveGuDong(addr = "") {
 }
 
 export default function PointStateSection() {
-  const { stats } = useConvertPoints();
   const selectedAddress = useAtomValue(selectedAddressAtom);
 
   // 전역 포인트 상태 사용

@@ -7,7 +7,6 @@ import {
   Text,
 } from "./TwoModalBar.styles";
 import CheckIcon from "@icon/map/greenCheck.svg";
-import { useConvertPoints } from "../convert/ConvertPointsContext";
 
 export default function TwoModalBar({ children }) {
   return <>{children}</>;

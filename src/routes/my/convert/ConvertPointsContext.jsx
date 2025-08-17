@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useReducer } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom } from "jotai";
 import { atom } from "jotai";
 import useMySummary from "../hooks/useMySummary";
 
