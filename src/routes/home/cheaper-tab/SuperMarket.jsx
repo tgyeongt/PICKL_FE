@@ -22,10 +22,6 @@ export default function SuperMarket({ selected }) {
     fetchSuperMarketItems();
   }, []);
 
-  if (superMarketList.length === 0) {
-    return <p>저렴한 상품이 없습니다.</p>;
-  }
-
   return (
     <>
       {superMarketList.map((item) => (
@@ -33,6 +29,7 @@ export default function SuperMarket({ selected }) {
           key={item.productName}
           selected={selected}
           name={item.productName}
+          img={item.imageUrl}
           unit={item.unit}
           marketPrice={Number(item.marketPrice).toLocaleString()}
           superMarketPrice={Number(item.superMarketPrice).toLocaleString()}

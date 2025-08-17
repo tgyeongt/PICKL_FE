@@ -1,17 +1,16 @@
 import styled from "styled-components";
-import grapeIcon from "@icon/home/grape_icon.svg";
 import superMarketIcon from "@icon/home/super_market.svg";
 import traditionalMarketIcon from "@icon/home/traditional_market.svg";
 import lineIcon from "@icon/home/line.svg";
 
-export default function CheaperCard({ selected, name, unit, marketPrice, superMarketPrice }) {
+export default function CheaperCard({ selected, name, img, unit, marketPrice, superMarketPrice }) {
   const mainIcon = selected === "전통시장" ? traditionalMarketIcon : superMarketIcon;
   const mainCategory = selected;
 
   return (
     <CardWrapper>
       <NameWrapper>
-        <img src={grapeIcon} alt="상품 이미지" />
+        <img src={img} alt="상품 이미지" />
         <p className="name">{name}</p>
         <span className="weight">/ {unit}</span>
       </NameWrapper>

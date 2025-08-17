@@ -29,6 +29,7 @@ export default function TraditionalMarket({ selected }) {
           key={item.productName}
           selected={selected}
           name={item.productName}
+          img={item.imageUrl}
           unit={item.unit}
           marketPrice={Number(item.marketPrice).toLocaleString()}
           superMarketPrice={Number(item.superMarketPrice).toLocaleString()}
