@@ -59,33 +59,37 @@ export default function DailyPointsPage() {
     showBack: true,
   });
 
-  // 광고에서 돌아왔을 때: 캐시 키 변경 + 즉시 재요청
+  // 광고에서 돌아왔을 때: 캐시 전량 제거 + 키 변경 + state 비우기
   useEffect(() => {
-    if (adWatched) {
-      const token = adNonceFromNav || String(Date.now());
-      setRetryToken(token);
-      // 광고 시청 후에는 완전히 새로운 문제를 받기 위해 캐시 완전 무효화
-      qc.removeQueries({ queryKey: ["dailyPoints", "today"] });
-      qc.invalidateQueries({ queryKey: ["dailyPoints", "today"] });
-      navigate(".", { replace: true }); // history state 정리
-    }
+    if (!adWatched) return;
+
+    const token = adNonceFromNav || String(Date.now());
+    setRetryToken(token);
+
+    // 🔥 dailyPoints 관련 캐시 전부 제거
+    qc.removeQueries({ predicate: (q) => String(q.queryKey?.[0]) === "dailyPoints" });
+    // 안전망 invalidate
+    qc.invalidateQueries({ predicate: (q) => String(q.queryKey?.[0]) === "dailyPoints" });
+
+    // 히스토리 state 비워서 재진입/새로고침 시 중복 로직 방지
+    navigate(".", { replace: true, state: null });
   }, [adWatched, adNonceFromNav, navigate, qc]);
 
   // 오늘의 문제 조회
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["dailyPoints", "today", retryToken],
+    queryKey: ["dailyPoints", "today", retryToken], // 광고 후엔 다른 키로 강제 재조회
     queryFn: async () => {
       await testLoginIfNeeded();
+
       const path = "/quiz/daily";
       const params = {
-        _ts: Date.now(), // 캐시버스터
-        ...(retryToken ? { retry: 1, nonce: retryToken, _ad: 1 } : {}),
+        _ts: Date.now(), // 캐시 버스터(브라우저/프록시 대비)
+        ...(retryToken ? { retry: 1, _ad: 1 } : {}), // 서버에 힌트 주고 싶다면 사용
       };
 
       try {
         const res = await APIService.private.get(path, { params });
-
-        const raw = res ?? {};
+        const raw = res?.data ?? res ?? {};
 
         const lines = Array.isArray(raw?.questionLines)
           ? raw.questionLines
@@ -94,18 +98,19 @@ export default function DailyPointsPage() {
           : [];
 
         return {
+          id: raw?.id ?? raw?.questionId, // 서버가 내려주면 보관
           itemName: raw?.ingredient?.name ?? raw?.itemName ?? "",
           itemIconUrl: raw?.ingredient?.iconUrl ?? raw?.itemIconUrl ?? "",
           questionLines: lines,
           attempted: !!raw?.attempted,
-          // 광고 시청 후 추가 시도인 경우 attempted를 false로 처리
+          // 광고 시 추가 시도라면 attempted를 강제로 false로 보정(서버가 정확히 내려주면 제거 가능)
           ...(retryToken && { attempted: false }),
         };
       } catch (e) {
         const { status, msg } = parseApiError(e);
-        console.error("[/quiz/daily] failed:", status, msg, e?.response?.data);
+        console.error("[GET /quiz/daily] failed:", status, msg, e?.response?.data);
 
-        // 204: 오늘 퀴즈 없음 → 종료 페이지로
+        // 204: 오늘 퀴즈 종료
         if (status === 204) {
           navigate("/my/points-daily/result", {
             replace: true,
@@ -120,7 +125,7 @@ export default function DailyPointsPage() {
           return null;
         }
 
-        // 409/403: 이미 참여 (광고 시청 후가 아닌 경우에만)
+        // 409/403: 이미 참여 (광고 전이라면 결과 페이지로 보냄)
         if ((status === 409 || status === 403) && !retryToken) {
           navigate("/my/points-daily/result", {
             replace: true,
@@ -129,24 +134,28 @@ export default function DailyPointsPage() {
           return null;
         }
 
-        // 5xx: DEV에서는 모의 문제로 폴백(UX 끊기지 않게)
+        // 5xx: DEV에서만 모의 문제 폴백
         if (String(import.meta.env.MODE).includes("dev") && DEV_MOCK_ON_5XX && status >= 500) {
           console.warn("[/quiz/daily] 5xx → using MOCK_QUIZ");
           return { ...MOCK_QUIZ };
         }
 
-        // 기타: 에러 그대로 던져서 아래 isError 분기 태움
+        // 기타 에러 전파
         throw e;
       }
     },
-    // 5xx일 때만 1회 재시도(짧게)
+    // 5xx일 때만 1회 재시도
     retry: (failureCount, e) => {
       const s = e?.response?.status || 0;
       if (s >= 500 && failureCount < 1) return true;
       return false;
     },
     retryDelay: () => 300,
-    staleTime: 0, // 광고 시청 후에는 캐시 사용하지 않음
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    keepPreviousData: false,
   });
 
   // 정답 제출
@@ -155,14 +164,15 @@ export default function DailyPointsPage() {
       await testLoginIfNeeded();
       const payload = {
         answer,
+        // 서버가 questionId 요구하면 아래 주석 해제
+        ...(data?.id ? { questionId: data.id } : {}),
         idempotencyKey: crypto.randomUUID(),
-        // 광고 시청 후 추가 시도인 경우 표시
-        ...(retryToken && { extraAttempt: true, nonce: retryToken }),
       };
       const res = await APIService.private.post("/quiz/daily/answer", payload);
       return res?.data ?? res;
     },
     onSuccess: async (res) => {
+      // 포인트/요약 invalidate
       await qc.invalidateQueries({ queryKey: ["me", "summary"] });
       await qc.refetchQueries({ queryKey: ["me", "summary"], type: "active" });
 
@@ -177,16 +187,14 @@ export default function DailyPointsPage() {
     onError: (e) => {
       const { status, msg } = parseApiError(e);
       if (status === 403 || status === 409) {
-        if (retryToken) {
-          alert("추가 시도권이 만료되었습니다. 다시 시도해주세요.");
-        } else {
-          alert("오늘 퀴즈는 이미 참여했어");
-        }
+        // 서버 정책에 따라 추가 시도권 미개시/만료 시 여기로 떨어짐
+        alert("추가시도권이 만료되었어. ‘광고 보고 한 번 더’로 추가권을 먼저 받아줘!");
       } else {
-        alert("제출에 실패했어. 잠시 후 다시 시도해줘");
+        alert("제출에 실패했어. 잠시 후 다시 시도해줘.");
       }
-      if (import.meta.env.DEV)
-        console.error("[/quiz/daily/answer] failed:", status, msg, e?.response?.data);
+      if (import.meta.env.DEV) {
+        console.error("[POST /quiz/daily/answer] failed:", status, msg, e?.response?.data);
+      }
     },
   });
 
@@ -207,7 +215,7 @@ export default function DailyPointsPage() {
     );
   }
 
-  // 에러 분기 (기타 남은 케이스)
+  // 에러 분기
   if (isError) {
     const { msg } = parseApiError(error);
     return (
@@ -229,18 +237,8 @@ export default function DailyPointsPage() {
   const q1 = data?.questionLines?.[0] || "";
   const q2 = data?.questionLines?.[1] || null;
 
-  // 디버깅: 광고 시청 후 상태 확인
-  if (import.meta.env.DEV && retryToken) {
-    console.log("광고 시청 후 추가 시도:", {
-      retryToken,
-      adWatched,
-      data,
-      attempted: data?.attempted,
-    });
-  }
-
   const handleSelect = (answer) => {
-    // 폴백 문제일 땐 제출 막아두는 선택지(원하면 주석 해제)
+    // 폴백 문제일 땐 제출 막고 싶으면 주석 해제
     // if (data?.__fallback === "mock500") return alert("서버 복구 후 다시 시도해줘");
     submitAnswer(answer);
   };
