@@ -7,16 +7,27 @@ export default function useHeader({
   title,
   showBack = false,
   showHeart = false,
+  onHeartOn = null,
+  onHeartOff = null,
+  showHelp = false,
+  onHelp = null,
   targetType = null,
   targetId = null,
 }) {
-  const setTitle = useHeaderStore((state) => state.setTitle);
-  const setShowBack = useHeaderStore((state) => state.setShowBack);
-  const setShowHeart = useHeaderStore((state) => state.setShowHeart);
-  const setOnHeartToggle = useHeaderStore((state) => state.setOnHeartToggle);
-  const setIsVisible = useHeaderStore((state) => state.setIsVisible);
-  const setIsHeartActive = useHeaderStore((state) => state.setIsHeartActive);
-  const resetHeader = useHeaderStore((state) => state.resetHeader);
+  const setTitle = useHeaderStore((s) => s.setTitle);
+  const setShowBack = useHeaderStore((s) => s.setShowBack);
+  const setShowHeart = useHeaderStore((s) => s.setShowHeart);
+  const setOnHeartToggle = useHeaderStore((s) => s.setOnHeartToggle);
+  const setIsVisible = useHeaderStore((s) => s.setIsVisible);
+  const setIsHeartActive = useHeaderStore((s) => s.setIsHeartActive);
+  const resetHeader = useHeaderStore((s) => s.resetHeader);
+
+  const setShowHelp = useHeaderStore((s) => s.setShowHelp)?.bind?.(null) || null;
+  const setOnHelp = useHeaderStore((s) => s.setOnHelp)?.bind?.(null) || null;
+
+  const setOnHeartOn = useHeaderStore((s) => s.setOnHeartOn)?.bind?.(null) || null;
+  const setOnHeartOff = useHeaderStore((s) => s.setOnHeartOff)?.bind?.(null) || null;
+
   const { showToast } = useToastStore.getState();
 
   const handleHeartToggle = useCallback(async () => {
@@ -32,31 +43,39 @@ export default function useHeader({
           targetId: String(targetId),
         });
         setIsHeartActive(true);
+
         try {
           window.localStorage.setItem(storageKey, "true");
         } catch (_) {
-          // 로컬 스토리지 에러 시 반응 없도록
+          /* no-op */
         }
-        showToast(
+
+        showToast?.(
           `관심 ${targetLabel}에 추가됐어요`,
           "success",
           isRecipe ? "/my/list-recipes" : "/my/list-ingredients"
         );
+
+        state.onHeartOn?.();
       } else {
         await APIService.private.delete("/favorites", {
           params: { type: targetType, targetId },
         });
         setIsHeartActive(false);
+
         try {
           window.localStorage.removeItem(storageKey);
         } catch (_) {
-          // 로컬 스토리지 에러 시 반응 없도록
+          /* no-op */
         }
-        showToast(`관심 ${targetLabel}에서 삭제됐어요`, "success", null);
+
+        showToast?.(`관심 ${targetLabel}에서 삭제됐어요`, "success", null);
+
+        state.onHeartOff?.();
       }
     } catch (err) {
       console.error("찜하기 처리 실패:", err);
-      showToast("작업 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.", "error");
+      showToast?.("작업 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.", "error");
     }
   }, [targetType, targetId, setIsHeartActive, showToast]);
 
@@ -65,6 +84,12 @@ export default function useHeader({
     setShowBack(showBack);
     setShowHeart(showHeart);
     setIsVisible(true);
+
+    setShowHelp?.(showHelp);
+    setOnHelp?.(onHelp);
+
+    setOnHeartOn?.(onHeartOn);
+    setOnHeartOff?.(onHeartOff);
 
     if (showHeart && targetType && targetId) {
       setOnHeartToggle(handleHeartToggle);
@@ -84,6 +109,10 @@ export default function useHeader({
     title,
     showBack,
     showHeart,
+    showHelp,
+    onHelp,
+    onHeartOn,
+    onHeartOff,
     targetType,
     targetId,
     handleHeartToggle,
@@ -94,5 +123,9 @@ export default function useHeader({
     setOnHeartToggle,
     resetHeader,
     setIsHeartActive,
+    setShowHelp,
+    setOnHelp,
+    setOnHeartOn,
+    setOnHeartOff,
   ]);
 }

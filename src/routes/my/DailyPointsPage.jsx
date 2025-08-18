@@ -1,7 +1,7 @@
 import useHeader from "../../shared/hooks/useHeader";
-import { useQuery } from "@tanstack/react-query";
-// import { APIService } from "../../shared/lib/api";
-import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
   DailyPointsPageWrapper,
   IconDiv,
@@ -11,6 +11,7 @@ import {
   OptionBox,
   OptionCard,
   EmojiIcon,
+  ItemEmoji,
   OptionLabel,
   SelectBtn,
   SelectTxt,
@@ -26,56 +27,160 @@ import defaultItemIcon from "@icon/my/tomatoIcon.svg";
 import HappyFace from "@icon/my/happyFace.svg";
 import SadFace from "@icon/my/sadIcon.svg";
 
+import { APIService } from "../../shared/lib/api";
+import { testLoginIfNeeded } from "../../shared/lib/auth";
+
+const DEV_MOCK_ON_5XX = false;
+const MOCK_QUIZ = {
+  itemName: "토마토",
+  itemIconUrl: "",
+  questionLines: ["토마토는 과일이다?", "(연동 오류로 모의 문제 표시 중)"],
+  attempted: false,
+  __fallback: "mock500",
+};
+
+// 🔎 공통 에러 파서
+function parseApiError(e) {
+  const status = e?.response?.status;
+  const msg = e?.response?.data?.message || e?.message || "unknown";
+  return { status, msg };
+}
+
+// 🔹 아이콘 디코더 (U+ 코드포인트 대비)
+function decodeEmoji(s = "") {
+  if (s.startsWith("U+")) {
+    return String.fromCodePoint(parseInt(s.replace("U+", ""), 16));
+  }
+  return s;
+}
+
 export default function DailyPointsPage() {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const adWatched = !!state?.adWatched;
+  const adNonceFromNav = state?.adNonce;
+  const [retryToken, setRetryToken] = useState(null);
+  const qc = useQueryClient();
 
-  useHeader({
-    title: "",
-    showBack: true,
-  });
+  useHeader({ title: "", showBack: true });
 
-  // 오늘의 예측 문제 데이터 불러오기
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["dailyPoints", "today"],
+  // 광고에서 돌아왔을 때 캐시 제거 & 키 갱신
+  useEffect(() => {
+    if (!adWatched) return;
+    const token = adNonceFromNav || String(Date.now());
+    setRetryToken(token);
+    qc.removeQueries({ predicate: (q) => String(q.queryKey?.[0]) === "dailyPoints" });
+    qc.invalidateQueries({ predicate: (q) => String(q.queryKey?.[0]) === "dailyPoints" });
+    navigate(".", { replace: true, state: null });
+  }, [adWatched, adNonceFromNav, navigate, qc]);
+
+  // 오늘의 문제 조회
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["dailyPoints", "today", retryToken],
     queryFn: async () => {
-      // 실제 연동 시 엔드포인트 예시: /daily-points/today
-      // const res = await APIService.private.get("/daily-points/today");
-      // const raw = res?.data ?? res;
-
-      // 임시 목데이터 (백 나오기 전까지)
-      const raw = {
-        itemName: "토마토",
-        // 없으면 폴백 아이콘 사용
-        itemIconUrl: "",
-        // 필요 시 서버가 바뀔 수 있도록 문구도 서버 제공 가능
-        questionLines: ["오늘 {item}의 가격은", "어제에 비해 올라갔을까요?"],
-        // 서버가 정답 판단을 하는 구조라면 여기선 안 씀
+      await testLoginIfNeeded();
+      const path = "/quiz/daily";
+      const params = {
+        _ts: Date.now(),
+        ...(retryToken ? { retry: 1, _ad: 1 } : {}),
       };
 
-      return {
-        itemName: raw?.itemName || "토마토",
-        itemIconUrl: raw?.itemIconUrl || "",
-        questionLines:
-          Array.isArray(raw?.questionLines) && raw.questionLines.length > 0
-            ? raw.questionLines
-            : ["오늘 {item}의 가격은", "어제에 비해 올라갔을까요?"],
-      };
+      try {
+        const res = await APIService.private.get(path, { params });
+        const raw = res?.data ?? res ?? {};
+
+        // 아이콘 처리
+        const rawIcon = raw?.ingredient?.icon ?? raw?.ingredient?.iconUrl ?? raw?.itemIconUrl ?? "";
+        const iconValue = decodeEmoji(rawIcon);
+        const iconKind =
+          /^https?:\/\//.test(iconValue) || /^data:image\//.test(iconValue)
+            ? "url"
+            : iconValue
+            ? "emoji"
+            : "none";
+
+        const lines = Array.isArray(raw?.questionLines)
+          ? raw.questionLines
+          : raw?.statement
+          ? [raw.statement]
+          : [];
+
+        return {
+          id: raw?.id ?? raw?.questionId,
+          itemName: raw?.ingredient?.name ?? raw?.itemName ?? "",
+          itemIconValue: iconValue,
+          itemIconKind: iconKind, // 'url' | 'emoji' | 'none'
+          questionLines: lines,
+          attempted: !!raw?.attempted,
+          ...(retryToken && { attempted: false }),
+        };
+      } catch (e) {
+        const { status, msg } = parseApiError(e);
+        console.error("[GET /quiz/daily] failed:", status, msg, e?.response?.data);
+
+        if (status === 204) {
+          navigate("/my/points-daily/result", { replace: true, state: { closed: true } });
+          return null;
+        }
+        if (status === 401) {
+          navigate("/login", { replace: true, state: { returnTo: "/my/points-daily" } });
+          return null;
+        }
+        if ((status === 409 || status === 403) && !retryToken) {
+          navigate("/my/points-daily/result", { replace: true, state: { alreadySolved: true } });
+          return null;
+        }
+        if (String(import.meta.env.MODE).includes("dev") && DEV_MOCK_ON_5XX && status >= 500) {
+          console.warn("[/quiz/daily] 5xx → using MOCK_QUIZ");
+          return { ...MOCK_QUIZ };
+        }
+        throw e;
+      }
     },
-    staleTime: 60 * 1000,
-    retry: 1,
+    retry: (failureCount, e) => {
+      const s = e?.response?.status || 0;
+      return s >= 500 && failureCount < 1;
+    },
+    retryDelay: () => 300,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    keepPreviousData: false,
   });
 
-  const itemName = data?.itemName ?? "토마토";
-  const itemIcon = data?.itemIconUrl || defaultItemIcon; // 없으면 토마토 아이콘
-
-  const q1 = (data?.questionLines?.[0] || "오늘 {item}의 가격은").replace("{item}", itemName);
-  const q2 = data?.questionLines?.[1] || "어제에 비해 올라갔을까요?";
-
-  const handleSelect = (answer /* 'up' | 'down' */) => {
-    // 실제로는 서버에 answer 제출 → 결과 판정 응답 받고 페이지 이동 권장
-    // 지금은 라우팅만 연결해둘게
-    navigate("/my/points-daily/result", { state: { answer, itemName } });
-  };
+  // 정답 제출
+  const { mutate: submitAnswer } = useMutation({
+    mutationFn: async (answer) => {
+      await testLoginIfNeeded();
+      const payload = {
+        answer,
+        ...(data?.id ? { questionId: data.id } : {}),
+        idempotencyKey: crypto.randomUUID(),
+      };
+      const res = await APIService.private.post("/quiz/daily/answer", payload);
+      return res?.data ?? res;
+    },
+    onSuccess: async (res) => {
+      await qc.invalidateQueries({ queryKey: ["me", "summary"] });
+      await qc.refetchQueries({ queryKey: ["me", "summary"], type: "active" });
+      navigate("/my/points-daily/result", {
+        state: {
+          result: res?.result,
+          awarded: res?.awarded ?? 0,
+          ingredientName: res?.ingredientName || res?.item?.name,
+        },
+      });
+    },
+    onError: (e) => {
+      const { status } = parseApiError(e);
+      if (status === 403 || status === 409) {
+        alert("추가시도권이 만료되었어. ‘광고 보고 한 번 더’로 추가권을 먼저 받아줘!");
+      } else {
+        alert("제출에 실패했어. 잠시 후 다시 시도해줘.");
+      }
+    },
+  });
 
   if (isLoading) {
     return (
@@ -94,40 +199,65 @@ export default function DailyPointsPage() {
   }
 
   if (isError) {
+    const { msg } = parseApiError(error);
     return (
       <DailyPointsPageWrapper>
         <QuestionBox style={{ marginTop: 80 }}>
-          <QTextStrong>문제를 불러오지 못했습니다</QTextStrong>
-          <p style={{ color: "#787885", marginTop: 8, fontSize: 14 }}>잠시 후 다시 시도해주세요</p>
+          <QTextStrong>문제를 불러오지 못했어</QTextStrong>
+          <p style={{ color: "#787885", marginTop: 8, fontSize: 14 }}>잠시 후 다시 시도해줘</p>
+          {import.meta.env.DEV && (
+            <p style={{ color: "#ADADAF", marginTop: 6, fontSize: 12 }}>디버그: {String(msg)}</p>
+          )}
         </QuestionBox>
       </DailyPointsPageWrapper>
     );
   }
 
+  const itemName = data?.itemName || "";
+  const iconKind = data?.itemIconKind || "none";
+  const iconValue = data?.itemIconValue || "";
+  const q1 = data?.questionLines?.[0] || "";
+  const q2 = data?.questionLines?.[1] || null;
+
+  const handleSelect = (answer) => submitAnswer(answer);
+
   return (
     <DailyPointsPageWrapper>
       <IconDiv>
-        <ItemIcon src={itemIcon} alt={itemName} />
+        {iconKind === "url" && <ItemIcon src={iconValue} alt={`${itemName || "item"} 아이콘`} />}
+        {iconKind === "emoji" && (
+          <ItemEmoji role="img" aria-label={itemName || "item"}>
+            {iconValue}
+          </ItemEmoji>
+        )}
+        {iconKind === "none" && <ItemIcon src={defaultItemIcon} alt="기본 아이콘" />}
       </IconDiv>
 
-      <QuestionBox>
-        <QTextStrong>{q1}</QTextStrong>
-        <QTextStrong>{q2}</QTextStrong>
-      </QuestionBox>
+      {(q1 || q2) && (
+        <QuestionBox>
+          {q1 && <QTextStrong>{q1}</QTextStrong>}
+          {q2 && <QTextStrong>{q2}</QTextStrong>}
+          {data?.__fallback === "mock500" && import.meta.env.DEV && (
+            <p style={{ color: "#ADADAF", marginTop: 8, fontSize: 12 }}>
+              DEV: 서버 5xx로 모의 문제 표시 중
+            </p>
+          )}
+        </QuestionBox>
+      )}
 
       <OptionBox>
-        <OptionCard $variant="up">
-          <EmojiIcon src={HappyFace} alt="up" />
-          <OptionLabel $variant="up">올랐다</OptionLabel>
-          <SelectBtn type="button" $variant="up" onClick={() => handleSelect("up")}>
+        <OptionCard $variant="yes">
+          <EmojiIcon src={HappyFace} alt="yes" />
+          <OptionLabel $variant="yes">맞다</OptionLabel>
+          <SelectBtn type="button" $variant="yes" onClick={() => handleSelect("O")}>
             <SelectTxt>선택</SelectTxt>
           </SelectBtn>
         </OptionCard>
 
-        <OptionCard $variant="down">
-          <EmojiIcon src={SadFace} alt="down" />
-          <OptionLabel $variant="down">떨어졌다</OptionLabel>
-          <SelectBtn type="button" $variant="down" onClick={() => handleSelect("down")}>
+        <OptionCard $variant="no">
+          <EmojiIcon src={SadFace} alt="no" />
+          <OptionLabel $variant="no">아니다</OptionLabel>
+          <SelectBtn type="button" $variant="no" onClick={() => handleSelect("X")}>
             <SelectTxt>선택</SelectTxt>
           </SelectBtn>
         </OptionCard>

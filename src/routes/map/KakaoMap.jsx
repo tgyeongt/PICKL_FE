@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { selectedCategoryAtom } from "./state/CategoryState";
 import { selectedAddressAtom } from "./state/addressAtom";
@@ -26,6 +27,8 @@ import StoreListImg from "@icon/map/storeListIcon.svg";
 
 export default function KakaoMap() {
   const mapRef = useRef(null);
+  const { state: navState } = useLocation();
+  const navigate = useNavigate();
   const [mapInstance, setMapInstance] = useState(null);
   const [selectedStore, setSelectedStore] = useState(null);
   const [selectedCategory] = useAtom(selectedCategoryAtom);
@@ -35,6 +38,7 @@ export default function KakaoMap() {
 
   const markersRef = useRef([]);
   const currentMarkerRef = useRef(null);
+  const centerLockUntilRef = useRef(0);
   const overlayMapRef = useRef({
     round: {},
     bubble: null,
@@ -42,6 +46,7 @@ export default function KakaoMap() {
   });
   const justOpenedAtRef = useRef(0);
 
+  const pendingFocusRef = useRef(null);
   const [bbox, setBbox] = useState(null);
 
   // ---------- Kakao SDK 준비 ----------
@@ -146,7 +151,7 @@ export default function KakaoMap() {
   };
 
   const showBubbleOverlay = useCallback(
-    (store, storePosition, imageSrc) => {
+    (store, storePosition, imageSrc, opts = { useOffset: true, offsetLat: 0.005 }) => {
       const key = `${store.latitude},${store.longitude}`;
 
       // 기존 둥근 마커 제거
@@ -157,10 +162,15 @@ export default function KakaoMap() {
         delete overlayMapRef.current.round[key];
       }
 
-      const offsetLat = 0.005;
-      const adjustedLat = store.latitude - offsetLat;
-      const adjustedCenter = new window.kakao.maps.LatLng(adjustedLat, store.longitude);
-      mapInstance?.panTo(adjustedCenter);
+      // 리스트 선택일 때는 정확히 상점 좌표로 센터 이동
+      if (opts?.useOffset) {
+        const offsetLat = opts.offsetLat ?? 0.005;
+        const adjustedLat = store.latitude - offsetLat;
+        const adjustedCenter = new window.kakao.maps.LatLng(adjustedLat, store.longitude);
+        mapInstance?.panTo(adjustedCenter);
+      } else {
+        mapInstance?.panTo(storePosition);
+      }
 
       // 말풍선 생성
       const bubbleEl = createBubbleElement(store, imageSrc);
@@ -180,6 +190,12 @@ export default function KakaoMap() {
     },
     [mapInstance]
   );
+
+  const handleSelectFromList = useCallback((store) => {
+    pendingFocusRef.current = store;
+    centerLockUntilRef.current = Date.now() + 1500;
+    setIsListMode(false);
+  }, []);
 
   const renderMarkers = useCallback(
     (stores) => {
@@ -271,6 +287,7 @@ export default function KakaoMap() {
   // 주소 변경 시 센터 이동
   useEffect(() => {
     if (!mapInstance || !addressState.lat || !addressState.lng) return;
+    if (Date.now() < centerLockUntilRef.current) return;
     const newCenter = new window.kakao.maps.LatLng(addressState.lat, addressState.lng);
     mapInstance.setCenter(newCenter);
   }, [mapInstance, addressState.lat, addressState.lng]);
@@ -350,7 +367,7 @@ export default function KakaoMap() {
     };
 
     window.kakao.maps.event.addListener(mapInstance, "idle", onIdle);
-    onIdle(); // 초기 1회
+    onIdle();
 
     return () => {
       clearTimeout(t);
@@ -361,7 +378,7 @@ export default function KakaoMap() {
   // ---------- 리스트 모드 기본 bbox 보정 (맵 없어도 쿼리 가능하게) ----------
   useEffect(() => {
     if (isListMode && !bbox && addressState?.lat && addressState?.lng) {
-      const span = 0.02; // 약 2km 박스
+      const span = 0.02;
       setBbox({
         minX: addressState.lng - span,
         minY: addressState.lat - span,
@@ -370,6 +387,22 @@ export default function KakaoMap() {
       });
     }
   }, [isListMode, bbox, addressState?.lat, addressState?.lng]);
+
+  useEffect(() => {
+    if (!isListMode && mapInstance && pendingFocusRef.current) {
+      const store = pendingFocusRef.current;
+      const pos = new window.kakao.maps.LatLng(store.latitude, store.longitude);
+      const imageSrc = (store.type || "").toLowerCase() === "market" ? marketIcon : martIcon;
+      const handler = () => {
+        showBubbleOverlay(store, pos, imageSrc, { useOffset: true, offsetLat: 0.0005 });
+        centerLockUntilRef.current = Date.now() + 800;
+        window.kakao.maps.event.removeListener(mapInstance, "tilesloaded", handler);
+      };
+      mapInstance.setCenter(pos);
+      window.kakao.maps.event.addListener(mapInstance, "tilesloaded", handler);
+      pendingFocusRef.current = null;
+    }
+  }, [isListMode, mapInstance, showBubbleOverlay]);
 
   // API 파라미터 변환
   const buildMarketParams = (bbox) => ({
@@ -524,20 +557,37 @@ export default function KakaoMap() {
 
   // ---------- 리스트/지도 전환 시 ----------
   useEffect(() => {
-    if (!isListMode && !mapInstance && addressState.lat && addressState.lng) {
+    if (!isListMode && addressState.lat && addressState.lng) {
       (async () => {
         await ensureKakaoReady();
         await waitForContainerSize();
         createMap();
       })();
     }
-  }, [isListMode, mapInstance, addressState.lat, addressState.lng, createMap]);
+  }, [isListMode, addressState.lat, addressState.lng, createMap]);
+
+  useEffect(() => {
+    if (isListMode && mapInstance) {
+      setMapInstance(null);
+    }
+  }, [isListMode, mapInstance]);
+
+  useEffect(() => {
+    const store = navState?.focusStore;
+    if (!store || !store.latitude || !store.longitude) return;
+
+    pendingFocusRef.current = store;
+    centerLockUntilRef.current = Date.now() + 1500;
+    setIsListMode(false);
+
+    navigate(".", { replace: true, state: null });
+  }, [navState, navigate]);
 
   return (
     <KakaoMapWrapper $isListMode={isListMode}>
       {isListMode ? (
         <>
-          <StoreListView stores={filteredStores} />
+          <StoreListView stores={filteredStores} onSelect={handleSelectFromList} />
         </>
       ) : (
         <>

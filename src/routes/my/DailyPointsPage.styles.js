@@ -10,10 +10,11 @@ export const DailyPointsPageWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow-x: hidden;
 `;
 
 export const IconDiv = styled.div`
-  padding-top: 63px;
+  padding-top: 53px;
 `;
 
 export const ItemIcon = styled.img`
@@ -23,8 +24,17 @@ export const ItemIcon = styled.img`
   aspect-ratio: 1 / 1;
 `;
 
+export const ItemEmoji = styled.span`
+  width: 147px;
+  height: 147px;
+  border: none;
+  flex-shrink: 0;
+  aspect-ratio: 1/1;
+  font-size: 147px;
+`;
+
 export const QuestionBox = styled.div`
-  margin-top: 19px;
+  margin-top: 5px;
   text-align: center;
 `;
 
@@ -42,19 +52,24 @@ export const OptionBox = styled.div`
   display: flex;
   gap: 13px;
   margin-top: 57px;
-  padding: 0;
+  box-sizing: border-box;
   width: 100%;
+  max-width: 390px; 
+  padding: 0 16px;
   justify-content: center;
+  min-width: 0;
 `;
 
 export const OptionCard = styled.div`
-  width: 170px;
+  box-sizing: border-box;
+  width: calc((100% - 13px) / 2);
+  max-width: 170px;
   height: 210px;
   border-radius: 30px;
   border: 2px solid
     ${({ $variant }) =>
-      $variant === "up" ? "rgba(228, 41, 56, 0.20)" : "rgba(22, 119, 255, 0.20)"};
-  background: ${({ $variant }) => ($variant === "up" ? "#FEE" : "#E8F3FF")};
+      $variant === "yes" ? "rgba(228, 41, 56, 0.20)" : "rgba(22, 119, 255, 0.20)"};
+  background: ${({ $variant }) => ($variant === "yes" ? "#FEE" : "#E8F3FF")};
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -76,7 +91,7 @@ export const OptionLabel = styled.p`
   font-style: normal;
   font-weight: 700;
   line-height: 32px;
-  color: ${({ $variant }) => ($variant === "up" ? "#E42938" : "#1677FF")};
+  color: ${({ $variant }) => ($variant === "yes" ? "#E42938" : "#1677FF")};
 `;
 
 export const SelectBtn = styled.button`
@@ -89,13 +104,13 @@ export const SelectBtn = styled.button`
   gap: 10px;
   flex-shrink: 0;
   border-radius: 30px;
-  background: ${({ $variant }) => ($variant === "up" ? "#E42938" : "#1677FF")};
+  background: ${({ $variant }) => ($variant === "yes" ? "#E42938" : "#1677FF")};
   cursor: pointer;
   margin-top: 27px;
   margin-bottom: 30px;
 
   &:hover {
-    background: ${({ $variant }) => ($variant === "up" ? "#c72a37" : "#226bd2")};
+    background: ${({ $variant }) => ($variant === "yes" ? "#c72a37" : "#226bd2")};
   }
 `;
 
@@ -169,7 +184,9 @@ export const SkeletonLine = styled.div`
 `;
 
 export const SkeletonCard = styled.div`
-  width: 170px;
+  box-sizing: border-box;
+  width: calc((100% - 13px) / 2);
+  max-width: 170px;
   height: 210px;
   border-radius: 30px;
   background: #f2f2f2;

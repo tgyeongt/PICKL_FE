@@ -6,6 +6,7 @@ export const DailyPointsResultWrapper = styled.div`
   padding: 0 0 40px;
   background: linear-gradient(180deg, #58d848 -6.04%, #fff 73.3%);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow-x: hidden;
