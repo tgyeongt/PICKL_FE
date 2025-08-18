@@ -9,8 +9,7 @@ export default function StateSection() {
   // 전역 포인트 상태 사용
   const globalPoints = useAtomValue(pointsAtom);
 
-  // 전역 상태가 있으면 사용, 없으면 API 데이터 사용
-  const currentPoints = globalPoints !== null ? globalPoints : summary?.points ?? 0;
+  const currentPoints = summary?.points ?? null ?? globalPoints ?? 0;
 
   const points = formatNumber(currentPoints);
   const joinedDays = summary?.daysSinceFriend ?? 0;

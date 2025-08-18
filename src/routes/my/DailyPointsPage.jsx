@@ -29,6 +29,8 @@ import SadFace from "@icon/my/sadIcon.svg";
 
 import { APIService } from "../../shared/lib/api";
 import { testLoginIfNeeded } from "../../shared/lib/auth";
+import { useSetAtom } from "jotai";
+import { pointsAtom } from "./convert/ConvertPointsContext";
 
 const DEV_MOCK_ON_5XX = false;
 const MOCK_QUIZ = {
@@ -61,6 +63,7 @@ export default function DailyPointsPage() {
   const adNonceFromNav = state?.adNonce;
   const [retryToken, setRetryToken] = useState(null);
   const qc = useQueryClient();
+  const setPoints = useSetAtom(pointsAtom);
 
   useHeader({ title: "", showBack: true });
 
@@ -162,6 +165,20 @@ export default function DailyPointsPage() {
       return res?.data ?? res;
     },
     onSuccess: async (res) => {
+      const awarded = Number(res?.awarded ?? 0);
+
+      // 1) React Query 캐시 즉시 증가
+      qc.setQueryData(["me", "summary"], (cur) => {
+        const prev = Number(cur?.points ?? 0);
+        return { ...(cur || {}), points: prev + awarded };
+      });
+
+      // 2) 전역 atom도 즉시 증가
+      setPoints((prev) => {
+        const base = Number(prev ?? 0);
+        return base + awarded;
+      });
+
       await qc.invalidateQueries({ queryKey: ["me", "summary"] });
       await qc.refetchQueries({ queryKey: ["me", "summary"], type: "active" });
       navigate("/my/points-daily/result", {

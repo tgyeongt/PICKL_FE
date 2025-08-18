@@ -35,15 +35,17 @@ export function ConvertPointsProvider({ children }) {
   // 전역 포인트 상태 사용
   const [globalPoints, setGlobalPoints] = useAtom(pointsAtom);
 
-  // 전역 포인트가 아직 없고, API에서 값이 오면 한 번만 세팅
+  // API에서 포인트 값이 바뀌면 전역 atom도 항상 동기화
   useEffect(() => {
-    if (globalPoints === null && summary?.points !== undefined) {
-      setGlobalPoints(summary.points);
-    }
-  }, [globalPoints, summary?.points, setGlobalPoints]);
+    if (summary?.points == null) return;
+    setGlobalPoints((prev) =>
+      // 값이 달라졌다면 서버 값을 신뢰해 갱신
+      prev === summary.points ? prev : summary.points
+    );
+  }, [summary?.points, setGlobalPoints]);
 
   // 전역 상태가 세팅되기 전엔 fallback으로 summary.points 사용
-  const currentPoints = globalPoints !== null ? globalPoints : summary?.points ?? 0;
+  const currentPoints = summary?.points ?? null ?? globalPoints ?? 0;
 
   const stats = {
     points: currentPoints,

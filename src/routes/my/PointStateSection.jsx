@@ -21,8 +21,7 @@ export default function PointStateSection() {
   const globalPoints = useAtomValue(pointsAtom);
   const { data: summary } = useMySummary();
 
-  // 전역 상태가 있으면 사용, 없으면 API 데이터 사용
-  const currentPoints = globalPoints !== null ? globalPoints : summary?.points ?? 0;
+  const currentPoints = summary?.points ?? null ?? globalPoints ?? 0;
 
   const hasGlobalAddr = !!(selectedAddress?.jibunAddress || selectedAddress?.roadAddress);
   const { address: fallbackAddr } = useCurrentAddress(!hasGlobalAddr);
