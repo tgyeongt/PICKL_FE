@@ -6,7 +6,6 @@ import ItemCard from "./ItemCard";
 import Suggestion from "./Suggestion";
 import SearchIcon from "@icon/search/search_icon.svg";
 import ClearIcon from "@icon/search/clear_icon.svg";
-import sampleItems from "./sampleItems";
 import { APIService } from "../../shared/lib/api";
 
 export default function Search() {
@@ -15,7 +14,7 @@ export default function Search() {
   const showClearButton = searchQuery.length > 0;
   const navigate = useNavigate();
 
-  const [itemList, setItemList] = useState(sampleItems);
+  const [itemList, setItemList] = useState([]);
   const isSearching = debouncedSearchQuery.length > 0;
 
   const filteredList = itemList.filter((item) =>
