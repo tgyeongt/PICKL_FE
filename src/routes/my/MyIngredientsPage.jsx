@@ -2,16 +2,25 @@ import { useMemo, useEffect, useRef } from "react";
 import styled from "styled-components";
 import useHeader from "../../shared/hooks/useHeader";
 import useFavoriteIngredients from "./hooks/useFavoriteIngredients";
+import useMySummary from "./hooks/useMySummary";
 
-import watermelonImg from "@icon/home/watermelon.png";
 import FavoriteItemCard from "./FavoriteItemCard";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function MyIngredientsPage() {
   useHeader({ title: "찜한 식재료 목록", showBack: true });
 
-  const { ingredients, loading, error, hasMore, loadMore, totalCount, unfavorite } =
-    useFavoriteIngredients();
+  const {
+    ingredients,
+    loading,
+    error,
+    hasMore,
+    loadMore,
+    unfavorite,
+    totalCount: totalFromHook,
+  } = useFavoriteIngredients();
+
+  const { data: summary } = useMySummary();
   const observerRef = useRef(null);
 
   const items = useMemo(
@@ -19,10 +28,16 @@ export default function MyIngredientsPage() {
       (ingredients || []).map((ingredient) => ({
         id: ingredient.ingredientId,
         name: ingredient.name,
-        img: ingredient.thumbnailUrl || watermelonImg,
+        img: ingredient.thumbnailUrl,
       })),
     [ingredients]
   );
+
+  const displayTotal =
+    summary?.favoriteIngredientCount ??
+    null ??
+    (Number.isFinite(Number(totalFromHook)) ? totalFromHook : null) ??
+    items.length;
 
   useEffect(() => {
     if (!hasMore || loading) return;
@@ -54,7 +69,7 @@ export default function MyIngredientsPage() {
     <MyIngredientsPageWrapper>
       <CountRow>
         <SubText>
-          총 <GreenText>{totalCount}개</GreenText>
+          총 <GreenText>{displayTotal}개</GreenText>
         </SubText>
       </CountRow>
 
