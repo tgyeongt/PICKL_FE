@@ -7,12 +7,10 @@ import watermelonImg from "@icon/home/watermelon.png";
 import FavoriteItemCard from "./FavoriteItemCard";
 
 export default function MyIngredientsPage() {
-  useHeader({
-    title: "찜한 식재료 목록",
-    showBack: true,
-  });
+  useHeader({ title: "찜한 식재료 목록", showBack: true });
 
-  const { ingredients, loading, error, hasMore, loadMore, totalCount } = useFavoriteIngredients();
+  const { ingredients, loading, error, hasMore, loadMore, totalCount, unfavorite } =
+    useFavoriteIngredients();
   const observerRef = useRef(null);
 
   const items = useMemo(
@@ -20,28 +18,19 @@ export default function MyIngredientsPage() {
       (ingredients || []).map((ingredient) => ({
         id: ingredient.ingredientId,
         name: ingredient.name,
-        description: ingredient.shortDesc || "맛있는 식재료입니다",
         img: ingredient.thumbnailUrl || watermelonImg,
       })),
     [ingredients]
   );
 
-  // IntersectionObserver로 마지막 아이템 감지
   useEffect(() => {
     if (!hasMore || loading) return;
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          loadMore();
-        }
-      },
+      (entries) => entries[0].isIntersecting && loadMore(),
       { threshold: 1.0 }
     );
-
     if (observerRef.current) observer.observe(observerRef.current);
-    return () => {
-      if (observerRef.current) observer.unobserve(observerRef.current);
-    };
+    return () => observer.disconnect();
   }, [hasMore, loading, loadMore]);
 
   if (loading && items.length === 0) {
@@ -55,7 +44,7 @@ export default function MyIngredientsPage() {
   if (error) {
     return (
       <MyIngredientsPageWrapper>
-        <ErrorText>데이터를 불러오는데 실패했습니다.</ErrorText>
+        <ErrorText>데이터를 불러오는데 실패했어</ErrorText>
       </MyIngredientsPageWrapper>
     );
   }
@@ -74,9 +63,9 @@ export default function MyIngredientsPage() {
             key={item.id}
             img={item.img}
             title={item.name}
-            description={item.description}
+            liked={true}
             onClick={() => {}}
-            // 마지막 카드에 ref 연결
+            onClickHeart={() => unfavorite(item.id)}
             ref={idx === items.length - 1 ? observerRef : null}
           />
         ))}
@@ -90,26 +79,22 @@ export default function MyIngredientsPage() {
 const MyIngredientsPageWrapper = styled.div`
   min-height: 100vh;
   background: #fbfbfb;
-  padding-bottom: 90px; /* 하단 네비게이션 여백 */
+  padding-bottom: 90px;
 `;
-
 const CountRow = styled.div`
   max-width: 390px;
   margin: 6px auto 10px;
   padding: 0 20px;
   box-sizing: border-box;
 `;
-
 const SubText = styled.p`
   color: #adadaf;
   font-size: 12px;
 `;
-
 const GreenText = styled.span`
   color: #38b628;
   font-size: 12px;
 `;
-
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -118,15 +103,15 @@ const Grid = styled.div`
   max-width: 390px;
   margin: 0 auto;
 `;
-
 const LoadingText = styled.div`
   text-align: center;
   padding: 20px;
   color: #666;
+  font-size: 14px;
 `;
-
 const ErrorText = styled.div`
   text-align: center;
   padding: 50px 20px;
   color: #ff4444;
+  font-size: 16px;
 `;

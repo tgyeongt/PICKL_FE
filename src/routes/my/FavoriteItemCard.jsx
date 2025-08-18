@@ -13,7 +13,7 @@ function FavoriteItemCardBase(
 
   const handleHeart = (e) => {
     e.stopPropagation();
-    onClickHeart?.(); 
+    onClickHeart?.();
   };
 
   return (
