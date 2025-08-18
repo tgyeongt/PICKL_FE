@@ -5,10 +5,19 @@ import heart_on from "@icon/common/heart_on.svg";
 import heart_off from "@icon/common/heart_off.svg";
 import helpIcon from "@icon/my/QIcon.svg";
 import { useLayoutEffect, useRef, useState } from "react";
+import Toast from "./Toast";
 
 export default function Header() {
-  const { title, showBack, showHeart, isVisible, isHeartActive, toggleHeart, showHelp, onHelp } =
-    useHeaderStore();
+  const {
+    title,
+    showBack,
+    showHeart,
+    isVisible,
+    isHeartActive,
+    toggleHeart,
+    showHelp,
+    onHelp,
+  } = useHeaderStore();
 
   const titleRef = useRef(null);
   const [titleW, setTitleW] = useState(0);
@@ -20,37 +29,43 @@ export default function Header() {
   if (!isVisible) return null;
 
   return (
-    <Wrapper>
-      {showBack ? (
-        <IconButton aria-label="뒤로가기" onClick={() => window.history.back()}>
-          <img src={back} alt="" />
-        </IconButton>
-      ) : (
-        <IconSpacer />
-      )}
-
-      <TitleOnly ref={titleRef}>{title}</TitleOnly>
-
-      {showHelp && (
-        <HelpButton
-          aria-label="도움말"
-          onClick={onHelp}
-          style={{ left: `calc(50% + ${titleW / 2.3}px)` }}
-        >
-          <img src={helpIcon} alt="" />
-        </HelpButton>
-      )}
-      
-      <RightSlot>
-        {showHeart ? (
-          <IconButton aria-label="찜하기" onClick={toggleHeart}>
-            <img src={isHeartActive ? heart_on : heart_off} alt="" />
+    <>
+      <Wrapper>
+        {showBack ? (
+          <IconButton aria-label="뒤로가기" onClick={() => window.history.back()}>
+            <img src={back} alt="" />
           </IconButton>
         ) : (
           <IconSpacer />
         )}
-      </RightSlot>
-    </Wrapper>
+
+        <TitleOnly ref={titleRef}>{title}</TitleOnly>
+
+        {/* 도움말 아이콘: 제목 우측에 살짝 붙여 배치 */}
+        {showHelp && (
+          <HelpButton
+            aria-label="도움말"
+            onClick={onHelp}
+            style={{ left: `calc(50% + ${titleW / 2.3}px)` }}
+          >
+            <img src={helpIcon} alt="" />
+          </HelpButton>
+        )}
+
+        <RightSlot>
+          {showHeart ? (
+            <IconButton aria-label="찜하기" onClick={toggleHeart}>
+              <img src={isHeartActive ? heart_on : heart_off} alt="" />
+            </IconButton>
+          ) : (
+            <IconSpacer />
+          )}
+        </RightSlot>
+      </Wrapper>
+
+      {/* 전역 토스트 렌더링 (하트 토글 포함 모든 토스트 메시지 처리) */}
+      <Toast />
+    </>
   );
 }
 
