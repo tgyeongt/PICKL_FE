@@ -85,7 +85,6 @@ export default function MyRecipesPage() {
   );
 }
 
-/* 스타일 */
 const MyRecipesPageWrapper = styled.div`
   min-height: 100vh;
   background: #fbfbfb;

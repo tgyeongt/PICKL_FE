@@ -52,7 +52,6 @@ export default function DailyAdPage() {
       });
     } catch (error) {
       console.error("추가 시도 요청 실패:", error);
-      // API 호출 실패 시에도 광고는 시청한 것으로 처리
       const adNonce = crypto.randomUUID();
       navigate(returnTo, {
         replace: true,

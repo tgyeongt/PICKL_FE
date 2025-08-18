@@ -54,5 +54,5 @@ const ConvertPointsPageWrapper = styled.div`
   margin: 0 auto;
   background: #fbfbfb;
   padding: 0 10px;
-  overflow-x: hidden; /* 안전망 */
+  overflow-x: hidden;
 `;

@@ -14,7 +14,7 @@ export const DailyPointsPageWrapper = styled.div`
 `;
 
 export const IconDiv = styled.div`
-  padding-top: 63px;
+  padding-top: 53px;
 `;
 
 export const ItemIcon = styled.img`
@@ -24,8 +24,17 @@ export const ItemIcon = styled.img`
   aspect-ratio: 1 / 1;
 `;
 
+export const ItemEmoji = styled.span`
+  width: 147px;
+  height: 147px;
+  border: none;
+  flex-shrink: 0;
+  aspect-ratio: 1/1;
+  font-size: 147px;
+`;
+
 export const QuestionBox = styled.div`
-  margin-top: 19px;
+  margin-top: 5px;
   text-align: center;
 `;
 
@@ -43,17 +52,17 @@ export const OptionBox = styled.div`
   display: flex;
   gap: 13px;
   margin-top: 57px;
-  box-sizing: border-box; /* ← 패딩 포함해서 390px 안에 맞추기 */
+  box-sizing: border-box;
   width: 100%;
-  max-width: 390px; /* 중앙 컨텐트 폭 제한 */
+  max-width: 390px; 
   padding: 0 16px;
   justify-content: center;
   min-width: 0;
 `;
 
 export const OptionCard = styled.div`
-  box-sizing: border-box; /* 경계선 포함해서 계산 */
-  width: calc((100% - 13px) / 2); /* 2열 반응형 */
+  box-sizing: border-box;
+  width: calc((100% - 13px) / 2);
   max-width: 170px;
   height: 210px;
   border-radius: 30px;
