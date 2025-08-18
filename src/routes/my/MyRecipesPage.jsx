@@ -2,17 +2,14 @@ import { useEffect, useRef, useMemo } from "react";
 import styled from "styled-components";
 import useHeader from "../../shared/hooks/useHeader";
 import useFavoriteRecipes from "./hooks/useFavoriteRecipes";
-
 import recipeIconImg from "@icon/my/recipeIcon.svg";
 import FavoriteItemCard from "./FavoriteItemCard";
 
 export default function MyRecipesPage() {
-  useHeader({
-    title: "찜한 레시피 목록",
-    showBack: true,
-  });
+  useHeader({ title: "찜한 레시피 목록", showBack: true });
 
-  const { recipes, loading, error, hasMore, loadMore, totalCount } = useFavoriteRecipes();
+  const { recipes, loading, error, hasMore, loadMore, totalCount, unfavorite } =
+    useFavoriteRecipes();
   const observerRef = useRef(null);
 
   const items = useMemo(
@@ -20,27 +17,19 @@ export default function MyRecipesPage() {
       recipes.map((recipe) => ({
         id: recipe.recipeId,
         name: recipe.recipeName,
-        img: recipeIconImg,
+        img: recipeIconImg, // 필요 시 recipe.thumbnail 등으로 교체
       })),
     [recipes]
   );
 
-  // IntersectionObserver로 마지막 아이템 감지
   useEffect(() => {
     if (!hasMore || loading) return;
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          loadMore();
-        }
-      },
+      (entries) => entries[0].isIntersecting && loadMore(),
       { threshold: 1.0 }
     );
-
     if (observerRef.current) observer.observe(observerRef.current);
-    return () => {
-      if (observerRef.current) observer.unobserve(observerRef.current);
-    };
+    return () => observer.disconnect();
   }, [hasMore, loading, loadMore]);
 
   if (loading && items.length === 0) {
@@ -50,11 +39,10 @@ export default function MyRecipesPage() {
       </MyRecipesPageWrapper>
     );
   }
-
   if (error) {
     return (
       <MyRecipesPageWrapper>
-        <ErrorText>데이터를 불러오는데 실패했습니다.</ErrorText>
+        <ErrorText>데이터를 불러오는데 실패했어</ErrorText>
       </MyRecipesPageWrapper>
     );
   }
@@ -73,8 +61,9 @@ export default function MyRecipesPage() {
             key={item.id}
             img={item.img}
             title={item.name}
+            liked={true}
             onClick={() => {}}
-            // 마지막 카드에 ref 연결
+            onClickHeart={() => unfavorite(item.id)}
             ref={idx === items.length - 1 ? observerRef : null}
           />
         ))}
