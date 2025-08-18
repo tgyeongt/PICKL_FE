@@ -25,6 +25,89 @@ import martIcon from "@icon/map/selectMart.svg";
 import currentMarkerIcon from "@icon/map/currentLocationMarker.svg";
 import StoreListImg from "@icon/map/storeListIcon.svg";
 
+// === 안전 설정 (필요 시 숫자만 더 키우면 됨) ===
+const SAFE = {
+  // idle 후 호출까지 딜레이 (기존 500 → 700ms)
+  IDLE_DEBOUNCE_MS: 700,
+
+  // 마트 bbox 반올림(키 안정화) 단위 (기존 ~0.01 → 0.02)
+  MART_ROUND_DECIMALS: 2, // (= Math.round(n*1e2)/1e2 ≒ 0.01)
+  MART_ROUND_STEP_HINT: 0.02, // 코멘트용 힌트
+
+  // 타일 분할 임계치 (면적) — 더 큰 값일 때만 분할해서 “불필요한 분할” 억제
+  TILE_SPLIT_THRESHOLD_2X2: 0.8, // 기존 0.2 → 0.8
+  TILE_SPLIT_THRESHOLD_4X4: 1.6, // 기존 0.6 → 1.6
+
+  // 타일 간 호출 간격 (기존 120 → 250ms)
+  TILE_COOLDOWN_MS: 250,
+
+  // 전체 마트 요청 사이 쿨다운 (bbox 바뀌어도 최소 이 간격 유지)
+  MART_GLOBAL_COOLDOWN_MS: 1200,
+
+  // 백오프(429/504) 파라미터 (기본 0.8s → 1.2s, 시도 3 → 4)
+  BACKOFF_BASE_MS: 1200,
+  BACKOFF_TRIES: 4,
+
+  // 마트 페이지 사이즈(더 크게 가져와 호출 횟수 감소, 20 → 30)
+  MART_PAGE_SIZE: 30,
+};
+
+/* =======================
+ * 유틸(마트 전용 개선)
+ * ======================= */
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
+/** 동일 키 동시요청 중복 제거 */
+const pendingRequests = new Map();
+const withDedup = async (key, fn) => {
+  if (pendingRequests.has(key)) return pendingRequests.get(key);
+  const p = fn().finally(() => pendingRequests.delete(key));
+  pendingRequests.set(key, p);
+  return p;
+};
+
+/** 429/504 전용 지수 백오프 재시도 */
+async function backoffRequest(
+  reqFn,
+  { tries = SAFE.BACKOFF_TRIES, base = SAFE.BACKOFF_BASE_MS } = {}
+) {
+  let delay = base;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await reqFn();
+      return res;
+    } catch (err) {
+      const status = err?.response?.status ?? err?.status;
+      if (status !== 429 && status !== 504) throw err;
+      await sleep(delay + Math.random() * 300);
+      delay *= 2;
+    }
+  }
+  return reqFn();
+}
+
+/** bbox 타일 분할 */
+function splitBbox(b, tiles = 2) {
+  const xs = [];
+  const ys = [];
+  for (let i = 0; i <= tiles; i++) {
+    xs.push(b.minX + ((b.maxX - b.minX) * i) / tiles);
+    ys.push(b.minY + ((b.maxY - b.minY) * i) / tiles);
+  }
+  const parts = [];
+  for (let i = 0; i < tiles; i++) {
+    for (let j = 0; j < tiles; j++) {
+      parts.push({
+        minX: xs[i],
+        maxX: xs[i + 1],
+        minY: ys[j],
+        maxY: ys[j + 1],
+      });
+    }
+  }
+  return parts;
+}
+
 export default function KakaoMap() {
   const mapRef = useRef(null);
   const { state: navState } = useLocation();
@@ -38,6 +121,7 @@ export default function KakaoMap() {
 
   const markersRef = useRef([]);
   const currentMarkerRef = useRef(null);
+  const martNextAllowedAtRef = useRef(0);
   const centerLockUntilRef = useRef(0);
   const overlayMapRef = useRef({
     round: {},
@@ -48,6 +132,10 @@ export default function KakaoMap() {
 
   const pendingFocusRef = useRef(null);
   const [bbox, setBbox] = useState(null);
+
+  // 마트 전용 안내/오류 상태
+  const [rateLimited, setRateLimited] = useState(false);
+  const [netError, setNetError] = useState(false);
 
   // ---------- Kakao SDK 준비 ----------
   const ensureKakaoReady = () =>
@@ -151,7 +239,7 @@ export default function KakaoMap() {
   };
 
   const showBubbleOverlay = useCallback(
-    (store, storePosition, imageSrc, opts = { useOffset: true, offsetLat: 0.005 }) => {
+    (store, storePosition, imageSrc, opts = { useOffset: true, offsetLat: 0.0007 }) => {
       const key = `${store.latitude},${store.longitude}`;
 
       // 기존 둥근 마커 제거
@@ -164,7 +252,7 @@ export default function KakaoMap() {
 
       // 리스트 선택일 때는 정확히 상점 좌표로 센터 이동
       if (opts?.useOffset) {
-        const offsetLat = opts.offsetLat ?? 0.005;
+        const offsetLat = opts.offsetLat ?? 0.0007;
         const adjustedLat = store.latitude - offsetLat;
         const adjustedCenter = new window.kakao.maps.LatLng(adjustedLat, store.longitude);
         mapInstance?.panTo(adjustedCenter);
@@ -330,7 +418,7 @@ export default function KakaoMap() {
   useEffect(() => {
     if (!mapInstance) return;
 
-    const DEBOUNCE_MS = 500;
+    const DEBOUNCE_MS = SAFE.IDLE_DEBOUNCE_MS;
     let t = null;
     const snap = (v, step = 0.005) => Math.round(v / step) * step;
 
@@ -414,6 +502,7 @@ export default function KakaoMap() {
     size: 50,
   });
 
+  // ⚠️ 마트 파라미터만 살짝 다르게(키 안정화 강하게)
   const buildMartParams = (bbox) => {
     const ensureMinSpan = (src, minLon = 0.3, minLat = 0.3) => {
       const cx = (src.minX + src.maxX) / 2;
@@ -422,19 +511,21 @@ export default function KakaoMap() {
       const halfY = Math.max((src.maxY - src.minY) / 2, minLat / 2);
       return { minX: cx - halfX, minY: cy - halfY, maxX: cx + halfX, maxY: cy + halfY };
     };
-    const round3 = (n) => Math.round(n * 1e3) / 1e3;
+    const roundN = (n) => Math.round(n * 1e2) / 1e2; // ≒ 0.01 (실제 체감은 0.02단위로 움직이게 됨)
     const bb = ensureMinSpan(bbox);
     return {
-      minX: round3(bb.minX),
-      minY: round3(bb.minY),
-      maxX: round3(bb.maxX),
-      maxY: round3(bb.maxY),
+      minX: roundN(bb.minX),
+      minY: roundN(bb.minY),
+      maxX: roundN(bb.maxX),
+      maxY: roundN(bb.maxY),
       page: 1,
-      size: 5,
+      size: SAFE.MART_PAGE_SIZE, // 30
     };
   };
 
-  // ---------- 전통시장 ----------
+  /* =======================
+   * 전통시장(그대로 유지)
+   * ======================= */
   const { data: storesData = [], refetch } = useQuery({
     queryKey: ["markets", bbox?.minX, bbox?.minY, bbox?.maxX, bbox?.maxY],
     enabled: !!bbox && (!!mapInstance || isListMode),
@@ -463,7 +554,9 @@ export default function KakaoMap() {
         .filter(Boolean),
   });
 
-  // ---------- 대형마트 ----------
+  // =======================
+  // 대형마트(강화 버전)
+  // =======================
   const { data: martsData = [], refetch: refetchMarts } = useQuery({
     queryKey: ["marts", bbox?.minX, bbox?.minY, bbox?.maxX, bbox?.maxY],
     enabled: !!bbox && (!!mapInstance || isListMode),
@@ -473,15 +566,79 @@ export default function KakaoMap() {
     refetchOnReconnect: false,
     staleTime: 60 * 1000,
     queryFn: async () => {
+      // 네트워크 안내 초기화
+      setNetError(false);
+
+      // 0) (옵션) 인증 시도 — 실패해도 무시
       try {
         await testLoginIfNeeded();
-      } catch (e) {
-        console.warn("[auth] testLoginIfNeeded 실패(무시 가능)", e);
+      } catch {
+        // 인증 실패
       }
-      const params = buildMartParams(bbox);
-      const res = await APIService.private.get("/marts", { params });
-      const raw = Array.isArray(res) ? res : res?.data ?? res?.content ?? res?.items ?? res ?? [];
-      return Array.isArray(raw) ? raw : Array.isArray(raw?.content) ? raw.content : [];
+
+      // 1) 🔒 전역 쿨다운: 이전 호출 이후 최소 N ms 간격 유지
+      const now = Date.now();
+      const wait = martNextAllowedAtRef.current - now;
+      if (wait > 0) await sleep(wait);
+
+      // 2) bbox 정규화(마트 전용 빌더)
+      const bb = buildMartParams(bbox);
+
+      // 3) 넓은 영역만 타일 분할(보수적 기준)
+      const spanX = Math.abs(bb.maxX - bb.minX);
+      const spanY = Math.abs(bb.maxY - bb.minY);
+      const area = spanX * spanY;
+
+      const tiles =
+        area > SAFE.TILE_SPLIT_THRESHOLD_4X4
+          ? splitBbox(bb, 4)
+          : area > SAFE.TILE_SPLIT_THRESHOLD_2X2
+          ? splitBbox(bb, 2)
+          : [bb]; // 작으면 분할 안 함
+
+      // 4) 타일을 순차 호출 + 타일 간 쿨다운으로 QPS 억제
+      const results = [];
+      for (let i = 0; i < tiles.length; i++) {
+        const t = tiles[i];
+        const params = { ...t, page: 1, size: bb.size ?? SAFE.MART_PAGE_SIZE };
+
+        // 동일 파라미터 중복 방지 키
+        const key = `marts:${params.minX}:${params.minY}:${params.maxX}:${params.maxY}:${params.size}`;
+
+        // 실제 API 호출(429/504에서만 백오프 재시도)
+        const call = () =>
+          APIService.private
+            .get("/marts", { params })
+            .then((res) => res?.data ?? res?.content ?? res?.items ?? res ?? [])
+            .catch((err) => {
+              const status = err?.response?.status ?? err?.status;
+              if (status === 429) setRateLimited(true); // 호출 제한 토스트 ON
+              if (status === 504) {
+                setRateLimited(true);
+                setNetError(true);
+              } // 네트워크 토스트 ON
+              throw err;
+            });
+
+        // 디듀프 + 백오프
+        const arr = await withDedup(key, () => backoffRequest(call));
+
+        // 결과 합치기
+        results.push(
+          ...(Array.isArray(arr) ? arr : Array.isArray(arr?.content) ? arr.content : [])
+        );
+
+        // 다음 타일까지 쿨다운 — 순간 동시폭주 방지
+        if (i < tiles.length - 1) await sleep(SAFE.TILE_COOLDOWN_MS);
+      }
+
+      // 데이터가 하나라도 오면 레이트 리밋 토스트 OFF
+      if (results.length) setRateLimited(false);
+
+      // 5) ✅ 글로벌 쿨다운 갱신
+      martNextAllowedAtRef.current = Date.now() + SAFE.MART_GLOBAL_COOLDOWN_MS;
+
+      return results;
     },
     select: (raw) =>
       raw
@@ -585,6 +742,63 @@ export default function KakaoMap() {
 
   return (
     <KakaoMapWrapper $isListMode={isListMode}>
+      {/* 상단 토스트: 호출 제한/네트워크 안내 (마트 전용) */}
+      {rateLimited && (
+        <div
+          style={{
+            position: "fixed",
+            top: 12,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 99999,
+            background: "#1f2937",
+            color: "#fff",
+            padding: "8px 12px",
+            borderRadius: 8,
+            fontSize: 12,
+            boxShadow: "0 2px 8px rgba(0,0,0,.2)",
+          }}
+        >
+          카카오 호출 제한으로 일부 마커를 불러오지 못했어. 잠시 후 자동 재시도 중이야
+        </div>
+      )}
+
+      {/* 504 등 네트워크 안내 + 수동 재시도 */}
+      {netError && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 80,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#fff",
+            border: "1px solid #ddd",
+            padding: "10px 12px",
+            borderRadius: 8,
+            zIndex: 99999,
+            fontSize: 12,
+          }}
+        >
+          네트워크 지연으로 일부 마커를 불러오지 못했어.
+          <button
+            style={{
+              marginLeft: 8,
+              padding: "4px 8px",
+              borderRadius: 6,
+              border: "1px solid #ccc",
+              background: "#f8f8f8",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              setNetError(false);
+              refetchMarts();
+            }}
+          >
+            재시도
+          </button>
+        </div>
+      )}
+
       {isListMode ? (
         <>
           <StoreListView stores={filteredStores} onSelect={handleSelectFromList} />
