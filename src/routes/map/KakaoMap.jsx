@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { selectedCategoryAtom } from "./state/CategoryState";
 import { selectedAddressAtom } from "./state/addressAtom";
@@ -26,6 +27,8 @@ import StoreListImg from "@icon/map/storeListIcon.svg";
 
 export default function KakaoMap() {
   const mapRef = useRef(null);
+  const { state: navState } = useLocation();
+  const navigate = useNavigate();
   const [mapInstance, setMapInstance] = useState(null);
   const [selectedStore, setSelectedStore] = useState(null);
   const [selectedCategory] = useAtom(selectedCategoryAtom);
@@ -574,6 +577,20 @@ export default function KakaoMap() {
       setMapInstance(null);
     }
   }, [isListMode, mapInstance]);
+
+  // 검색/타 페이지에서 navigate("/map", { state: { focusStore, offsetLat } })로
+  // 넘어온 경우 포커스 예약 + 자동 센터링 잠금 + state 정리
+  useEffect(() => {
+    const store = navState?.focusStore;
+    if (!store || !store.latitude || !store.longitude) return;
+
+    pendingFocusRef.current = store;
+    centerLockUntilRef.current = Date.now() + 1500; // 주소기반 자동센터 잠깐 무시
+    setIsListMode(false); // 혹시 리스트 모드면 지도 모드로
+
+    // 한 번 처리했으면 state 비워서 새로고침/뒤로가기 때 중복 실행 방지
+    navigate(".", { replace: true, state: null });
+  }, [navState, navigate]);
 
   return (
     <KakaoMapWrapper $isListMode={isListMode}>

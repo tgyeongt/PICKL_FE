@@ -12,6 +12,7 @@ import { APIService } from "../../shared/lib/api";
 import { testLoginIfNeeded } from "../../shared/lib/auth";
 import { mapMarketFromAPI } from "../../shared/lib/storeMappers";
 import SearchResultList from "./SearchResultList";
+import { useCallback } from "react";
 
 function useDebounce(value, delay = 200) {
   const [v, setV] = useState(value);
@@ -82,6 +83,20 @@ export default function MapSearchPage() {
   const selectedAddress = useAtomValue(selectedAddressAtom);
   const [keyword, setKeyword] = useState("");
   const debouncedKeyword = useDebounce(keyword, 200);
+  const handleSelectStore = useCallback(
+    (store) => {
+      // 검색 → 지도 전환: 상점 객체와 리스트 전용 offset(살짝) 전달
+      navigate("/map", {
+        state: {
+          focusStore: store,
+          from: "search",
+          offsetLat: 0.002, // 리스트/검색 전용: 말풍선 살짝 위로
+        },
+        replace: false,
+      });
+    },
+    [navigate]
+  );
 
   const baseBbox = useMemo(() => {
     const lat = Number(selectedAddress?.lat) || 37.5665;
@@ -222,6 +237,7 @@ export default function MapSearchPage() {
           stores={keyword ? filtered : []}
           loading={isLoading}
           error={isError && filtered.length === 0}
+          onSelect={handleSelectStore}
         />
       </MapSearchBox>
     </MapSearchWrapper>
