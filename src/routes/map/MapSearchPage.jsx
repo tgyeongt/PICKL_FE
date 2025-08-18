@@ -85,12 +85,11 @@ export default function MapSearchPage() {
   const debouncedKeyword = useDebounce(keyword, 200);
   const handleSelectStore = useCallback(
     (store) => {
-      // 검색 → 지도 전환: 상점 객체와 리스트 전용 offset(살짝) 전달
       navigate("/map", {
         state: {
           focusStore: store,
           from: "search",
-          offsetLat: 0.002, // 리스트/검색 전용: 말풍선 살짝 위로
+          offsetLat: 0.002,
         },
         replace: false,
       });

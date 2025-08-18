@@ -61,7 +61,6 @@ export default function CheckLocationMap({ onAddressChange, initialCenter }) {
           });
         };
 
-        // ✅ 조건: initialCenter가 있으면 그걸로 지도 생성
         if (initialCenter?.lat && initialCenter?.lng) {
           createMap(initialCenter.lat, initialCenter.lng);
         } else {
@@ -72,7 +71,6 @@ export default function CheckLocationMap({ onAddressChange, initialCenter }) {
             (error) => {
               alert("위치 정보를 불러올 수 없습니다.");
               console.error(error);
-              // fallback
               createMap(37.5665, 126.978);
             }
           );

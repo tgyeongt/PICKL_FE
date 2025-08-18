@@ -162,9 +162,9 @@ export default function KakaoMap() {
         delete overlayMapRef.current.round[key];
       }
 
-      // ✅ 리스트 선택일 때는 정확히 상점 좌표로 센터 이동
+      // 리스트 선택일 때는 정확히 상점 좌표로 센터 이동
       if (opts?.useOffset) {
-        const offsetLat = opts.offsetLat ?? 0.005; // 기본 0.005
+        const offsetLat = opts.offsetLat ?? 0.005;
         const adjustedLat = store.latitude - offsetLat;
         const adjustedCenter = new window.kakao.maps.LatLng(adjustedLat, store.longitude);
         mapInstance?.panTo(adjustedCenter);
@@ -192,9 +192,9 @@ export default function KakaoMap() {
   );
 
   const handleSelectFromList = useCallback((store) => {
-    pendingFocusRef.current = store; // 나중에 지도 준비되면 포커스
-    centerLockUntilRef.current = Date.now() + 1500; // 1.5초 동안 주소기반 자동센터 무시
-    setIsListMode(false); // 지도 모드로 전환
+    pendingFocusRef.current = store;
+    centerLockUntilRef.current = Date.now() + 1500;
+    setIsListMode(false);
   }, []);
 
   const renderMarkers = useCallback(
@@ -367,7 +367,7 @@ export default function KakaoMap() {
     };
 
     window.kakao.maps.event.addListener(mapInstance, "idle", onIdle);
-    onIdle(); // 초기 1회
+    onIdle();
 
     return () => {
       clearTimeout(t);
@@ -378,7 +378,7 @@ export default function KakaoMap() {
   // ---------- 리스트 모드 기본 bbox 보정 (맵 없어도 쿼리 가능하게) ----------
   useEffect(() => {
     if (isListMode && !bbox && addressState?.lat && addressState?.lng) {
-      const span = 0.02; // 약 2km 박스
+      const span = 0.02;
       setBbox({
         minX: addressState.lng - span,
         minY: addressState.lat - span,
@@ -393,12 +393,8 @@ export default function KakaoMap() {
       const store = pendingFocusRef.current;
       const pos = new window.kakao.maps.LatLng(store.latitude, store.longitude);
       const imageSrc = (store.type || "").toLowerCase() === "market" ? marketIcon : martIcon;
-      // 센터 이동 + 버블 표시
-      // 리스트 전용: offsetLat을 0.002 정도로만 줘서 살짝 위로
-      // 타일이 다 로드된 다음에 포커싱 & 말풍선 표시
       const handler = () => {
         showBubbleOverlay(store, pos, imageSrc, { useOffset: true, offsetLat: 0.0005 });
-        // 포커싱 직후에도 자동 센터링이 끼어들지 않게 잠금 연장 살짝 더
         centerLockUntilRef.current = Date.now() + 800;
         window.kakao.maps.event.removeListener(mapInstance, "tilesloaded", handler);
       };
@@ -561,7 +557,6 @@ export default function KakaoMap() {
 
   // ---------- 리스트/지도 전환 시 ----------
   useEffect(() => {
-    // 리스트 → 지도 복귀 시 항상 새 맵을 컨테이너에 붙인다
     if (!isListMode && addressState.lat && addressState.lng) {
       (async () => {
         await ensureKakaoReady();
@@ -571,24 +566,20 @@ export default function KakaoMap() {
     }
   }, [isListMode, addressState.lat, addressState.lng, createMap]);
 
-  // 리스트 모드 들어가면 끊어진 mapInstance 정리
   useEffect(() => {
     if (isListMode && mapInstance) {
       setMapInstance(null);
     }
   }, [isListMode, mapInstance]);
 
-  // 검색/타 페이지에서 navigate("/map", { state: { focusStore, offsetLat } })로
-  // 넘어온 경우 포커스 예약 + 자동 센터링 잠금 + state 정리
   useEffect(() => {
     const store = navState?.focusStore;
     if (!store || !store.latitude || !store.longitude) return;
 
     pendingFocusRef.current = store;
-    centerLockUntilRef.current = Date.now() + 1500; // 주소기반 자동센터 잠깐 무시
-    setIsListMode(false); // 혹시 리스트 모드면 지도 모드로
+    centerLockUntilRef.current = Date.now() + 1500;
+    setIsListMode(false);
 
-    // 한 번 처리했으면 state 비워서 새로고침/뒤로가기 때 중복 실행 방지
     navigate(".", { replace: true, state: null });
   }, [navState, navigate]);
 
