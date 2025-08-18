@@ -28,11 +28,36 @@ export default function Search() {
 
   useEffect(() => {
     const fetchItems = async () => {
-      const { data } = await APIService.private.get("items", {
-        params: { q: debouncedSearchQuery },
-      });
-      setItemList(data);
+      if (!debouncedSearchQuery) {
+        setItemList([]);
+        return;
+      }
+
+      try {
+        const res = await APIService.private.get("/daily-price-change/store/items/search", {
+          params: {
+            name: debouncedSearchQuery,
+          },
+        });
+
+        if (res.success) {
+          const mapped = res.data.map((item) => ({
+            id: item.id,
+            title: item.productName,
+            unit: item.unit,
+            img: item.imageUrl,
+            price: item.latestPrice,
+          }));
+          setItemList(mapped);
+        } else {
+          setItemList([]);
+        }
+      } catch (err) {
+        console.error("검색 API 호출 실패:", err);
+        setItemList([]);
+      }
     };
+
     fetchItems();
   }, [debouncedSearchQuery]);
 
@@ -119,7 +144,7 @@ const SearchBtn = styled.button`
 const ItemWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  padding: 20px 0;
+  padding: 20px 0 80px 0;
 `;
 
 const NoResultMessage = styled.div`

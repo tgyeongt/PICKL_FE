@@ -1,28 +1,30 @@
 import styled from "styled-components";
-import { useEffect, useState } from "react";
-import { APIService } from "../../shared/lib/api";
 import ItemCard from "./ItemCard";
 
 export default function Suggestion({ onSelectItem }) {
   const keywordList = [
-    { id: 4, title: "감자" },
-    { id: 2, title: "양파" },
-    { id: 3, title: "토마토" },
+    { id: 110, title: "복숭아" },
+    { id: 181, title: "멜론" },
+    { id: 7, title: "토마토" },
   ];
 
-  const [seasonalList, setSeasonalList] = useState([]);
-
-  useEffect(() => {
-    async function fetchSeasonItems() {
-      try {
-        const res = await APIService.private.get("/season-items");
-        setSeasonalList(res.data);
-      } catch (error) {
-        console.error("Failed to fetch season items:", error);
-      }
-    }
-    fetchSeasonItems();
-  }, []);
+  const seasonalList = [
+    {
+      id: 57,
+      title: "새송이버섯",
+      unit: "100g",
+      img: "https://picklocal.s3.ap-northeast-2.amazonaws.com/images/2025/08/8ed68c0e-94c9-4762-ae9a-14b908617667",
+      price: 545,
+    },
+    {
+      id: 20,
+      title: "깐마늘(국산)",
+      unit: "1kg",
+      img: "https://picklocal.s3.ap-northeast-2.amazonaws.com/images/2025/08/204434f0-a9d7-450c-b7fe-446537601f0f",
+      price: 10449,
+    },
+    { id: 91, title: "갈치/국산(냉장)(中)", unit: "1마리", img: "", price: 7464 },
+  ];
 
   return (
     <>
@@ -42,9 +44,9 @@ export default function Suggestion({ onSelectItem }) {
           <ItemCard
             key={item.id}
             id={item.id}
-            title={item.itemname}
+            title={item.title}
             unit={item.unit}
-            img={item.imageUrl}
+            img={item.img}
             price={item.price}
           />
         ))}
