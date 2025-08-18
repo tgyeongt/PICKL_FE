@@ -2,29 +2,44 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
 
 export default function Chart() {
   const data = [
-    { name: "Jan", value: 30 },
-    { name: "Feb", value: 45 },
-    { name: "Mar", value: 60 },
+    { name: "어제날짜", value: 3500 },
+    { name: "오늘날짜", value: 3000 },
   ];
   if (!data || data.length < 2) return null;
 
-  // 시작값과 끝값 비교
   const first = data[0].value;
   const last = data[data.length - 1].value;
-  const lineColor = last >= first ? "red" : "blue"; // 우상향 = 빨강, 우하향 = 파랑
+  const lineColor = last >= first ? "red" : "blue";
+
+  const values = data.map((d) => d.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const pad = Math.max(10, Math.round((max - min) * 0.15));
 
   return (
-    <LineChart width={500} height={300} data={data}>
+    <LineChart
+      width={300}
+      height={300}
+      data={data}
+      margin={{ top: 28, right: 16, bottom: 6, left: 0 }}
+    >
       <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
-      <XAxis dataKey="name" />
-      <YAxis />
+      <XAxis dataKey="name" tickMargin={6} tickLine={false} />
+      <YAxis
+        tick={false}
+        axisLine={false}
+        width={0}
+        domain={[(dataMin) => dataMin - pad, (dataMax) => dataMax + pad]}
+      />
       <Tooltip />
       <Line
         type="monotone"
         dataKey="value"
-        stroke={lineColor} // 여기서 색상 지정
+        stroke={lineColor}
         strokeWidth={2}
         dot={{ r: 4 }}
+        label={{ position: "top", fill: lineColor, fontSize: 12, offset: 8 }}
+        isAnimationActive={false}
       />
     </LineChart>
   );
