@@ -2,9 +2,9 @@ import styled from "styled-components";
 import heartOn from "@icon/common/heart_on.svg";
 import heartOff from "@icon/common/heart_off.svg";
 import { useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 
-export default function FavoriteItemCard({ img, title, description, onClick }) {
+function FavoriteItemCardBase({ img, title, description, onClick }, ref) {
   const { pathname } = useLocation();
   const hideDesc = pathname === "/my/list-recipes";
   const [isLiked, setIsLiked] = useState(true);
@@ -15,7 +15,7 @@ export default function FavoriteItemCard({ img, title, description, onClick }) {
   };
 
   return (
-    <CardWrapper role="button" onClick={onClick}>
+    <CardWrapper ref={ref} role="button" onClick={onClick}>
       <ThumbWrapper>
         <Thumb src={img} alt={title} />
         <RightTopIcon src={isLiked ? heartOn : heartOff} alt="heart" onClick={toggleLike} />
@@ -32,6 +32,9 @@ export default function FavoriteItemCard({ img, title, description, onClick }) {
     </CardWrapper>
   );
 }
+
+// forwardRef로 감싸서 부모에서 ref 전달 가능하게 함
+export default forwardRef(FavoriteItemCardBase);
 
 const CardWrapper = styled.div`
   border-radius: 16px;

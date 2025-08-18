@@ -59,7 +59,7 @@ export default function useMySummary(options = {}) {
       const res = await APIService.private.get("/users/me/summary");
       return mapSummary(res?.data ?? res);
     },
-    staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
+    staleTime: 5 * 60 * 1000,
     refetchOnMount: "always",
     refetchOnWindowFocus: false,
     retry: 1,
