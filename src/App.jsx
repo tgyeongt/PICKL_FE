@@ -15,12 +15,16 @@ import MapSearchPage from "./routes/map/MapSearchPage";
 import EditLocationPage from "./routes/map/EditLocationPage";
 import CheckLocationPage from "./routes/map/CheckLocationPage";
 import SearchLocationPage from "./routes/map/SearchLocationPage";
+
+// My 페이지
 import MyIngredientsPage from "./routes/my/MyIngredientsPage";
 import MyRecipesPage from "./routes/my/MyRecipesPage";
 import MyHistoryPage from "./routes/my/MyHistoryPage";
 import DailyPointsPage from "./routes/my/DailyPointsPage";
 import ConvertPointsPage from "./routes/my/ConvertPointsPage";
 import DailyPointsResultPage from "./routes/my/DailyPointsResultPage";
+import DailyPointsClosedPage from "./routes/my/DailyPointsClosedPage";
+import DailyAdPage from "./routes/my/DailyAdPage";
 
 // Home 페이지
 import MonthlyPickPage from "./routes/home/seasonal-tab/MonthlyPickPage";
@@ -40,10 +44,11 @@ const router = createBrowserRouter([
     children: [
       { index: true, Component: RootPage },
 
-      /*  토큰이 필요한 페이지들, url로 접근 불가 */
+      // 토큰이 필요한 페이지들
       {
         Component: ProtectedRoute,
         children: [
+          // 홈 하위
           {
             path: "/",
             children: [
@@ -53,6 +58,8 @@ const router = createBrowserRouter([
               { path: "category/:title", Component: CategoryDetailPage },
             ],
           },
+
+          // 맵 하위
           {
             path: "map",
             children: [
@@ -63,6 +70,8 @@ const router = createBrowserRouter([
               { path: "search-location", Component: SearchLocationPage },
             ],
           },
+
+          // 채팅 하위
           {
             path: "chat",
             children: [
@@ -70,6 +79,8 @@ const router = createBrowserRouter([
               { path: "new-chat", Component: ChatbotPage },
             ],
           },
+
+          // 패딩 포함 섹션들
           {
             Component: ServiceLayout,
             children: [
@@ -90,6 +101,8 @@ const router = createBrowserRouter([
                   { path: "points-daily", Component: DailyPointsPage },
                   { path: "points-convert", Component: ConvertPointsPage },
                   { path: "points-daily/result", Component: DailyPointsResultPage },
+                  { path: "points-daily/closed", Component: DailyPointsClosedPage },
+                  { path: "points-daily/ad", Component: DailyAdPage },
                 ],
               },
             ],
@@ -103,9 +116,7 @@ const router = createBrowserRouter([
 function App() {
   const queryClient = new QueryClient({
     defaultOptions: {
-      queries: {
-        retry: 1,
-      },
+      queries: { retry: 1 },
     },
   });
 

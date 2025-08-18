@@ -34,17 +34,12 @@ export default function DailyPointsResultPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
 
-  // DailyPointsPage에서 넘긴 값: { answer, itemName }
-  const answer = state?.answer; // 'up' | 'down'
-  const itemName = state?.itemName || "토마토";
+  const payload = state ?? {};
+  const result = payload.result ?? payload.status;
+  const awarded = payload.awarded ?? payload.points ?? 0;
+  const itemName = payload.ingredientName ?? payload.itemName ?? "토마토";
 
-  // ⚠️ 임시 판정 로직: 서버 연동 전까지 up이면 성공, down이면 실패로 가정
-  // 실제에선 DailyPointsPage에서 서버에 제출 → { isSuccess, rewardPoint } 받아와 state로 넘겨와야 함
-  const isSuccess = state?.isSuccess ?? answer === "up";
-  const rewardPoint = 100;
-
-  // state 없이 직접 진입한 경우 대비
-  if (!answer && state == null) {
+  if (!result) {
     return (
       <DailyPointsResultWrapper>
         <Title>잘못된 접근입니다</Title>
@@ -54,12 +49,14 @@ export default function DailyPointsResultPage() {
     );
   }
 
+  const isSuccess = result === "CORRECT";
+
   return (
     <DailyPointsResultWrapper>
       {isSuccess ? (
         <SuccessBox>
-          <SmallTag>+{rewardPoint}P</SmallTag>
-          <SuccessBigTitle>{rewardPoint}P 획득</SuccessBigTitle>
+          <SmallTag>+{awarded}P</SmallTag>
+          <SuccessBigTitle>{awarded}P 획득</SuccessBigTitle>
           <Sub>예측 성공! 포인트가 적립되었어요</Sub>
           <ImgBox>
             <SuccessImage src={successP} alt="" />
@@ -121,11 +118,17 @@ export default function DailyPointsResultPage() {
           </ImgBox>
           <Buttons>
             <GhostBtn onClick={() => navigate("/", { replace: true })}>현재가 보기</GhostBtn>
-            <PrimaryBtn onClick={() => alert("광고 SDK 연동 예정")}>
+            <PrimaryBtn
+              onClick={() =>
+                navigate("/my/points-daily/ad", {
+                  state: { returnTo: "/my/points-daily" },
+                })
+              }
+            >
               광고 보고 한 번 더 하기
             </PrimaryBtn>
           </Buttons>
-          <CloseBtn onClick={() => navigate(-1)}>닫기 ×</CloseBtn>
+          <CloseBtn onClick={() => navigate("/my")}>닫기 ×</CloseBtn>
         </SuccessBox>
       ) : (
         <FailBox>
@@ -170,7 +173,7 @@ export default function DailyPointsResultPage() {
               홈으로 돌아가기
             </PrimaryBtn>
           </Buttons>
-          <CloseBtn onClick={() => navigate(-1)}>닫기 ×</CloseBtn>
+          <CloseBtn onClick={() => navigate("/my")}>닫기 ×</CloseBtn>
         </FailBox>
       )}
     </DailyPointsResultWrapper>

@@ -4,13 +4,16 @@ import HelloSection from "./HelloSection";
 import StateSection from "./StateSection";
 import MyActivitiesSection from "./MyActivitiesSection";
 import MyServiceSection from "./MyServiceSection";
+import { ConvertPointsProvider } from "./convert/ConvertPointsContext";
 
 export default function My() {
   return (
     <MyWrapper>
       <MyTopBar />
       <HelloSection />
-      <StateSection />
+      <ConvertPointsProvider>
+        <StateSection />
+      </ConvertPointsProvider>
       <MyActivitiesSection />
       <GreyBox></GreyBox>
       <MyServiceSection />

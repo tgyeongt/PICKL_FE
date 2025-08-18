@@ -1,27 +1,57 @@
 import styled from "styled-components";
-import { useQuery } from "@tanstack/react-query";
-import { APIService } from "../../shared/lib/api";
+import useMySummary from "./hooks/useMySummary";
+import { useAtomValue } from "jotai";
+import { pointsAtom } from "./convert/ConvertPointsContext";
 
 export default function StateSection() {
-  const { data } = useQuery({
-    queryKey: ["me", "stats"],
-    queryFn: async () => {
-      /*
-        백엔드 스웨거 나오면 경로 및 필드 맞춰야 하는 부분 
-        */
-      const res = await APIService.private.get("/me/stats");
-      const raw = res?.data ?? res ?? {};
-      return {
-        points: isFinite(raw.points) ? raw.points : 3000,
-        joinedDays: isFinite(raw.joinedDays) ? raw.joinedDays : 23,
-      };
-    },
-    staleTime: 60 * 1000,
-    retry: 1,
-  });
+  const { data: summary, isLoading, error } = useMySummary();
 
-  const points = formatNumber(data?.points ?? 3000);
-  const joinedDays = data?.joinedDays ?? 23;
+  // 전역 포인트 상태 사용
+  const globalPoints = useAtomValue(pointsAtom);
+
+  // 전역 상태가 있으면 사용, 없으면 API 데이터 사용
+  const currentPoints = globalPoints !== null ? globalPoints : summary?.points ?? 0;
+
+  const points = formatNumber(currentPoints);
+  const joinedDays = summary?.daysSinceFriend ?? 0;
+
+  // 디버깅을 위한 로깅
+  console.log("🔍 StateSection - Summary:", summary);
+  console.log("🔍 StateSection - Global Points:", globalPoints);
+  console.log("🔍 StateSection - Current Points:", currentPoints);
+  console.log("🔍 StateSection - Points:", points);
+  console.log("🔍 StateSection - Loading:", isLoading);
+  console.log("🔍 StateSection - Error:", error);
+
+  if (isLoading) {
+    return (
+      <SectionWrapper>
+        <CardsSection>
+          <StatCard>
+            <Label>포인트</Label>
+            <ValueRow>
+              <ValueHighlight>로딩 중...</ValueHighlight>
+            </ValueRow>
+          </StatCard>
+        </CardsSection>
+      </SectionWrapper>
+    );
+  }
+
+  if (error) {
+    return (
+      <SectionWrapper>
+        <CardsSection>
+          <StatCard>
+            <Label>포인트</Label>
+            <ValueRow>
+              <ValueHighlight style={{ color: "red" }}>에러 발생</ValueHighlight>
+            </ValueRow>
+          </StatCard>
+        </CardsSection>
+      </SectionWrapper>
+    );
+  }
 
   return (
     <SectionWrapper>
@@ -32,6 +62,11 @@ export default function StateSection() {
             <ValueHighlight>{points}</ValueHighlight>
             <Unit> P</Unit>
           </ValueRow>
+          {points === "0" && (
+            <div style={{ fontSize: "10px", color: "red", marginTop: "5px" }}>
+              포인트가 0입니다. API 응답을 확인해주세요.
+            </div>
+          )}
         </StatCard>
 
         <StatCard>

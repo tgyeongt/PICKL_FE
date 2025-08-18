@@ -1,35 +1,42 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import useMySummary from "./hooks/useMySummary";
 import { APIService } from "../../shared/lib/api";
+import { testLoginIfNeeded } from "../../shared/lib/auth";
 import chevronRight from "@icon/my/chevron-right.svg";
 import todayPointIcon from "@icon/my/faceIcon.svg";
 import convertPointIcon from "@icon/my/beadIcon.svg";
 
 export default function MyServiceSection() {
   const navigate = useNavigate();
+  const { data: summary } = useMySummary();
 
-  const { data: me } = useQuery({
-    queryKey: ["me"],
-    queryFn: async () => {
-      const res = await APIService.private.get("/me");
-      const raw = res?.data ?? res ?? {};
-      return {
-        displayName: raw?.displayName || raw?.nickname || raw?.name || "정시태근희망러",
-      };
-    },
-    staleTime: 60 * 1000,
-    retry: 1,
-  });
+  const displayName = summary?.nickname || "";
 
-  const displayName = me?.displayName || "정시태근희망러";
+  const handleTodayClick = async () => {
+    try {
+      await testLoginIfNeeded();
+      const res = await APIService.private.get("/quiz/daily");
+      const raw = res?.data ?? res;
+      if (!raw || raw?.status === "CLOSED" || raw?.attempted) {
+        return navigate("/my/points-daily/closed");
+      }
+      navigate("/my/points-daily");
+    } catch (e) {
+      const code = e?.response?.status;
+      if (code === 404) {
+        alert("오늘의 퀴즈가 아직 준비 중이에요.");
+      } else {
+        navigate("/my/points-daily");
+      }
+    }
+  };
 
   return (
     <MyServiceSectionWrapper>
       <SectionTitle>{displayName}님을 위한 맞춤형 서비스</SectionTitle>
-
       <List>
-        <ListButton onClick={() => navigate("/my/points-daily")}>
+        <ListButton onClick={handleTodayClick}>
           <Card>
             <Left>
               <Icon src={todayPointIcon} alt="" />
@@ -62,7 +69,8 @@ const MyServiceSectionWrapper = styled.section`
   max-width: 390px;
   margin: 0 auto;
   background: #fbfbfb;
-  padding: 14px 10px 104px 10px;
+  padding-top: 14px;
+  padding-bottom: 104px;
 `;
 
 const SectionTitle = styled.p`
@@ -74,6 +82,7 @@ const SectionTitle = styled.p`
   line-height: 24px;
   padding-bottom: 10px;
   padding-top: 10px;
+  padding-left: 10px;
 `;
 
 const List = styled.div`
@@ -99,8 +108,8 @@ const Card = styled.div`
 
   padding: 12px 10px;
   background: #fbfbfb;
-  border-radius: 14px; 
-  overflow: hidden; 
+  border-radius: 14px;
+  overflow: hidden;
   transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center;
