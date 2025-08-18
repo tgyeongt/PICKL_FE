@@ -12,6 +12,8 @@ export default function ItemDetailPage() {
     title: "상세 정보",
     showBack: true,
     showHeart: true,
+    targetType: "INGREDIENT",
+    targetId: id,
   });
 
   useEffect(() => {
