@@ -3,6 +3,7 @@ import styled from "styled-components";
 import back from "@icon/common/back.svg";
 import heart_on from "@icon/common/heart_on.svg";
 import heart_off from "@icon/common/heart_off.svg";
+import Toast from "./Toast";
 
 export default function Header() {
   const { title, showBack, showHeart, isVisible, isHeartActive, toggleHeart } = useHeaderStore();
@@ -20,9 +21,12 @@ export default function Header() {
       <Title>{title}</Title>
 
       {showHeart && (
-        <button onClick={toggleHeart}>
-          <img src={isHeartActive ? heart_on : heart_off} alt="찜하기" />
-        </button>
+        <>
+          <button onClick={toggleHeart}>
+            <img src={isHeartActive ? heart_on : heart_off} alt="찜하기" />
+          </button>
+          <Toast />
+        </>
       )}
     </Wrapper>
   );
