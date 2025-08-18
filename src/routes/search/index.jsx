@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import styled from "styled-components";
 import useDebounce from "@hooks/useDebounce";
 import ItemCard from "./ItemCard";
@@ -6,27 +7,34 @@ import Suggestion from "./Suggestion";
 import SearchIcon from "@icon/search/search_icon.svg";
 import ClearIcon from "@icon/search/clear_icon.svg";
 import sampleItems from "./sampleItems";
+import { APIService } from "../../shared/lib/api";
 
 export default function Search() {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery.trim(), 200);
   const showClearButton = searchQuery.length > 0;
+  const navigate = useNavigate();
 
-  const [itemList] = useState(sampleItems);
+  const [itemList, setItemList] = useState(sampleItems);
   const isSearching = debouncedSearchQuery.length > 0;
 
   const filteredList = itemList.filter((item) =>
     item.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
-  // API 호출 예시
-  // useEffect(() => {
-  //   const fetchItems = async () => {
-  //     const { data } = await publicAPI.get("items", { params: { q: debouncedSearchQuery } });
-  //     setItemList(data);
-  //   };
-  //   fetchItems();
-  // }, [debouncedSearchQuery]);
+  const handleSelectItem = (itemId) => {
+    navigate(`/search/ingredients/${itemId}`);
+  };
+
+  useEffect(() => {
+    const fetchItems = async () => {
+      const { data } = await APIService.private.get("items", {
+        params: { q: debouncedSearchQuery },
+      });
+      setItemList(data);
+    };
+    fetchItems();
+  }, [debouncedSearchQuery]);
 
   return (
     <Wrapper>
@@ -45,7 +53,7 @@ export default function Search() {
         </SearchBtn>
       </SearchSection>
 
-      {!isSearching && <Suggestion />}
+      {!isSearching && <Suggestion onSelectItem={handleSelectItem} />}
 
       {isSearching && (
         <ItemWrapper>

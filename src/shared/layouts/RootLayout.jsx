@@ -5,8 +5,10 @@ import Header from "../commons/header";
 export default function RootLayout() {
   const { pathname } = useLocation();
 
-  const HIDE_NAV_ROUTES = ["/my/points-daily", "/my/points-daily/result"];
-  const hideNav = HIDE_NAV_ROUTES.includes(pathname);
+  const hasToken = !!localStorage.getItem("accessToken");
+
+  const HIDE_NAV_ROUTES = ["/my/points-daily", "/my/points-daily/result", "/chat/new-chat"];
+  const hideNav = (!hasToken && pathname === "/") || HIDE_NAV_ROUTES.includes(pathname);
 
   return (
     <>

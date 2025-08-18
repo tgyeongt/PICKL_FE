@@ -1,44 +1,35 @@
 import { create } from "zustand";
 
-const useHeaderStore = create((set) => ({
+const useHeaderStore = create((set, get) => ({
   title: "",
   showBack: false,
   showHeart: false,
   isVisible: false,
-
-  onHeartOn: null,
-  onHeartOff: null,
   isHeartActive: false,
+  onHeartToggle: null,
+
+  toggleHeart: () => {
+    const onToggle = get().onHeartToggle;
+    if (onToggle) {
+      onToggle();
+    }
+  },
 
   setTitle: (title) => set({ title }),
-  setShowBack: (showBack) => set({ showBack }),
-  setShowHeart: (showHeart) => set({ showHeart }),
-  setOnHeartOn: (fn) => set({ onHeartOn: fn }),
-  setOnHeartOff: (fn) => set({ onHeartOff: fn }),
-  setIsVisible: (isVisible) => set({ isVisible }),
-  setIsHeartActive: (isHeartActive) => set({ isHeartActive }),
-
-  toggleHeart: () =>
-    set((state) => {
-      const newActive = !state.isHeartActive;
-      if (newActive) {
-        state.onHeartOn?.();
-      } else {
-        state.onHeartOff?.();
-      }
-      return { isHeartActive: newActive };
-    }),
+  setShowBack: (show) => set({ showBack: show }),
+  setShowHeart: (show) => set({ showHeart: show }),
+  setIsVisible: (visible) => set({ isVisible: visible }),
+  setIsHeartActive: (active) => set({ isHeartActive: active }),
+  setOnHeartToggle: (fn) => set({ onHeartToggle: fn }),
 
   resetHeader: () =>
     set({
       title: "",
       showBack: false,
       showHeart: false,
-      onHeartClick: null,
-      onHeartOn: null,
-      onHeartOff: null,
       isVisible: false,
       isHeartActive: false,
+      onHeartToggle: null,
     }),
 }));
 
