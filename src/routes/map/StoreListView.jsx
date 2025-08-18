@@ -3,7 +3,8 @@ import { useAtomValue } from "jotai";
 import { selectedAddressAtom } from "./state/addressAtom";
 import StoreCard from "./StoreCard";
 
-export default function StoreListView({ stores }) {
+export default function StoreListView({ stores, onSelect }) {
+  // ✅ onSelect 추가
   const address = useAtomValue(selectedAddressAtom);
 
   const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -25,8 +26,6 @@ export default function StoreListView({ stores }) {
     }))
     .sort((a, b) => a.distance - b.distance);
 
-  // console.log("ListMode stores length:", sortedStores.length);
-
   return (
     <StoreListViewWrapper>
       {sortedStores.map((store) => {
@@ -35,6 +34,7 @@ export default function StoreListView({ stores }) {
             key={store.id || `${store.latitude},${store.longitude}`}
             store={store}
             isListMode={true}
+            onClick={() => onSelect?.(store)} // ✅ 클릭 시 부모에 알림
           />
         );
       })}

@@ -35,6 +35,7 @@ export default function KakaoMap() {
 
   const markersRef = useRef([]);
   const currentMarkerRef = useRef(null);
+  const centerLockUntilRef = useRef(0);
   const overlayMapRef = useRef({
     round: {},
     bubble: null,
@@ -42,6 +43,7 @@ export default function KakaoMap() {
   });
   const justOpenedAtRef = useRef(0);
 
+  const pendingFocusRef = useRef(null);
   const [bbox, setBbox] = useState(null);
 
   // ---------- Kakao SDK 준비 ----------
@@ -146,7 +148,7 @@ export default function KakaoMap() {
   };
 
   const showBubbleOverlay = useCallback(
-    (store, storePosition, imageSrc) => {
+    (store, storePosition, imageSrc, opts = { useOffset: true, offsetLat: 0.005 }) => {
       const key = `${store.latitude},${store.longitude}`;
 
       // 기존 둥근 마커 제거
@@ -157,10 +159,15 @@ export default function KakaoMap() {
         delete overlayMapRef.current.round[key];
       }
 
-      const offsetLat = 0.005;
-      const adjustedLat = store.latitude - offsetLat;
-      const adjustedCenter = new window.kakao.maps.LatLng(adjustedLat, store.longitude);
-      mapInstance?.panTo(adjustedCenter);
+      // ✅ 리스트 선택일 때는 정확히 상점 좌표로 센터 이동
+      if (opts?.useOffset) {
+        const offsetLat = opts.offsetLat ?? 0.005; // 기본 0.005
+        const adjustedLat = store.latitude - offsetLat;
+        const adjustedCenter = new window.kakao.maps.LatLng(adjustedLat, store.longitude);
+        mapInstance?.panTo(adjustedCenter);
+      } else {
+        mapInstance?.panTo(storePosition);
+      }
 
       // 말풍선 생성
       const bubbleEl = createBubbleElement(store, imageSrc);
@@ -180,6 +187,12 @@ export default function KakaoMap() {
     },
     [mapInstance]
   );
+
+  const handleSelectFromList = useCallback((store) => {
+    pendingFocusRef.current = store; // 나중에 지도 준비되면 포커스
+    centerLockUntilRef.current = Date.now() + 1500; // 1.5초 동안 주소기반 자동센터 무시
+    setIsListMode(false); // 지도 모드로 전환
+  }, []);
 
   const renderMarkers = useCallback(
     (stores) => {
@@ -271,6 +284,7 @@ export default function KakaoMap() {
   // 주소 변경 시 센터 이동
   useEffect(() => {
     if (!mapInstance || !addressState.lat || !addressState.lng) return;
+    if (Date.now() < centerLockUntilRef.current) return;
     const newCenter = new window.kakao.maps.LatLng(addressState.lat, addressState.lng);
     mapInstance.setCenter(newCenter);
   }, [mapInstance, addressState.lat, addressState.lng]);
@@ -370,6 +384,26 @@ export default function KakaoMap() {
       });
     }
   }, [isListMode, bbox, addressState?.lat, addressState?.lng]);
+
+  useEffect(() => {
+    if (!isListMode && mapInstance && pendingFocusRef.current) {
+      const store = pendingFocusRef.current;
+      const pos = new window.kakao.maps.LatLng(store.latitude, store.longitude);
+      const imageSrc = (store.type || "").toLowerCase() === "market" ? marketIcon : martIcon;
+      // 센터 이동 + 버블 표시
+      // 리스트 전용: offsetLat을 0.002 정도로만 줘서 살짝 위로
+      // 타일이 다 로드된 다음에 포커싱 & 말풍선 표시
+      const handler = () => {
+        showBubbleOverlay(store, pos, imageSrc, { useOffset: true, offsetLat: 0.0005 });
+        // 포커싱 직후에도 자동 센터링이 끼어들지 않게 잠금 연장 살짝 더
+        centerLockUntilRef.current = Date.now() + 800;
+        window.kakao.maps.event.removeListener(mapInstance, "tilesloaded", handler);
+      };
+      mapInstance.setCenter(pos);
+      window.kakao.maps.event.addListener(mapInstance, "tilesloaded", handler);
+      pendingFocusRef.current = null;
+    }
+  }, [isListMode, mapInstance, showBubbleOverlay]);
 
   // API 파라미터 변환
   const buildMarketParams = (bbox) => ({
@@ -524,20 +558,28 @@ export default function KakaoMap() {
 
   // ---------- 리스트/지도 전환 시 ----------
   useEffect(() => {
-    if (!isListMode && !mapInstance && addressState.lat && addressState.lng) {
+    // 리스트 → 지도 복귀 시 항상 새 맵을 컨테이너에 붙인다
+    if (!isListMode && addressState.lat && addressState.lng) {
       (async () => {
         await ensureKakaoReady();
         await waitForContainerSize();
         createMap();
       })();
     }
-  }, [isListMode, mapInstance, addressState.lat, addressState.lng, createMap]);
+  }, [isListMode, addressState.lat, addressState.lng, createMap]);
+
+  // 리스트 모드 들어가면 끊어진 mapInstance 정리
+  useEffect(() => {
+    if (isListMode && mapInstance) {
+      setMapInstance(null);
+    }
+  }, [isListMode, mapInstance]);
 
   return (
     <KakaoMapWrapper $isListMode={isListMode}>
       {isListMode ? (
         <>
-          <StoreListView stores={filteredStores} />
+          <StoreListView stores={filteredStores} onSelect={handleSelectFromList} />
         </>
       ) : (
         <>

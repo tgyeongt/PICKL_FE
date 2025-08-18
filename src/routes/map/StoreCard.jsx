@@ -20,7 +20,7 @@ import {
   ByText,
 } from "./StoreCard.styles";
 
-export default function StoreCard({ store, isListMode = false }) {
+export default function StoreCard({ store, isListMode = false, onClick }) {
   const address = useAtomValue(selectedAddressAtom);
   const [resolvedAddress, setResolvedAddress] = useState(null);
   const [showClass, setShowClass] = useState(false);
@@ -91,7 +91,14 @@ export default function StoreCard({ store, isListMode = false }) {
   const typeIcon = store.type === "market" ? selectMarket : selectMart;
 
   return (
-    <StoreCardWrapper className={showClass ? "show" : ""} $isListMode={isListMode}>
+    <StoreCardWrapper
+      className={showClass ? "show" : ""}
+      $isListMode={isListMode}
+      onClick={isListMode ? onClick : undefined}
+      role={isListMode ? "button" : undefined}
+      tabIndex={isListMode ? 0 : undefined}
+      style={isListMode ? { cursor: "pointer" } : undefined}
+    >
       <ImageWrapper>
         <StoreImage src={store.imageUrl} alt="상점 사진" />
         <TypeIcon src={typeIcon} alt="타입 아이콘" />
