@@ -5,6 +5,7 @@ import useFavoriteIngredients from "./hooks/useFavoriteIngredients";
 
 import watermelonImg from "@icon/home/watermelon.png";
 import FavoriteItemCard from "./FavoriteItemCard";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function MyIngredientsPage() {
   useHeader({ title: "찜한 식재료 목록", showBack: true });
@@ -57,18 +58,28 @@ export default function MyIngredientsPage() {
         </SubText>
       </CountRow>
 
-      <Grid>
-        {items.map((item, idx) => (
-          <FavoriteItemCard
-            key={item.id}
-            img={item.img}
-            title={item.name}
-            liked={true}
-            onClick={() => {}}
-            onClickHeart={() => unfavorite(item.id)}
-            ref={idx === items.length - 1 ? observerRef : null}
-          />
-        ))}
+      <Grid as={motion.div} layout>
+        <AnimatePresence>
+          {items.map((item, idx) => (
+            <motion.div
+              key={item.id}
+              layout
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9, y: 12 }}
+              transition={{ duration: 0.25 }}
+              ref={idx === items.length - 1 ? observerRef : null}
+            >
+              <FavoriteItemCard
+                img={item.img}
+                title={item.name}
+                liked={true}
+                onClick={() => {}}
+                onClickHeart={() => unfavorite(item.id)}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </Grid>
 
       {loading && <LoadingText>추가 로딩 중...</LoadingText>}
@@ -81,20 +92,24 @@ const MyIngredientsPageWrapper = styled.div`
   background: #fbfbfb;
   padding-bottom: 90px;
 `;
+
 const CountRow = styled.div`
   max-width: 390px;
   margin: 6px auto 10px;
   padding: 0 20px;
   box-sizing: border-box;
 `;
+
 const SubText = styled.p`
   color: #adadaf;
   font-size: 12px;
 `;
+
 const GreenText = styled.span`
   color: #38b628;
   font-size: 12px;
 `;
+
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -103,12 +118,14 @@ const Grid = styled.div`
   max-width: 390px;
   margin: 0 auto;
 `;
+
 const LoadingText = styled.div`
   text-align: center;
   padding: 20px;
   color: #666;
   font-size: 14px;
 `;
+
 const ErrorText = styled.div`
   text-align: center;
   padding: 50px 20px;

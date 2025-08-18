@@ -1,9 +1,10 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import styled from "styled-components";
 import useHeader from "../../shared/hooks/useHeader";
 import useFavoriteRecipes from "./hooks/useFavoriteRecipes";
 import recipeIconImg from "@icon/my/recipeIcon.svg";
 import FavoriteItemCard from "./FavoriteItemCard";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function MyRecipesPage() {
   useHeader({ title: "찜한 레시피 목록", showBack: true });
@@ -55,18 +56,28 @@ export default function MyRecipesPage() {
         </SubText>
       </CountRow>
 
-      <Grid>
-        {items.map((item, idx) => (
-          <FavoriteItemCard
-            key={item.id}
-            img={item.img}
-            title={item.name}
-            liked={true}
-            onClick={() => {}}
-            onClickHeart={() => unfavorite(item.id)}
-            ref={idx === items.length - 1 ? observerRef : null}
-          />
-        ))}
+      <Grid as={motion.div} layout>
+        <AnimatePresence>
+          {items.map((item, idx) => (
+            <motion.div
+              key={item.id}
+              layout
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9, y: 12 }}
+              transition={{ duration: 0.25 }}
+              ref={idx === items.length - 1 ? observerRef : null}
+            >
+              <FavoriteItemCard
+                img={item.img}
+                title={item.name}
+                liked={true}
+                onClick={() => {}}
+                onClickHeart={() => unfavorite(item.id)}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </Grid>
 
       {loading && <LoadingText>추가 로딩 중...</LoadingText>}
