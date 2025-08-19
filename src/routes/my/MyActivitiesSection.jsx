@@ -1,6 +1,8 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import useMySummary from "./hooks/useMySummary";
+import { useAtomValue } from "jotai";
+import { favoriteRecipesCountAtom } from "./state/favoriteRecipesCountAtom";
 
 import tomatoIcon from "@icon/my/tomatoIcon.svg";
 import recipeIcon from "@icon/my/saladIcon.svg";
@@ -10,10 +12,15 @@ import chevronRight from "@icon/my/chevron-right.svg";
 export default function MyActivitiesSection() {
   const navigate = useNavigate();
   const { data: summary } = useMySummary();
+  const favRecipesCountFromList = useAtomValue(favoriteRecipesCountAtom);
 
   const counts = {
     ingredients: summary?.favoriteIngredientCount ?? 0,
-    recipes: summary?.favoriteRecipeCount ?? 0,
+    //  리스트 페이지가 갱신해둔 전역값을 우선 사용, 없으면 요약값
+    recipes:
+      (typeof favRecipesCountFromList === "number"
+        ? favRecipesCountFromList
+        : summary?.favoriteRecipeCount) ?? 0,
     history: summary?.pickleHistoryCount ?? 0,
   };
 
