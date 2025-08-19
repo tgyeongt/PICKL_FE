@@ -1,3 +1,4 @@
+// src/routes/map/index.jsx
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
@@ -25,48 +26,140 @@ import martIcon from "@icon/map/selectMart.svg";
 import currentMarkerIcon from "@icon/map/currentLocationMarker.svg";
 import StoreListImg from "@icon/map/storeListIcon.svg";
 
-// === 안전 설정 (필요 시 숫자만 더 키우면 됨) ===
+// ============== 안전 상수 (보수화) ==============
 const SAFE = {
-  // idle 후 호출까지 딜레이 (기존 500 → 700ms)
   IDLE_DEBOUNCE_MS: 700,
+  MAP_MIN_LEVEL: 3,
+  MAP_MAX_LEVEL: 7,
 
-  // 마트 bbox 반올림(키 안정화) 단위 (기존 ~0.01 → 0.02)
-  MART_ROUND_DECIMALS: 2, // (= Math.round(n*1e2)/1e2 ≒ 0.01)
-  MART_ROUND_STEP_HINT: 0.02, // 코멘트용 힌트
+  BBOX_AREA_MAX: 0.05, // 프론트 전체 가드
 
-  // 타일 분할 임계치 (면적) — 더 큰 값일 때만 분할해서 “불필요한 분할” 억제
-  TILE_SPLIT_THRESHOLD_2X2: 0.8, // 기존 0.2 → 0.8
-  TILE_SPLIT_THRESHOLD_4X4: 1.6, // 기존 0.6 → 1.6
+  // 요청 수 줄이기 위해 분할 임계/쿨다운 강화
+  TILE_SPLIT_THRESHOLD_2X2: 1.0, // 1.4 -> 1.0
+  TILE_SPLIT_THRESHOLD_4X4: 1.8, // 2.6 -> 1.8
+  TILE_COOLDOWN_MS: 450, // 300 -> 450
 
-  // 타일 간 호출 간격 (기존 120 → 250ms)
-  TILE_COOLDOWN_MS: 250,
-
-  // 전체 마트 요청 사이 쿨다운 (bbox 바뀌어도 최소 이 간격 유지)
-  MART_GLOBAL_COOLDOWN_MS: 1200,
-
-  // 백오프(429/504) 파라미터 (기본 0.8s → 1.2s, 시도 3 → 4)
+  MART_GLOBAL_COOLDOWN_MS: 12000, // 7000 -> 12000
   BACKOFF_BASE_MS: 1200,
   BACKOFF_TRIES: 4,
 
-  // 마트 페이지 사이즈(더 크게 가져와 호출 횟수 감소, 20 → 30)
-  MART_PAGE_SIZE: 30,
+  // ✅ 백엔드 페이징 검증 보수적으로 맞춤
+  MART_PAGE_SIZE: 15,
+  MARKET_PAGE_SIZE: 50,
+
+  // 마트 박스 한도(가로*세로)
+  MART_BBOX_AREA_MAX: 0.015, // 0.02 -> 0.015
+
+  // ✅ 마트 최소 가로/세로(경위도) 0.03 강제
+  MART_MIN_SPAN: 0.03, // 0.02 -> 0.03
 };
 
-/* =======================
- * 유틸(마트 전용 개선)
- * ======================= */
-const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+// ====== 서킷 브레이커(폭주 차단) ======
+const circuitRef = { openUntil: 0, strikes: 0, lastStrikeAt: 0 };
+const CIRCUIT = {
+  STRIKE_WINDOW_MS: 20000,
+  OPEN_AFTER_STRIKES: 3,
+  OPEN_MS: 60000,
+};
+function circuitRecord(status) {
+  const now = Date.now();
+  if (status === 429 || status === 500 || status === 504) {
+    if (now - circuitRef.lastStrikeAt > CIRCUIT.STRIKE_WINDOW_MS) {
+      circuitRef.strikes = 0;
+    }
+    circuitRef.lastStrikeAt = now;
+    circuitRef.strikes += 1;
+    if (circuitRef.strikes >= CIRCUIT.OPEN_AFTER_STRIKES) {
+      circuitRef.openUntil = now + CIRCUIT.OPEN_MS;
+      circuitRef.strikes = 0;
+    }
+  } else {
+    circuitRef.strikes = 0;
+  }
+}
+function circuitOpen() {
+  return Date.now() < circuitRef.openUntil;
+}
 
-/** 동일 키 동시요청 중복 제거 */
+// ====== 클라이언트 타일 LRU 캐시 ======
+const martTileCache = new Map(); // key -> { data, until }
+const MART_TILE_TTL_MS = 5 * 60_000;
+function cacheKeyFromParams(p) {
+  return `${p.minX},${p.minY},${p.maxX},${p.maxY},${p.size}`;
+}
+function cacheGet(key) {
+  const v = martTileCache.get(key);
+  if (!v) return null;
+  if (Date.now() > v.until) {
+    martTileCache.delete(key);
+    return null;
+  }
+  return v.data;
+}
+function cacheSet(key, data) {
+  martTileCache.set(key, { data, until: Date.now() + MART_TILE_TTL_MS });
+}
+
+// ============== 유틸 ==============
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+const n5 = (v) => Math.round(Number(v) * 1e5) / 1e5;
+const clamp = (v, lo, hi) => Math.min(Math.max(Number(v), lo), hi);
+
+// Retry-After 헤더 파싱
+function parseRetryAfter(err) {
+  const h = err?.response?.headers ?? {};
+  const ra = h["retry-after"] ?? h["Retry-After"] ?? err?.response?.data?.retryAfter;
+  if (!ra) return null;
+  const secs = Number(String(ra).match(/\d+/)?.[0]);
+  return Number.isFinite(secs) ? secs * 1000 : null;
+}
+
+// 박스 정규화 + 최소 스팬 보정 + 한반도 대략 클램프 + 소수 5자리 스냅
+function normalizeBbox(bb, minSpan = SAFE.MART_MIN_SPAN) {
+  let minX = Math.min(bb.minX, bb.maxX);
+  let maxX = Math.max(bb.minX, bb.maxX);
+  let minY = Math.min(bb.minY, bb.maxY);
+  let maxY = Math.max(bb.minY, bb.maxY);
+
+  if (maxX - minX < minSpan) {
+    const mid = (minX + maxX) / 2;
+    minX = mid - minSpan / 2;
+    maxX = mid + minSpan / 2;
+  }
+  if (maxY - minY < minSpan) {
+    const mid = (minY + maxY) / 2;
+    minY = mid - minSpan / 2;
+    maxY = mid + minSpan / 2;
+  }
+
+  // 한국 대략 영역 클램프(경도 124~132, 위도 33~39)
+  minX = clamp(minX, 124, 132);
+  maxX = clamp(maxX, 124, 132);
+  minY = clamp(minY, 33, 39);
+  maxY = clamp(maxY, 33, 39);
+
+  return { minX: n5(minX), minY: n5(minY), maxX: n5(maxX), maxY: n5(maxY) };
+}
+
+function validateMartParams(p) {
+  if (!(p.minX < p.maxX) || !(p.minY < p.maxY)) return false;
+  const area = Math.abs(p.maxX - p.minX) * Math.abs(p.maxY - p.minY);
+  if (area <= 0 || area > SAFE.MART_BBOX_AREA_MAX) return false;
+  return true;
+}
+
+/** 디듀프: 동일 키 동시요청을 하나로 합치기 */
 const pendingRequests = new Map();
-const withDedup = async (key, fn) => {
+function withDedup(key, fn) {
   if (pendingRequests.has(key)) return pendingRequests.get(key);
-  const p = fn().finally(() => pendingRequests.delete(key));
+  const p = Promise.resolve()
+    .then(fn)
+    .finally(() => pendingRequests.delete(key));
   pendingRequests.set(key, p);
   return p;
-};
+}
 
-/** 429/504 전용 지수 백오프 재시도 */
+/** 429/504에서만 지수 백오프(+ Retry-After 존중) */
 async function backoffRequest(
   reqFn,
   { tries = SAFE.BACKOFF_TRIES, base = SAFE.BACKOFF_BASE_MS } = {}
@@ -74,22 +167,24 @@ async function backoffRequest(
   let delay = base;
   for (let i = 0; i < tries; i++) {
     try {
-      const res = await reqFn();
-      return res;
+      return await reqFn();
     } catch (err) {
       const status = err?.response?.status ?? err?.status;
       if (status !== 429 && status !== 504) throw err;
-      await sleep(delay + Math.random() * 300);
+
+      const ra = parseRetryAfter(err);
+      const wait = ra ?? delay + Math.random() * 300;
+      await sleep(wait);
       delay *= 2;
     }
   }
   return reqFn();
 }
 
-/** bbox 타일 분할 */
+/** BBOX N×N 분할 */
 function splitBbox(b, tiles = 2) {
-  const xs = [];
-  const ys = [];
+  const xs = [],
+    ys = [];
   for (let i = 0; i <= tiles; i++) {
     xs.push(b.minX + ((b.maxX - b.minX) * i) / tiles);
     ys.push(b.minY + ((b.maxY - b.minY) * i) / tiles);
@@ -97,21 +192,193 @@ function splitBbox(b, tiles = 2) {
   const parts = [];
   for (let i = 0; i < tiles; i++) {
     for (let j = 0; j < tiles; j++) {
-      parts.push({
-        minX: xs[i],
-        maxX: xs[i + 1],
-        minY: ys[j],
-        maxY: ys[j + 1],
-      });
+      parts.push({ minX: xs[i], maxX: xs[i + 1], minY: ys[j], maxY: ys[j + 1] });
     }
   }
   return parts;
 }
 
+const bboxArea = (b) => Math.abs(b.maxX - b.minX) * Math.abs(b.maxY - b.minY);
+const split2x2 = (b) => splitBbox(b, 2).map((t) => normalizeBbox(t, SAFE.MART_MIN_SPAN));
+
+// 타일 에러 캐시(짧은 TTL 블랙리스트)
+const tileErrorCache = new Map(); // key -> { until: ts, count: n }
+const tileKeyFromParams = (p) => [p.minX, p.minY, p.maxX, p.maxY].join(",");
+function isTileBlacklisted(p) {
+  const k = tileKeyFromParams(p);
+  const rec = tileErrorCache.get(k);
+  if (!rec) return false;
+  if (Date.now() > rec.until) {
+    tileErrorCache.delete(k);
+    return false;
+  }
+  return true;
+}
+function markTileError(p, { ttlMs = 90_000 } = {}) {
+  const k = tileKeyFromParams(p);
+  const prev = tileErrorCache.get(k) || { until: 0, count: 0 };
+  tileErrorCache.set(k, { until: Date.now() + ttlMs, count: prev.count + 1 });
+}
+
+// 400인데 사실상 일시적 서버오류일 때 식별
+function isTransient400(err) {
+  const s = err?.response?.status;
+  if (s !== 400) return false;
+  const d = err?.response?.data;
+  const msg = (d?.message || d?.error || "").toString().toLowerCase();
+  return msg.includes("retries exhausted") || msg.includes("temporary") || msg.includes("timeout");
+}
+
+/**
+ * 단일 타일 호출 (캐시+디듀프+백오프):
+ * - 캐시 히트 시 즉시 반환
+ * - 429/504: backoffRequest
+ * - 400(transient): 500처럼 더 잘게 쪼개 재시도
+ * - 400(param invalid): 로그만 남기고 빈 배열
+ * - 500: 최대 depth 2까지 2x2 재귀 재시도, 실패 시 블랙리스트 등록
+ */
+async function fetchMartTile(params, controller, depth = 0) {
+  const norm = normalizeBbox(params, SAFE.MART_MIN_SPAN);
+  if (isTileBlacklisted(norm)) return [];
+
+  const key = cacheKeyFromParams({ ...norm, size: params.size });
+  const hit = cacheGet(key);
+  if (hit) return hit;
+
+  const call = async () => {
+    const res = await APIService.private.get("/marts", {
+      params: { ...norm, page: 1, size: params.size },
+      signal: controller.signal,
+    });
+    return res?.data ?? res?.content ?? res?.items ?? res ?? [];
+  };
+
+  const dedupKey = `marts:${key}`;
+
+  try {
+    const data = await withDedup(dedupKey, () => backoffRequest(call));
+    const arr = Array.isArray(data) ? data : data?.content ?? [];
+    cacheSet(key, arr);
+    return arr;
+  } catch (e) {
+    const s = e?.response?.status;
+    circuitRecord(s || 500);
+
+    // 일시적 400 → 500처럼 재시도
+    if (isTransient400(e)) {
+      if (depth < 2) {
+        const tinyTiles = split2x2(norm);
+        const merged = [];
+        for (const tt of tinyTiles) {
+          if (bboxArea(tt) <= 0) continue;
+          const part = await fetchMartTile(
+            { ...tt, page: 1, size: params.size },
+            controller,
+            depth + 1
+          );
+          if (Array.isArray(part)) merged.push(...part);
+        }
+        if (merged.length === 0) markTileError(norm, { ttlMs: 60_000 });
+        cacheSet(key, merged);
+        return merged;
+      }
+      markTileError(norm, { ttlMs: 60_000 });
+      return [];
+    }
+
+    // 진짜 파라미터 400
+    if (s === 400) {
+      console.groupCollapsed("%c[/marts 400] params", "color:#d97706;font-weight:700");
+      console.log(norm);
+      console.log("resp:", {
+        data: e?.response?.data,
+        headers: e?.response?.headers,
+        requestId:
+          e?.response?.headers?.["x-request-id"] ||
+          e?.response?.headers?.["x-amzn-requestid"] ||
+          e?.response?.headers?.["x-amz-request-id"],
+      });
+      console.groupEnd();
+      return [];
+    }
+
+    // 500: 재귀 분할
+    if (s === 500 && depth < 2) {
+      const tinyTiles = split2x2(norm);
+      const merged = [];
+      for (const tt of tinyTiles) {
+        if (bboxArea(tt) <= 0) continue;
+        const part = await fetchMartTile(
+          { ...tt, page: 1, size: params.size },
+          controller,
+          depth + 1
+        );
+        if (Array.isArray(part)) merged.push(...part);
+      }
+      if (merged.length === 0) markTileError(norm);
+      cacheSet(key, merged);
+      return merged;
+    }
+
+    if (s === 500) {
+      markTileError(norm);
+      return [];
+    }
+
+    throw e;
+  }
+}
+
+/** 여러 타일을 순차 호출해서 합치기 */
+async function fetchMartTilesSequential(tiles, size, controller) {
+  const results = [];
+  for (const t of tiles) {
+    const tNorm = normalizeBbox(t, SAFE.MART_MIN_SPAN);
+    if (isTileBlacklisted(tNorm)) continue;
+
+    const params = { ...tNorm, page: 1, size };
+    const arr = await fetchMartTile(params, controller, 0);
+    if (Array.isArray(arr)) results.push(...arr);
+    await sleep(SAFE.TILE_COOLDOWN_MS);
+  }
+  return results;
+}
+
+// ====== 적응형 게이팅(줌/이동량/쿨다운) ======
+const lastQueryRef = { center: null, level: null, at: 0 };
+function shouldQuery(map) {
+  if (!map?.getLevel || !map?.getCenter) return false;
+  const level = map.getLevel();
+  // 충분히 확대됐을 때만 허용
+  if (level > 5) return false;
+
+  const center = map.getCenter();
+  const now = Date.now();
+  const last = lastQueryRef;
+
+  const moved =
+    !last.center ||
+    Math.abs(center.getLat() - last.center.getLat?.()) > 0.004 ||
+    Math.abs(center.getLng() - last.center.getLng?.()) > 0.004;
+
+  const leveled = last.level == null || Math.abs(level - last.level) >= 1;
+  const cooled = now - (last.at || 0) > 10_000; // 최소 10초
+
+  if ((moved || leveled) && cooled) {
+    lastQueryRef.center = center;
+    lastQueryRef.level = level;
+    lastQueryRef.at = now;
+    return true;
+  }
+  return false;
+}
+
+// ====== 컴포넌트 ======
 export default function KakaoMap() {
   const mapRef = useRef(null);
   const { state: navState } = useLocation();
   const navigate = useNavigate();
+
   const [mapInstance, setMapInstance] = useState(null);
   const [selectedStore, setSelectedStore] = useState(null);
   const [selectedCategory] = useAtom(selectedCategoryAtom);
@@ -121,30 +388,30 @@ export default function KakaoMap() {
 
   const markersRef = useRef([]);
   const currentMarkerRef = useRef(null);
-  const martNextAllowedAtRef = useRef(0);
-  const centerLockUntilRef = useRef(0);
-  const overlayMapRef = useRef({
-    round: {},
-    bubble: null,
-    bubbleTargetKey: null,
-  });
-  const justOpenedAtRef = useRef(0);
 
+  // 마트 과호출 제어
+  const martNextAllowedAtRef = useRef(0);
+  const lastMartKeyRef = useRef("");
+  const martAbortRef = useRef(null);
+
+  const centerLockUntilRef = useRef(0);
+  const overlayMapRef = useRef({ round: {}, bubble: null, bubbleTargetKey: null });
+  const justOpenedAtRef = useRef(0);
   const pendingFocusRef = useRef(null);
+
   const [bbox, setBbox] = useState(null);
 
-  // 마트 전용 안내/오류 상태
+  // 안내 상태
   const [rateLimited, setRateLimited] = useState(false);
   const [netError, setNetError] = useState(false);
+  const [tooWide, setTooWide] = useState(false);
 
   // ---------- Kakao SDK 준비 ----------
   const ensureKakaoReady = () =>
     new Promise((resolve) => {
       const onReady = () => window.kakao.maps.load(resolve);
       if (window.kakao?.maps?.services) return onReady();
-
       document.querySelectorAll("script[data-kakao-maps-sdk]").forEach((s) => s.remove());
-
       const script = document.createElement("script");
       script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${
         import.meta.env.VITE_KAKAOMAP_APP_KEY
@@ -176,27 +443,28 @@ export default function KakaoMap() {
     const map = new window.kakao.maps.Map(mapRef.current, {
       center: centerLatLng,
       level: 3,
+      minLevel: SAFE.MAP_MIN_LEVEL,
+      maxLevel: SAFE.MAP_MAX_LEVEL,
       draggable: true,
       scrollwheel: true,
     });
 
-    setMapInstance(map);
-    map.setCenter(centerLatLng);
+    // 줌 변경 시 강제 가드
+    window.kakao.maps.event.addListener(map, "zoom_changed", function () {
+      const lvl = map.getLevel();
+      if (lvl > SAFE.MAP_MAX_LEVEL) map.setLevel(SAFE.MAP_MAX_LEVEL);
+      if (lvl < SAFE.MAP_MIN_LEVEL) map.setLevel(SAFE.MAP_MIN_LEVEL);
+    });
 
-    setTimeout(() => {
-      window.kakao.maps.event.trigger(map, "resize");
-    }, 100);
+    setMapInstance(map);
+    setTimeout(() => window.kakao.maps.event.trigger(map, "resize"), 100);
   }, [addressState.lat, addressState.lng]);
 
-  // ---------- 커스텀 마커 / 버블 ----------
+  // ---------- 마커/버블 ----------
   const createMarkerElement = (store, imageSrc) => {
     const marker = document.createElement("div");
-    marker.style.cssText = `
-      width: 50px; height: 50px; background: white; border-radius: 50%;
-      display: flex; justify-content: center; align-items: center;
-      box-shadow: 1px 1px 4px 0 var(--GREY10, #E1E1E3); cursor: pointer;
-      transform: scale(0.8); opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
-    `;
+    marker.style.cssText =
+      "width:50px;height:50px;background:#fff;border-radius:50%;display:flex;justify-content:center;align-items:center;box-shadow:1px 1px 4px 0 #E1E1E3;cursor:pointer;transform:scale(.8);opacity:0;transition:opacity .3s,transform .3s;";
     const icon = document.createElement("img");
     icon.src = imageSrc;
     icon.alt = store.name;
@@ -204,7 +472,6 @@ export default function KakaoMap() {
     icon.style.height = "30px";
     marker.appendChild(icon);
     marker.addEventListener("click", (e) => e.stopPropagation());
-
     setTimeout(() => {
       marker.style.opacity = "1";
       marker.style.transform = "scale(1)";
@@ -216,33 +483,22 @@ export default function KakaoMap() {
     const bubble = document.createElement("div");
     bubble.innerHTML = `
       <style>
-        .custom-bubble{
-          position:relative; display:flex; gap:6px; align-items:center;
-          padding:8px 21px; border-radius:20px; background:#58D748; color:#fff;
-          box-shadow: 1px 1px 4px rgba(0,0,0,0.1); transform: translateY(6px);
-          opacity:0; transition: all .2s ease; z-index: 9999;
-        }
-        .custom-bubble.show{ opacity:1; transform: translateY(0); }
+        .custom-bubble{position:relative;display:flex;gap:6px;align-items:center;padding:8px 21px;border-radius:20px;background:#58D748;color:#fff;box-shadow:1px 1px 4px rgba(0,0,0,.1);transform:translateY(6px);opacity:0;transition:all .2s ease;z-index:9999;}
+        .custom-bubble.show{opacity:1;transform:translateY(0);}
       </style>
       <div class="custom-bubble">
-        <img src="${imageSrc}" style="width: 20px; height: 20px; margin-left: 2px;" />
+        <img src="${imageSrc}" style="width:20px;height:20px;margin-left:2px;" />
         <span>${store.name}</span>
-        <div style="position: absolute; bottom: -6px; left: 26px; width: 0; height: 0;
-          border-left: 6px solid transparent; border-right: 6px solid transparent;
-          border-top: 6px solid #58D748;"></div>
+        <div style="position:absolute;bottom:-6px;left:26px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #58D748;"></div>
       </div>`;
     bubble.addEventListener("click", (e) => e.stopPropagation());
-    setTimeout(() => {
-      bubble.querySelector(".custom-bubble")?.classList.add("show");
-    }, 10);
+    setTimeout(() => bubble.querySelector(".custom-bubble")?.classList.add("show"), 10);
     return bubble;
   };
 
   const showBubbleOverlay = useCallback(
     (store, storePosition, imageSrc, opts = { useOffset: true, offsetLat: 0.0007 }) => {
       const key = `${store.latitude},${store.longitude}`;
-
-      // 기존 둥근 마커 제거
       const prevRound = overlayMapRef.current.round[key];
       if (prevRound) {
         prevRound.setMap(null);
@@ -250,7 +506,6 @@ export default function KakaoMap() {
         delete overlayMapRef.current.round[key];
       }
 
-      // 리스트 선택일 때는 정확히 상점 좌표로 센터 이동
       if (opts?.useOffset) {
         const offsetLat = opts.offsetLat ?? 0.0007;
         const adjustedLat = store.latitude - offsetLat;
@@ -260,7 +515,6 @@ export default function KakaoMap() {
         mapInstance?.panTo(storePosition);
       }
 
-      // 말풍선 생성
       const bubbleEl = createBubbleElement(store, imageSrc);
       const bubbleOverlay = new window.kakao.maps.CustomOverlay({
         position: storePosition,
@@ -270,7 +524,6 @@ export default function KakaoMap() {
         zIndex: 10000,
       });
       bubbleOverlay.setMap(mapInstance);
-
       overlayMapRef.current.bubble = bubbleOverlay;
       overlayMapRef.current.bubbleTargetKey = key;
       justOpenedAtRef.current = Date.now();
@@ -288,22 +541,18 @@ export default function KakaoMap() {
   const renderMarkers = useCallback(
     (stores) => {
       if (!mapInstance || !stores) return;
-
       markersRef.current.forEach((m) => m.setMap?.(null));
       markersRef.current = [];
       Object.values(overlayMapRef.current.round).forEach((o) => o.setMap?.(null));
       overlayMapRef.current.round = {};
 
       const bounds = mapInstance.getBounds();
-
       stores.forEach((store) => {
         const key = `${store.latitude},${store.longitude}`;
         if (selectedCategory !== "all" && (store.type || "").toLowerCase() !== selectedCategory)
           return;
-
         const pos = new window.kakao.maps.LatLng(store.latitude, store.longitude);
         if (!bounds.contain(pos)) return;
-
         if (overlayMapRef.current.bubbleTargetKey === key) return;
 
         const imageSrc = (store.type || "").toLowerCase() === "market" ? marketIcon : martIcon;
@@ -315,19 +564,17 @@ export default function KakaoMap() {
         });
         roundOverlay.setMap(mapInstance);
         overlayMapRef.current.round[key] = roundOverlay;
-
         markerEl.addEventListener("click", (e) => {
           e.stopPropagation();
           showBubbleOverlay(store, pos, imageSrc);
         });
-
         markersRef.current.push(roundOverlay);
       });
     },
     [mapInstance, selectedCategory, showBubbleOverlay]
   );
 
-  // ---------- 초기 로딩 & 현재 위치 ----------
+  // ---------- 초기 로딩 ----------
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -383,23 +630,16 @@ export default function KakaoMap() {
   // 현재 위치 마커
   useEffect(() => {
     if (!mapInstance) return;
-
     const watchId = navigator.geolocation.watchPosition(
       ({ coords }) => {
-        const { latitude, longitude } = coords;
-        const position = new window.kakao.maps.LatLng(latitude, longitude);
-
+        const position = new window.kakao.maps.LatLng(coords.latitude, coords.longitude);
         if (!currentMarkerRef.current) {
           const markerImage = new window.kakao.maps.MarkerImage(
             currentMarkerIcon,
             new window.kakao.maps.Size(40, 40),
             { offset: new window.kakao.maps.Point(20, 40) }
           );
-          const marker = new window.kakao.maps.Marker({
-            position,
-            image: markerImage,
-            zIndex: 10,
-          });
+          const marker = new window.kakao.maps.Marker({ position, image: markerImage, zIndex: 10 });
           marker.setMap(mapInstance);
           currentMarkerRef.current = marker;
         } else {
@@ -410,11 +650,10 @@ export default function KakaoMap() {
       () => {},
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
     );
-
     return () => navigator.geolocation.clearWatch(watchId);
   }, [mapInstance]);
 
-  // ---------- 맵 idle → bbox 갱신 (스냅 + 디바운스 500ms, 동일 BBOX 스킵) ----------
+  // ---------- idle → BBOX 갱신(디바운스) ----------
   useEffect(() => {
     if (!mapInstance) return;
 
@@ -434,6 +673,10 @@ export default function KakaoMap() {
         maxX: snap(ne.getLng()),
         maxY: snap(ne.getLat()),
       };
+
+      // 면적 과대 시 프론트 차단
+      const area = Math.abs(next.maxX - next.minX) * Math.abs(next.maxY - next.minY);
+      setTooWide(area > SAFE.BBOX_AREA_MAX);
 
       setBbox((prev) => {
         if (
@@ -463,10 +706,10 @@ export default function KakaoMap() {
     };
   }, [mapInstance]);
 
-  // ---------- 리스트 모드 기본 bbox 보정 (맵 없어도 쿼리 가능하게) ----------
+  // 리스트 모드 기본 bbox
   useEffect(() => {
     if (isListMode && !bbox && addressState?.lat && addressState?.lng) {
-      const span = 0.02;
+      const span = 0.03; // 마트 최소 스팬과 동일하게
       setBbox({
         minX: addressState.lng - span,
         minY: addressState.lat - span,
@@ -476,6 +719,7 @@ export default function KakaoMap() {
     }
   }, [isListMode, bbox, addressState?.lat, addressState?.lng]);
 
+  // 포커스 이동
   useEffect(() => {
     if (!isListMode && mapInstance && pendingFocusRef.current) {
       const store = pendingFocusRef.current;
@@ -487,58 +731,42 @@ export default function KakaoMap() {
         window.kakao.maps.event.removeListener(mapInstance, "tilesloaded", handler);
       };
       mapInstance.setCenter(pos);
+      window.kakao.maps.event.addEventListener?.(mapInstance, "tilesloaded", handler);
       window.kakao.maps.event.addListener(mapInstance, "tilesloaded", handler);
       pendingFocusRef.current = null;
     }
   }, [isListMode, mapInstance, showBubbleOverlay]);
 
-  // API 파라미터 변환
-  const buildMarketParams = (bbox) => ({
-    minX: bbox.minX,
-    minY: bbox.minY,
-    maxX: bbox.maxX,
-    maxY: bbox.maxY,
+  // 파라미터 빌더
+  const buildMarketParams = (bb) => ({
+    minX: bb.minX,
+    minY: bb.minY,
+    maxX: bb.maxX,
+    maxY: bb.maxY,
     page: 1,
-    size: 50,
+    size: SAFE.MARKET_PAGE_SIZE,
   });
 
-  // ⚠️ 마트 파라미터만 살짝 다르게(키 안정화 강하게)
-  const buildMartParams = (bbox) => {
-    const ensureMinSpan = (src, minLon = 0.3, minLat = 0.3) => {
-      const cx = (src.minX + src.maxX) / 2;
-      const cy = (src.minY + src.maxY) / 2;
-      const halfX = Math.max((src.maxX - src.minX) / 2, minLon / 2);
-      const halfY = Math.max((src.maxY - src.minY) / 2, minLat / 2);
-      return { minX: cx - halfX, minY: cy - halfY, maxX: cx + halfX, maxY: cy + halfY };
-    };
-    const roundN = (n) => Math.round(n * 1e2) / 1e2; // ≒ 0.01 (실제 체감은 0.02단위로 움직이게 됨)
-    const bb = ensureMinSpan(bbox);
-    return {
-      minX: roundN(bb.minX),
-      minY: roundN(bb.minY),
-      maxX: roundN(bb.maxX),
-      maxY: roundN(bb.maxY),
-      page: 1,
-      size: SAFE.MART_PAGE_SIZE, // 30
-    };
+  const buildMartParams = (bb) => {
+    const norm = normalizeBbox(bb, SAFE.MART_MIN_SPAN);
+    return { ...norm, page: 1, size: SAFE.MART_PAGE_SIZE };
   };
 
-  /* =======================
-   * 전통시장(그대로 유지)
-   * ======================= */
+  // ================= 전통시장 =================
   const { data: storesData = [], refetch } = useQuery({
     queryKey: ["markets", bbox?.minX, bbox?.minY, bbox?.maxX, bbox?.maxY],
-    enabled: !!bbox && (!!mapInstance || isListMode),
+    enabled: !!bbox && (!!mapInstance || isListMode) && !tooWide,
     retry: false,
-    keepPreviousData: true,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    refetchOnMount: false, // Dev 중복 호출 방지
+    keepPreviousData: true,
     staleTime: 60 * 1000,
     queryFn: async () => {
       try {
         await testLoginIfNeeded();
-      } catch (e) {
-        console.warn("[auth] testLoginIfNeeded 실패(무시 가능)", e);
+      } catch {
+        //err
       }
       const params = buildMarketParams(bbox);
       const res = await APIService.private.get("/markets", { params });
@@ -548,108 +776,113 @@ export default function KakaoMap() {
     select: (raw) =>
       raw
         .map((r) => {
-          const mapped = mapMarketFromAPI(r);
-          return mapped && { ...mapped, type: "market" };
+          const m = mapMarketFromAPI(r);
+          return m && { ...m, type: "market" };
         })
         .filter(Boolean),
   });
 
-  // =======================
-  // 대형마트(강화 버전)
-  // =======================
+  // ================= 대형마트 =================
   const { data: martsData = [], refetch: refetchMarts } = useQuery({
     queryKey: ["marts", bbox?.minX, bbox?.minY, bbox?.maxX, bbox?.maxY],
-    enabled: !!bbox && (!!mapInstance || isListMode),
+    enabled: !!bbox && (!!mapInstance || isListMode) && !tooWide,
     retry: false,
-    keepPreviousData: true,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    refetchOnMount: false, // Dev 중복 호출 방지
+    keepPreviousData: true,
     staleTime: 60 * 1000,
     queryFn: async () => {
-      // 네트워크 안내 초기화
-      setNetError(false);
-
-      // 0) (옵션) 인증 시도 — 실패해도 무시
-      try {
-        await testLoginIfNeeded();
-      } catch {
-        // 인증 실패
+      // 서킷 오픈 시 완전 차단
+      if (circuitOpen()) {
+        return [];
       }
 
-      // 1) 🔒 전역 쿨다운: 이전 호출 이후 최소 N ms 간격 유지
+      // 줌/이동 게이팅
+      if (!isListMode && !shouldQuery(mapInstance)) {
+        return [];
+      }
+
+      // 마켓이 먼저 나가도록 살짝 스태거
+      await sleep(200);
+      setNetError(false);
+
+      // 🔒 전역 쿨다운
       const now = Date.now();
       const wait = martNextAllowedAtRef.current - now;
       if (wait > 0) await sleep(wait);
-
-      // 2) bbox 정규화(마트 전용 빌더)
-      const bb = buildMartParams(bbox);
-
-      // 3) 넓은 영역만 타일 분할(보수적 기준)
-      const spanX = Math.abs(bb.maxX - bb.minX);
-      const spanY = Math.abs(bb.maxY - bb.minY);
-      const area = spanX * spanY;
-
-      const tiles =
-        area > SAFE.TILE_SPLIT_THRESHOLD_4X4
-          ? splitBbox(bb, 4)
-          : area > SAFE.TILE_SPLIT_THRESHOLD_2X2
-          ? splitBbox(bb, 2)
-          : [bb]; // 작으면 분할 안 함
-
-      // 4) 타일을 순차 호출 + 타일 간 쿨다운으로 QPS 억제
-      const results = [];
-      for (let i = 0; i < tiles.length; i++) {
-        const t = tiles[i];
-        const params = { ...t, page: 1, size: bb.size ?? SAFE.MART_PAGE_SIZE };
-
-        // 동일 파라미터 중복 방지 키
-        const key = `marts:${params.minX}:${params.minY}:${params.maxX}:${params.maxY}:${params.size}`;
-
-        // 실제 API 호출(429/504에서만 백오프 재시도)
-        const call = () =>
-          APIService.private
-            .get("/marts", { params })
-            .then((res) => res?.data ?? res?.content ?? res?.items ?? res ?? [])
-            .catch((err) => {
-              const status = err?.response?.status ?? err?.status;
-              if (status === 429) setRateLimited(true); // 호출 제한 토스트 ON
-              if (status === 504) {
-                setRateLimited(true);
-                setNetError(true);
-              } // 네트워크 토스트 ON
-              throw err;
-            });
-
-        // 디듀프 + 백오프
-        const arr = await withDedup(key, () => backoffRequest(call));
-
-        // 결과 합치기
-        results.push(
-          ...(Array.isArray(arr) ? arr : Array.isArray(arr?.content) ? arr.content : [])
-        );
-
-        // 다음 타일까지 쿨다운 — 순간 동시폭주 방지
-        if (i < tiles.length - 1) await sleep(SAFE.TILE_COOLDOWN_MS);
-      }
-
-      // 데이터가 하나라도 오면 레이트 리밋 토스트 OFF
-      if (results.length) setRateLimited(false);
-
-      // 5) ✅ 글로벌 쿨다운 갱신
       martNextAllowedAtRef.current = Date.now() + SAFE.MART_GLOBAL_COOLDOWN_MS;
 
-      return results;
+      try {
+        await testLoginIfNeeded();
+      } catch {
+        //err
+      }
+
+      const p = buildMartParams(bbox);
+
+      // ✅ 최종 유효성 검사(면적/순서)
+      if (!validateMartParams(p)) {
+        // 잘못된 파라미터는 호출 자체 생략
+        return [];
+      }
+
+      const key = [p.minX, p.minY, p.maxX, p.maxY, p.page, p.size].join("|");
+
+      // ✅ 동일 bbox + 쿨다운 중이면 return
+      if (key === lastMartKeyRef.current && Date.now() < martNextAllowedAtRef.current) {
+        return [];
+      }
+      lastMartKeyRef.current = key;
+
+      // 이전 요청 취소
+      if (martAbortRef.current) {
+        try {
+          martAbortRef.current.abort();
+        } catch {
+          //err
+        }
+      }
+      const controller = new AbortController();
+      martAbortRef.current = controller;
+
+      const area = Math.abs(p.maxX - p.minX) * Math.abs(p.maxY - p.minY);
+      const tiles =
+        area > SAFE.TILE_SPLIT_THRESHOLD_4X4
+          ? splitBbox(p, 4)
+          : area > SAFE.TILE_SPLIT_THRESHOLD_2X2
+          ? splitBbox(p, 2)
+          : [p];
+
+      try {
+        const results = await fetchMartTilesSequential(tiles, p.size, controller);
+        if (results.length) setRateLimited(false);
+        return results;
+      } catch (err) {
+        const status = err?.response?.status ?? err?.status;
+        circuitRecord(status || 500);
+
+        if (status === 429) {
+          setRateLimited(true);
+          const raMs = parseRetryAfter(err);
+          const extra = raMs ?? SAFE.MART_GLOBAL_COOLDOWN_MS * 2;
+          martNextAllowedAtRef.current = Math.max(martNextAllowedAtRef.current, Date.now() + extra);
+        } else {
+          setNetError(true);
+        }
+        return [];
+      }
     },
     select: (raw) =>
       raw
         .map((r) => {
-          const mapped = mapMarketFromAPI(r);
-          return mapped && { ...mapped, type: "mart" };
+          const m = mapMarketFromAPI(r);
+          return m && { ...m, type: "mart" };
         })
         .filter(Boolean),
   });
 
-  // ---------- 데이터 머지 & 필터 ----------
+  // ---------- 데이터 머지/필터 ----------
   const mergedStoresData = useMemo(() => {
     const mapByKey = new Map();
     [...(storesData || []), ...(martsData || [])].forEach((s) => {
@@ -666,18 +899,14 @@ export default function KakaoMap() {
 
   // ---------- 마커 렌더 ----------
   useEffect(() => {
-    if (!isListMode) {
-      renderMarkers(filteredStores);
-    }
+    if (!isListMode) renderMarkers(filteredStores);
   }, [filteredStores, renderMarkers, isListMode]);
 
   // ---------- 맵 클릭 시 버블 닫기 ----------
   useEffect(() => {
     if (!mapInstance) return;
-
     const handleMapClick = () => {
       if (Date.now() - justOpenedAtRef.current < 200) return;
-
       const { bubble, bubbleTargetKey } = overlayMapRef.current;
       if (!bubble || !bubbleTargetKey) return;
 
@@ -687,7 +916,6 @@ export default function KakaoMap() {
       overlayMapRef.current.bubbleTargetKey = null;
       setSelectedStore(null);
 
-      // 버블 대상 자리에 둥근 마커 복원
       const store = filteredStores.find((s) => `${s.latitude},${s.longitude}` === bubbleTargetKey);
       if (!store) return;
       const imageSrc = (store.type || "").toLowerCase() === "market" ? marketIcon : martIcon;
@@ -705,14 +933,11 @@ export default function KakaoMap() {
         showBubbleOverlay(store, pos, imageSrc);
       });
     };
-
     window.kakao.maps.event.addListener(mapInstance, "click", handleMapClick);
-    return () => {
-      window.kakao.maps.event.removeListener(mapInstance, "click", handleMapClick);
-    };
+    return () => window.kakao.maps.event.removeListener(mapInstance, "click", handleMapClick);
   }, [mapInstance, filteredStores, showBubbleOverlay]);
 
-  // ---------- 리스트/지도 전환 시 ----------
+  // ---------- 리스트/지도 전환 ----------
   useEffect(() => {
     if (!isListMode && addressState.lat && addressState.lng) {
       (async () => {
@@ -724,26 +949,23 @@ export default function KakaoMap() {
   }, [isListMode, addressState.lat, addressState.lng, createMap]);
 
   useEffect(() => {
-    if (isListMode && mapInstance) {
-      setMapInstance(null);
-    }
+    if (isListMode && mapInstance) setMapInstance(null);
   }, [isListMode, mapInstance]);
 
   useEffect(() => {
     const store = navState?.focusStore;
     if (!store || !store.latitude || !store.longitude) return;
-
     pendingFocusRef.current = store;
     centerLockUntilRef.current = Date.now() + 1500;
     setIsListMode(false);
-
     navigate(".", { replace: true, state: null });
   }, [navState, navigate]);
 
+  // ---------- UI ----------
   return (
     <KakaoMapWrapper $isListMode={isListMode}>
-      {/* 상단 토스트: 호출 제한/네트워크 안내 (마트 전용) */}
-      {rateLimited && (
+      {/* 과대 영역 경고 */}
+      {tooWide && (
         <div
           style={{
             position: "fixed",
@@ -756,14 +978,34 @@ export default function KakaoMap() {
             padding: "8px 12px",
             borderRadius: 8,
             fontSize: 12,
-            boxShadow: "0 2px 8px rgba(0,0,0,.2)",
           }}
         >
-          카카오 호출 제한으로 일부 마커를 불러오지 못했어. 잠시 후 자동 재시도 중이야
+          검색 범위가 너무 넓어. 지도를 조금 더 확대해줘
         </div>
       )}
 
-      {/* 504 등 네트워크 안내 + 수동 재시도 */}
+      {/* 레이트리밋 안내 */}
+      {rateLimited && (
+        <div
+          style={{
+            position: "fixed",
+            top: tooWide ? 44 : 12,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 99999,
+            background: "#1f2937",
+            color: "#fff",
+            padding: "8px 12px",
+            borderRadius: 8,
+            fontSize: 12,
+            boxShadow: "0 2px 8px rgba(0,0,0,.2)",
+          }}
+        >
+          호출 제한으로 일부 마커를 불러오지 못했어. 잠시 후 자동 재시도 중이야
+        </div>
+      )}
+
+      {/* 네트워크 안내 + 수동 재시도 */}
       {netError && (
         <div
           style={{
@@ -779,7 +1021,7 @@ export default function KakaoMap() {
             fontSize: 12,
           }}
         >
-          네트워크 지연으로 일부 마커를 불러오지 못했어.
+          네트워크/요청 형식 문제로 일부 마커를 불러오지 못했어.
           <button
             style={{
               marginLeft: 8,
@@ -800,9 +1042,7 @@ export default function KakaoMap() {
       )}
 
       {isListMode ? (
-        <>
-          <StoreListView stores={filteredStores} onSelect={handleSelectFromList} />
-        </>
+        <StoreListView stores={filteredStores} onSelect={handleSelectFromList} />
       ) : (
         <>
           <KakaoMapBox ref={mapRef} />
