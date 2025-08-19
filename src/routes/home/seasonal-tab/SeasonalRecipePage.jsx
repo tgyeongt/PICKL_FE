@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { APIService } from "../../../shared/lib/api";
+import { upsertRecipeSeason } from "../../../shared/lib/recipeSeasonMap";
 import styled from "styled-components";
 import DetailItem from "./DetailItem";
 import useHeader from "@hooks/useHeader";
@@ -29,6 +30,9 @@ export default function SeasonalRecipePage() {
         const res = await APIService.private.get(`/season-items/${id}/recipes`);
         const selectedRecipe = res.data.find((r) => String(r.id) === recipeId);
         setRecipe(selectedRecipe || {});
+        if (selectedRecipe) {
+          upsertRecipeSeason(String(recipeId), Number(id));
+        }
       } catch (error) {
         console.error("Failed to fetch recipe:", error);
       }

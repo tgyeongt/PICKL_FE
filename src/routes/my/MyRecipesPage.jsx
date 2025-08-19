@@ -1,4 +1,6 @@
 import { useMemo, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { getSeasonIdByRecipe } from "../../shared/lib/recipeSeasonMap";
 import styled from "styled-components";
 import useHeader from "../../shared/hooks/useHeader";
 import useFavoriteRecipes from "./hooks/useFavoriteRecipes";
@@ -9,9 +11,21 @@ import { AnimatePresence, motion } from "framer-motion";
 export default function MyRecipesPage() {
   useHeader({ title: "찜한 레시피 목록", showBack: true });
 
+  const navigate = useNavigate();
   const { recipes, loading, error, hasMore, loadMore, totalCount, unfavorite } =
     useFavoriteRecipes();
   const observerRef = useRef(null);
+
+  const handleCardClick = (item) => {
+    const seasonItemId = getSeasonIdByRecipe(item.id);
+    if (seasonItemId) {
+      // ✅ 캐시에 있으면 즉시 상세 이동
+      navigate(`/seasonal/${seasonItemId}/${item.id}`);
+    } else {
+      // ✅ 캐시가 없으면 리졸버 경유
+      navigate(`/recipes/resolve/${item.id}`);
+    }
+  };
 
   const items = useMemo(
     () =>
@@ -72,8 +86,11 @@ export default function MyRecipesPage() {
                 img={item.img}
                 title={item.name}
                 liked={true}
-                onClick={() => {}}
-                onClickHeart={() => unfavorite(item.id)}
+                onClick={() => handleCardClick(item)}
+                onClickHeart={(e) => {
+                  e?.stopPropagation?.(); // ✅ 카드 클릭으로 전파 방지
+                  unfavorite(item.id);
+                }}
               />
             </motion.div>
           ))}
