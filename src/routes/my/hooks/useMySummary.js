@@ -60,7 +60,7 @@ export default function useMySummary(options = {}) {
       return mapSummary(res?.data ?? res);
     },
     staleTime: 5 * 60 * 1000,
-    refetchOnMount: "always",
+    refetchOnMount: false, // 전환 직후 뒤로 가기시 서버값으로 덮이지 않도록
     refetchOnWindowFocus: false,
     retry: 1,
     ...options,

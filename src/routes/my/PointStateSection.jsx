@@ -1,10 +1,9 @@
 import styled from "styled-components";
-import { useAtomValue } from "jotai";
+import { useAtomValue } from "jotai"; // ✅ 추가
 import { selectedAddressAtom } from "../map/state/addressAtom";
 import useCurrentAddress from "../map/hooks/useCurrentAddress";
-import { pointsAtom } from "./convert/ConvertPointsContext";
-import useMySummary from "./hooks/useMySummary";
 import pPoint from "@icon/my/pPointIcon.svg";
+import useCurrentPoints from "./hooks/useCurrentPoints";
 
 function deriveGuDong(addr = "") {
   const m1 = addr.match(/([\w가-힣]+구)\s+([\w가-힣]+동)/);
@@ -15,13 +14,9 @@ function deriveGuDong(addr = "") {
 }
 
 export default function PointStateSection() {
-  const selectedAddress = useAtomValue(selectedAddressAtom);
+  const selectedAddress = useAtomValue(selectedAddressAtom); // ✅ 정상 동작
 
-  // 전역 포인트 상태 사용
-  const globalPoints = useAtomValue(pointsAtom);
-  const { data: summary } = useMySummary();
-
-  const currentPoints = summary?.points ?? null ?? globalPoints ?? 0;
+  const currentPoints = useCurrentPoints();
 
   const hasGlobalAddr = !!(selectedAddress?.jibunAddress || selectedAddress?.roadAddress);
   const { address: fallbackAddr } = useCurrentAddress(!hasGlobalAddr);
