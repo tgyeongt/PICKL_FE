@@ -1,7 +1,7 @@
 import useHeader from "../../shared/hooks/useHeader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   DailyPointsPageWrapper,
   IconDiv,
@@ -32,6 +32,7 @@ import { testLoginIfNeeded } from "../../shared/lib/auth";
 import { useSetAtom } from "jotai";
 import { pointsAtom } from "./convert/ConvertPointsContext";
 
+const LAST_ID_KEY = "dailyPoints:lastQuestionId";
 const DEV_MOCK_ON_5XX = false;
 const MOCK_QUIZ = {
   itemName: "토마토",
@@ -41,19 +42,19 @@ const MOCK_QUIZ = {
   __fallback: "mock500",
 };
 
-// 🔎 공통 에러 파서
+// 공통 에러 파서
 function parseApiError(e) {
   const status = e?.response?.status;
   const msg = e?.response?.data?.message || e?.message || "unknown";
   return { status, msg };
 }
 
-// 🔹 아이콘 디코더 (U+ 코드포인트 대비)
+// 아이콘 디코더 (U+ 코드포인트 대비)
 function decodeEmoji(s = "") {
-  if (s.startsWith("U+")) {
+  if (s?.startsWith?.("U+")) {
     return String.fromCodePoint(parseInt(s.replace("U+", ""), 16));
   }
-  return s;
+  return s || "";
 }
 
 export default function DailyPointsPage() {
@@ -61,7 +62,11 @@ export default function DailyPointsPage() {
   const { state } = useLocation();
   const adWatched = !!state?.adWatched;
   const adNonceFromNav = state?.adNonce;
+
   const [retryToken, setRetryToken] = useState(null);
+  const [reseed, setReseed] = useState(null); // 강제 재요청용 난수
+  const retryCountRef = useRef(0);
+
   const qc = useQueryClient();
   const setPoints = useSetAtom(pointsAtom);
 
@@ -72,6 +77,8 @@ export default function DailyPointsPage() {
     if (!adWatched) return;
     const token = adNonceFromNav || String(Date.now());
     setRetryToken(token);
+    setReseed(crypto.randomUUID());
+    retryCountRef.current = 0; // 재시도 카운터 초기화
     qc.removeQueries({ predicate: (q) => String(q.queryKey?.[0]) === "dailyPoints" });
     qc.invalidateQueries({ predicate: (q) => String(q.queryKey?.[0]) === "dailyPoints" });
     navigate(".", { replace: true, state: null });
@@ -79,18 +86,19 @@ export default function DailyPointsPage() {
 
   // 오늘의 문제 조회
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["dailyPoints", "today", retryToken],
+    queryKey: ["dailyPoints", "today", retryToken, reseed],
     queryFn: async () => {
       await testLoginIfNeeded();
       const path = "/quiz/daily";
       const params = {
         _ts: Date.now(),
-        ...(retryToken ? { retry: 1, _ad: 1 } : {}),
+        ...(retryToken ? { retry: 1, _ad: 1, nonce: retryToken, reseed } : {}),
       };
 
       try {
         const res = await APIService.private.get(path, { params });
         const raw = res?.data ?? res ?? {};
+        console.log("[daily] raw response =", raw);
 
         // 아이콘 처리
         const rawIcon = raw?.ingredient?.icon ?? raw?.ingredient?.iconUrl ?? raw?.itemIconUrl ?? "";
@@ -108,14 +116,20 @@ export default function DailyPointsPage() {
           ? [raw.statement]
           : [];
 
+        console.log(
+          "[daily] mapped id =",
+          raw?.id ?? raw?.questionId,
+          "attempted =",
+          raw?.attempted
+        );
+
         return {
           id: raw?.id ?? raw?.questionId,
           itemName: raw?.ingredient?.name ?? raw?.itemName ?? "",
           itemIconValue: iconValue,
           itemIconKind: iconKind, // 'url' | 'emoji' | 'none'
           questionLines: lines,
-          attempted: !!raw?.attempted,
-          ...(retryToken && { attempted: false }),
+          attempted: !!raw?.attempted, // ✅ 서버값 그대로 사용
         };
       } catch (e) {
         const { status, msg } = parseApiError(e);
@@ -152,6 +166,47 @@ export default function DailyPointsPage() {
     keepPreviousData: false,
   });
 
+  // ▶︎ 새 문제 보장 로직
+  useEffect(() => {
+    if (!data) return;
+    try {
+      const lastId = sessionStorage.getItem(LAST_ID_KEY);
+      const curId = data?.id ? String(data.id) : "";
+      const sameAsBefore = !!curId && lastId === curId;
+      const looksAlreadyAttempted = !!data?.attempted;
+
+      // 1) 정상 케이스: 새 ID 받았으면 저장하고 종료
+      if (curId && !sameAsBefore && !looksAlreadyAttempted) {
+        sessionStorage.setItem(LAST_ID_KEY, curId);
+        retryCountRef.current = 0;
+        return;
+      }
+
+      // 2) 광고 복귀 상황 + 같은 문제거나 attempted=true면, 최대 2번까지만 강제 재요청
+      const underRetry = Boolean(retryToken) && retryCountRef.current < 2;
+      if (underRetry) {
+        retryCountRef.current += 1;
+        console.warn("[daily] same/attempted detected → force refetch", {
+          lastId,
+          curId,
+          attempted: data?.attempted,
+          try: retryCountRef.current,
+        });
+        // 쿼리키를 바꾸기 위해 reseed 갱신
+        setReseed(crypto.randomUUID());
+        // 캐시 무효화
+        qc.invalidateQueries({ queryKey: ["dailyPoints", "today"] });
+      } else {
+        // 3) 그래도 계속 같다면 서버가 새 문제를 안 주는 상황 → 사용자에게 안내
+        if (sameAsBefore || looksAlreadyAttempted) {
+          alert("새 문제가 준비되지 않았어. 잠시 후 다시 시도해줘!");
+        }
+      }
+    } catch {
+      // err
+    }
+  }, [data, retryToken, qc]);
+
   // 정답 제출
   const { mutate: submitAnswer } = useMutation({
     mutationFn: async (answer) => {
@@ -179,8 +234,10 @@ export default function DailyPointsPage() {
         return base + awarded;
       });
 
+      // 3) 서버 동기화
       await qc.invalidateQueries({ queryKey: ["me", "summary"] });
       await qc.refetchQueries({ queryKey: ["me", "summary"], type: "active" });
+
       navigate("/my/points-daily/result", {
         state: {
           result: res?.result,
