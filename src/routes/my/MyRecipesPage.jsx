@@ -1,6 +1,8 @@
 import { useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSeasonIdByRecipe } from "../../shared/lib/recipeSeasonMap";
+import { useSetAtom } from "jotai";
+import { favoriteRecipesCountAtom } from "./state/favoriteRecipesCountAtom";
 import styled from "styled-components";
 import useHeader from "../../shared/hooks/useHeader";
 import useFavoriteRecipes from "./hooks/useFavoriteRecipes";
@@ -15,6 +17,12 @@ export default function MyRecipesPage() {
   const { recipes, loading, error, hasMore, loadMore, totalCount, unfavorite } =
     useFavoriteRecipes();
   const observerRef = useRef(null);
+  const setFavCount = useSetAtom(favoriteRecipesCountAtom);
+
+  // ✅ recipes 길이가 바뀔 때마다 atom 업데이트
+  useEffect(() => {
+    setFavCount(recipes.length);
+  }, [recipes.length, setFavCount]);
 
   const handleCardClick = (item) => {
     const seasonItemId = getSeasonIdByRecipe(item.id);
