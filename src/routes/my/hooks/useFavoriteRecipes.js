@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { APIService } from "../../../shared/lib/api";
+import { emitFavoriteChange } from "../../../shared/lib/favoritesBus";
 import { useSetAtom } from "jotai";
 import { favoriteRecipesCountAtom } from "../state/favoriteRecipesCountAtom";
 
@@ -42,11 +43,11 @@ export default function useFavoriteRecipes() {
 
       qc.setQueryData(["favorites", "recipes"], (old) => {
         if (!old) return old;
-        const pages = old.pages.map((p) => ({
+        const pages = old.pages.map((p, idx) => ({
           ...p,
-          content: (p.content || []).filter((it) => it.recipeId !== recipeId),
+          content: (p.content || []).filter((it) => String(it.recipeId) !== String(recipeId)),
           totalElements:
-            typeof p.totalElements === "number" && p.totalElements > 0
+            idx === 0 && typeof p.totalElements === "number" && p.totalElements > 0
               ? p.totalElements - 1
               : p.totalElements,
         }));
@@ -65,13 +66,17 @@ export default function useFavoriteRecipes() {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["favorites", "recipes"] });
     },
+    onSuccess: (_res, recipeId) => {
+      console.log("[emit] 보내는 중:", { type: "RECIPE", id: recipeId, willFavorite: false });
+      emitFavoriteChange({ type: "RECIPE", id: recipeId, willFavorite: false });
+    },
   });
 
   const recipes = query.data?.pages.flatMap((p) => p.content) ?? [];
-  const totalCount = query.data?.pages?.[0]?.totalElements ?? 0;
+  const totalCount = query.data?.pages?.[0]?.totalElements ?? recipes.length;
 
   useEffect(() => {
-    setFavCount(typeof totalCount === "number" && totalCount > 0 ? totalCount : recipes.length);
+    setFavCount(typeof totalCount === "number" && totalCount >= 0 ? totalCount : recipes.length);
   }, [totalCount, recipes.length, setFavCount]);
 
   return {

@@ -16,22 +16,22 @@ export default function MyRecipesPage() {
   const navigate = useNavigate();
   const { recipes, loading, error, hasMore, loadMore, totalCount, unfavorite } =
     useFavoriteRecipes();
-  const observerRef = useRef(null);
+
+  const sentinelRef = useRef(null);
   const setFavCount = useSetAtom(favoriteRecipesCountAtom);
 
-  // ✅ recipes 길이가 바뀔 때마다 atom 업데이트
   useEffect(() => {
-    setFavCount(recipes.length);
-  }, [recipes.length, setFavCount]);
+    const next = typeof totalCount === "number" && totalCount >= 0 ? totalCount : recipes.length;
+    setFavCount(next);
+  }, [totalCount, recipes.length, setFavCount]);
 
   const handleCardClick = (item) => {
-    const seasonItemId = getSeasonIdByRecipe(item.id);
+    const rid = String(item.id);
+    const seasonItemId = getSeasonIdByRecipe(rid);
     if (seasonItemId) {
-      // ✅ 캐시에 있으면 즉시 상세 이동
-      navigate(`/seasonal/${seasonItemId}/${item.id}`);
+      navigate(`/seasonal/${seasonItemId}/${rid}`);
     } else {
-      // ✅ 캐시가 없으면 리졸버 경유
-      navigate(`/recipes/resolve/${item.id}`);
+      navigate(`/recipes/resolve/${rid}`);
     }
   };
 
@@ -51,7 +51,8 @@ export default function MyRecipesPage() {
       (entries) => entries[0].isIntersecting && loadMore(),
       { threshold: 1.0 }
     );
-    if (observerRef.current) observer.observe(observerRef.current);
+    const node = sentinelRef.current;
+    if (node) observer.observe(node);
     return () => observer.disconnect();
   }, [hasMore, loading, loadMore]);
 
@@ -74,13 +75,13 @@ export default function MyRecipesPage() {
     <MyRecipesPageWrapper>
       <CountRow>
         <SubText>
-          총 <GreenText>{totalCount}개</GreenText>
+          총 <GreenText>{totalCount}</GreenText>개
         </SubText>
       </CountRow>
 
       <Grid as={motion.div} layout>
         <AnimatePresence>
-          {items.map((item, idx) => (
+          {items.map((item) => (
             <motion.div
               key={item.id}
               layout
@@ -88,7 +89,6 @@ export default function MyRecipesPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9, y: 12 }}
               transition={{ duration: 0.25 }}
-              ref={idx === items.length - 1 ? observerRef : null}
             >
               <FavoriteItemCard
                 img={item.img}
@@ -96,7 +96,7 @@ export default function MyRecipesPage() {
                 liked={true}
                 onClick={() => handleCardClick(item)}
                 onClickHeart={(e) => {
-                  e?.stopPropagation?.(); // ✅ 카드 클릭으로 전파 방지
+                  e?.stopPropagation?.();
                   unfavorite(item.id);
                 }}
               />
@@ -104,6 +104,9 @@ export default function MyRecipesPage() {
           ))}
         </AnimatePresence>
       </Grid>
+
+      {/* 무한스크롤 센티널 */}
+      <div ref={sentinelRef} />
 
       {loading && <LoadingText>추가 로딩 중...</LoadingText>}
     </MyRecipesPageWrapper>

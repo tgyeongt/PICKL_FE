@@ -13,7 +13,7 @@ import Timer from "@icon/home/time_icon.svg";
 import Knife from "@icon/home/knife_icon.svg";
 
 export default function SeasonalRecipePage() {
-  const { id, recipeId } = useParams();
+  const { id: seasonItemId, recipeId } = useParams();
   const [recipe, setRecipe] = useState({});
 
   useHeader({
@@ -27,18 +27,18 @@ export default function SeasonalRecipePage() {
   useEffect(() => {
     async function fetchRecipe() {
       try {
-        const res = await APIService.private.get(`/season-items/${id}/recipes`);
-        const selectedRecipe = res.data.find((r) => String(r.id) === recipeId);
+        const res = await APIService.private.get(`/season-items/${seasonItemId}/recipes`);
+        const selectedRecipe = (res?.data || []).find((r) => String(r.id) === String(recipeId));
         setRecipe(selectedRecipe || {});
         if (selectedRecipe) {
-          upsertRecipeSeason(String(recipeId), Number(id));
+          upsertRecipeSeason(String(recipeId), Number(seasonItemId));
         }
       } catch (error) {
         console.error("Failed to fetch recipe:", error);
       }
     }
-    fetchRecipe();
-  }, [id, recipeId]);
+    if (seasonItemId && recipeId) fetchRecipe();
+  }, [seasonItemId, recipeId]);
 
   const [openStates, setOpenStates] = useState([true, true, true]);
   const toggleSection = (index) => {

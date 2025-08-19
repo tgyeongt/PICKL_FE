@@ -1,12 +1,12 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef, useMemo } from "react";
 import useHeaderStore from "../stores/useHeaderStore";
 import useToastStore from "../stores/useToastStore";
 import { APIService } from "../lib/api";
 
-/* ✅ 추가: 캐시/전역 동기화를 위해 */
 import { useQueryClient } from "@tanstack/react-query";
 import { useSetAtom } from "jotai";
 import { favoriteRecipesCountAtom } from "../../routes/my/state/favoriteRecipesCountAtom";
+import { onFavoriteChange, emitFavoriteChange } from "../lib/favoritesBus";
 
 export default function useHeader({
   title,
@@ -35,11 +35,18 @@ export default function useHeader({
 
   const { showToast } = useToastStore.getState();
 
-  /* ✅ 추가: 전역 캐시/atom 접근자 */
   const qc = useQueryClient();
   const setFavRecipesCount = useSetAtom(favoriteRecipesCountAtom);
 
-  /* ✅ 추가: 요약 캐시의 숫자 필드를 즉시 증감시키는 헬퍼 */
+  const normType = useMemo(() => String(targetType || "").toUpperCase(), [targetType]);
+  const normId = useMemo(() => String(targetId ?? ""), [targetId]);
+
+  const didInitRef = useRef(false);
+
+  useEffect(() => {
+    didInitRef.current = false;
+  }, [normType, normId]);
+
   const bumpSummaryCount = useCallback(
     (key, delta) => {
       qc.setQueryData(["me", "summary"], (prev) => {
@@ -55,26 +62,24 @@ export default function useHeader({
 
   const handleHeartToggle = useCallback(async () => {
     const state = useHeaderStore.getState();
-    const storageKey = `favorite:${String(targetType)}:${String(targetId)}`;
-    const isRecipe = targetType === "RECIPE";
+    if (!normType || !normId) return;
+
+    const isRecipe = normType === "RECIPE";
     const targetLabel = isRecipe ? "레시피" : "식재료";
+    const storageKey = `favorite:${normType}:${normId}`;
 
     try {
       if (!state.isHeartActive) {
-        // ✅ 찜 등록
-        await APIService.private.post("/favorites", {
-          type: targetType,
-          targetId: String(targetId),
-        });
+        await APIService.private.post("/favorites", { type: normType, targetId: normId });
         setIsHeartActive(true);
 
-        // ✅ 즉시 전역 반영: 요약 캐시 & (레시피인 경우) atom
+        emitFavoriteChange({ type: normType, id: normId, willFavorite: true });
+
         bumpSummaryCount(isRecipe ? "favoriteRecipeCount" : "favoriteIngredientCount", +1);
         if (isRecipe) {
           setFavRecipesCount((prev) => Math.max(0, (typeof prev === "number" ? prev : 0) + 1));
         }
 
-        // (선택) 상세/목록의 정합성 위해 무효화
         qc.invalidateQueries({ queryKey: ["favorites", "recipes"] });
 
         try {
@@ -82,22 +87,20 @@ export default function useHeader({
         } catch (e) {
           void e;
         }
-
         showToast?.(
           `관심 ${targetLabel}에 추가됐어요`,
           "success",
           isRecipe ? "/my/list-recipes" : "/my/list-ingredients"
         );
-
         state.onHeartOn?.();
       } else {
-        // ✅ 찜 해제
         await APIService.private.delete("/favorites", {
-          params: { type: targetType, targetId },
+          params: { type: normType, targetId: normId },
         });
         setIsHeartActive(false);
 
-        // ✅ 즉시 전역 반영
+        emitFavoriteChange({ type: normType, id: normId, willFavorite: false });
+
         bumpSummaryCount(isRecipe ? "favoriteRecipeCount" : "favoriteIngredientCount", -1);
         if (isRecipe) {
           setFavRecipesCount((prev) => {
@@ -113,16 +116,14 @@ export default function useHeader({
         } catch (e) {
           void e;
         }
-
         showToast?.(`관심 ${targetLabel}에서 삭제됐어요`, "success", null);
-
         state.onHeartOff?.();
       }
     } catch (err) {
       console.error("찜하기 처리 실패:", err);
       showToast?.("작업 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.", "error");
     }
-  }, [targetType, targetId, setIsHeartActive, showToast, qc, bumpSummaryCount, setFavRecipesCount]);
+  }, [normType, normId, setIsHeartActive, showToast, qc, bumpSummaryCount, setFavRecipesCount]);
 
   useEffect(() => {
     setTitle(title);
@@ -136,18 +137,31 @@ export default function useHeader({
     setOnHeartOn?.(onHeartOn);
     setOnHeartOff?.(onHeartOff);
 
-    if (showHeart && targetType && targetId) {
+    let off;
+
+    if (showHeart && normType && normId) {
       setOnHeartToggle(handleHeartToggle);
-      try {
-        const storageKey = `favorite:${String(targetType)}:${String(targetId)}`;
-        const saved = window.localStorage.getItem(storageKey) === "true";
-        setIsHeartActive(saved);
-      } catch (_) {
-        setIsHeartActive(false);
+
+      if (!didInitRef.current) {
+        try {
+          const storageKey = `favorite:${normType}:${normId}`;
+          const saved = window.localStorage.getItem(storageKey) === "true";
+          setIsHeartActive(!!saved);
+        } catch {
+          setIsHeartActive(false);
+        }
+        didInitRef.current = true;
       }
+
+      off = onFavoriteChange(({ type, id, willFavorite }) => {
+        if (type === normType && id === normId) {
+          setIsHeartActive(!!willFavorite);
+        }
+      });
     }
 
     return () => {
+      off?.();
       resetHeader();
     };
   }, [
@@ -158,8 +172,8 @@ export default function useHeader({
     onHelp,
     onHeartOn,
     onHeartOff,
-    targetType,
-    targetId,
+    normType,
+    normId,
     handleHeartToggle,
     setTitle,
     setShowBack,
