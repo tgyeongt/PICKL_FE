@@ -346,53 +346,40 @@ function shouldQuery(map) {
 // ====== 현위치 유틸(리팩터링 핵심) ======
 const LAST_GEO_LS_KEY = "pickl:lastGeo";
 
-const CITY_HALL = { lat: 37.5665, lng: 126.978 };
-const NEAR = (a, b, eps = 0.002) => Math.abs(a - b) <= eps; // ~200m
-function isNearCityHall(lat, lng) {
-  return NEAR(lat, CITY_HALL.lat) && NEAR(lng, CITY_HALL.lng);
-}
+// 간단한 GPS 위치 검증만 필요
 
-// 두 좌표 거리(m)
-function haversineMeters(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const toRad = (d) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
-
-// === 변경 ①: 히스테리시스가 있는 usable 판정 ===
-function isUsableCoords(
-  coords,
-  {
-    maxAccuracyStrict = 1500, // 기본 엄격 기준
-    maxAccuracySoft = 3000, // 완화 기준 (경계값 출렁임 흡수)
-    softRadiusMeters = 2500, // lastGeo와 이내면 허용
-  } = {}
-) {
+// === GPS 위치 검증 (잘못된 위치 필터링) ===
+function isUsableCoords(coords) {
   const lat = Number(coords?.latitude);
   const lng = Number(coords?.longitude);
   const acc = Number(coords?.accuracy ?? 99999);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
-  if (isNearCityHall(lat, lng)) return false; // 기본값 추정 좌표 거부
 
-  // 1) 엄격 기준 통과 → OK
-  if (acc > 0 && acc <= maxAccuracyStrict) return true;
-
-  // 2) 1500~3000m 사이면, 직전 저장 위치와 충분히 가까우면 OK
-  if (acc > maxAccuracyStrict && acc <= maxAccuracySoft) {
-    const last = readLastGeo();
-    if (last) {
-      const d = haversineMeters(lat, lng, last.lat, last.lng);
-      if (d <= softRadiusMeters) return true;
-    }
+  // 기본적인 유효성만 체크
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    console.log("[usable] Invalid coordinates");
+    return false;
   }
 
-  // 3) 그 외는 불가
-  return false;
+  // 서울 시청 근처 좌표는 거부 (잘못된 GPS 신호)
+  const cityHallLat = 37.5665;
+  const cityHallLng = 126.978;
+  const latDiff = Math.abs(lat - cityHallLat);
+  const lngDiff = Math.abs(lng - cityHallLng);
+
+  // 서울 시청 근처 1km 이내면 거부
+  if (latDiff < 0.01 && lngDiff < 0.01) {
+    console.log("[usable] Rejecting city hall area coordinates:", { lat, lng, acc });
+    return false;
+  }
+
+  // 정확도가 너무 낮으면 거부 (200km 이상)
+  if (acc > 200000) {
+    console.log("[usable] Accuracy too low:", acc);
+    return false;
+  }
+
+  console.log("[usable] Coordinates accepted:", { lat, lng, acc });
+  return true;
 }
 
 function readLastGeo(maxAgeMs = 3 * 24 * 60 * 60 * 1000) {
@@ -402,7 +389,6 @@ function readLastGeo(maxAgeMs = 3 * 24 * 60 * 60 * 1000) {
     const obj = JSON.parse(raw);
     const { lat, lng, at } = obj || {};
     if (typeof lat !== "number" || typeof lng !== "number") return null;
-    if (isNearCityHall(lat, lng)) return null;
     if (typeof at === "number" && Date.now() - at > maxAgeMs) return null;
     return { lat, lng };
   } catch {
@@ -412,9 +398,8 @@ function readLastGeo(maxAgeMs = 3 * 24 * 60 * 60 * 1000) {
 
 function writeLastGeo(lat, lng) {
   try {
-    if (!isNearCityHall(lat, lng)) {
-      localStorage.setItem(LAST_GEO_LS_KEY, JSON.stringify({ lat, lng, at: Date.now() }));
-    }
+    // 모든 유효한 좌표 저장
+    localStorage.setItem(LAST_GEO_LS_KEY, JSON.stringify({ lat, lng, at: Date.now() }));
   } catch (e) {
     void e;
   }
@@ -458,8 +443,8 @@ function getPositionOnce({ timeout = 10000 } = {}) {
         reject(err);
       },
       {
-        enableHighAccuracy: true,
-        maximumAge: 30000, // ← 30초 이내의 최근 측위 재사용
+        enableHighAccuracy: false, // 정확도보다 안정성 우선
+        maximumAge: 60000, // 1분 이내의 최근 측위 재사용
         timeout,
       }
     );
@@ -529,7 +514,17 @@ export default function KakaoMap() {
 
   // ---------- 맵 생성 (초기 중심 좌표를 인자로 받도록 변경: 핵심) ----------
   const createMap = useCallback((centerLat, centerLng) => {
-    if (!mapRef.current || !mapRef.current.isConnected) return;
+    if (!mapRef.current || !mapRef.current.isConnected) {
+      console.warn("[map] Container not ready");
+      return;
+    }
+
+    if (!window.kakao?.maps) {
+      console.warn("[map] Kakao maps not ready");
+      return;
+    }
+
+    console.log("[map] Creating map at:", centerLat, centerLng);
     const centerLatLng = new window.kakao.maps.LatLng(centerLat, centerLng);
 
     const map = new window.kakao.maps.Map(mapRef.current, {
@@ -549,12 +544,20 @@ export default function KakaoMap() {
       setCurrentLevel(lvl);
       setZoomTooFar(lvl > SAFE.MARTS_VISIBLE_LEVEL); // 확대가 부족하면 true로
     });
+
     // 생성 직후 한 번 초기화
     setCurrentLevel(map.getLevel());
     setZoomTooFar(map.getLevel() > SAFE.MARTS_VISIBLE_LEVEL);
 
     setMapInstance(map);
-    setTimeout(() => window.kakao.maps.event.trigger(map, "resize"), 100);
+
+    // 지도가 완전히 로드된 후 resize 트리거
+    window.kakao.maps.event.addListener(map, "tilesloaded", () => {
+      console.log("[map] Tiles loaded, triggering resize");
+      setTimeout(() => window.kakao.maps.event.trigger(map, "resize"), 100);
+    });
+
+    console.log("[map] Map created successfully");
   }, []);
 
   // ---------- 마커/버블 ----------
@@ -640,10 +643,30 @@ export default function KakaoMap() {
     (stores) => {
       if (!mapInstance || !stores) return;
 
-      markersRef.current.forEach((m) => m.setMap?.(null));
+      console.log("[markers] Rendering markers:", stores.length);
+
+      // 기존 마커들 정리
+      markersRef.current.forEach((m) => {
+        if (m && m.setMap) {
+          m.setMap(null);
+          // 이벤트 리스너도 정리
+          const content = m.getContent?.();
+          if (content && content.removeEventListener) {
+            content.removeEventListener("click", content._clickHandler);
+          }
+        }
+      });
       markersRef.current = [];
 
-      Object.values(overlayMapRef.current.round).forEach((o) => o.setMap?.(null));
+      Object.values(overlayMapRef.current.round).forEach((o) => {
+        if (o && o.setMap) {
+          o.setMap(null);
+          const content = o.getContent?.();
+          if (content && content.removeEventListener) {
+            content.removeEventListener("click", content._clickHandler);
+          }
+        }
+      });
       overlayMapRef.current.round = {};
 
       const bounds = mapInstance.getBounds();
@@ -659,6 +682,19 @@ export default function KakaoMap() {
 
         const imageSrc = (store.type || "").toLowerCase() === "market" ? marketIcon : martIcon;
         const markerEl = createMarkerElement(store, imageSrc);
+
+        // 클릭 핸들러를 함수로 분리하여 참조 보존
+        const clickHandler = (e) => {
+          console.log("[markers] Marker clicked:", store.name);
+          e.stopPropagation();
+          showBubbleOverlay(store, pos, imageSrc);
+        };
+
+        // 이벤트 리스너 추가
+        markerEl.addEventListener("click", clickHandler);
+        // 참조 보존을 위해 핸들러를 요소에 저장
+        markerEl._clickHandler = clickHandler;
+
         const roundOverlay = new window.kakao.maps.CustomOverlay({
           position: pos,
           content: markerEl,
@@ -667,13 +703,10 @@ export default function KakaoMap() {
         roundOverlay.setMap(mapInstance);
         overlayMapRef.current.round[key] = roundOverlay;
 
-        markerEl.addEventListener("click", (e) => {
-          e.stopPropagation();
-          showBubbleOverlay(store, pos, imageSrc);
-        });
-
         markersRef.current.push(roundOverlay);
       });
+
+      console.log("[markers] Rendered", markersRef.current.length, "markers");
     },
     [mapInstance, selectedCategory, showBubbleOverlay]
   );
@@ -683,58 +716,80 @@ export default function KakaoMap() {
     let mounted = true;
 
     (async () => {
-      await ensureKakaoReady();
-      if (!mounted) return;
-      await waitForContainerSize();
-      if (!mounted || isListMode) return;
+      console.log("[init] Starting map initialization...");
 
-      // 우선순위: addressState → geolocation(3s, usable만) → lastGeo → 시청
-      let center = null;
+      try {
+        await ensureKakaoReady();
+        if (!mounted) return;
 
-      if (addressState?.lat && addressState?.lng) {
-        center = { lat: addressState.lat, lng: addressState.lng };
-      }
+        await waitForContainerSize();
+        if (!mounted || isListMode) return;
 
-      if (!center) {
-        try {
-          const pos = await getPositionOnce({ timeout: 3000 });
-          const { coords } = pos || {};
-          if (isUsableCoords(coords)) {
-            const { latitude, longitude } = coords;
-            center = { lat: latitude, lng: longitude };
-            writeLastGeo(latitude, longitude);
+        console.log("[init] Kakao SDK and container ready");
 
-            try {
-              const geocoder = new window.kakao.maps.services.Geocoder();
-              geocoder.coord2Address(longitude, latitude, (result, status) => {
-                const base = { lat: latitude, lng: longitude, isManual: false };
-                if (status === window.kakao.maps.services.Status.OK && result.length > 0) {
-                  setSelectedAddress({
-                    ...base,
-                    roadAddress: result[0].road_address?.address_name || "",
-                    jibunAddress: result[0].address?.address_name || "",
-                  });
-                } else {
-                  setSelectedAddress((prev) => ({ ...(prev || {}), ...base }));
-                }
-              });
-            } catch (e) {
-              void e;
-            }
-          }
-        } catch {
-          // ignore
+        // 우선순위: addressState → geolocation(3s, usable만) → lastGeo → 여의도
+        let center = null;
+
+        if (addressState?.lat && addressState?.lng) {
+          center = { lat: addressState.lat, lng: addressState.lng };
+          console.log("[init] Using addressState:", center);
         }
+
+        if (!center) {
+          try {
+            console.log("[init] Getting current position...");
+            const pos = await getPositionOnce({ timeout: 3000 });
+            const { coords } = pos || {};
+            if (isUsableCoords(coords)) {
+              const { latitude, longitude } = coords;
+              center = { lat: latitude, lng: longitude };
+              writeLastGeo(latitude, longitude);
+              console.log("[init] Using current position:", center);
+
+              try {
+                const geocoder = new window.kakao.maps.services.Geocoder();
+                geocoder.coord2Address(longitude, latitude, (result, status) => {
+                  const base = { lat: latitude, lng: longitude, isManual: false };
+                  if (status === window.kakao.maps.services.Status.OK && result.length > 0) {
+                    setSelectedAddress({
+                      ...base,
+                      roadAddress: result[0].road_address?.address_name || "",
+                      jibunAddress: result[0].address?.address_name || "",
+                    });
+                  } else {
+                    setSelectedAddress((prev) => ({ ...(prev || {}), ...base }));
+                  }
+                });
+              } catch (e) {
+                console.warn("[init] Geocoding failed:", e);
+              }
+            } else {
+              console.log("[init] Current position not usable");
+            }
+          } catch (error) {
+            console.warn("[init] Getting position failed:", error);
+          }
+        }
+
+        if (!center) {
+          const last = readLastGeo();
+          if (last) {
+            center = last;
+            console.log("[init] Using last known position:", center);
+          }
+        }
+
+        // 기본값으로 서울 중심 사용
+        if (!center) {
+          center = { lat: 37.5665, lng: 126.978 }; // 서울 중심
+          console.log("[init] Using default position (Seoul center):", center);
+        }
+
+        console.log("[init] Creating map with center:", center);
+        createMap(center.lat, center.lng);
+      } catch (error) {
+        console.error("[init] Map initialization failed:", error);
       }
-
-      if (!center) {
-        const last = readLastGeo();
-        if (last) center = last;
-      }
-
-      if (!center) center = { lat: 37.5665, lng: 126.978 };
-
-      createMap(center.lat, center.lng);
     })();
 
     return () => {
@@ -751,22 +806,28 @@ export default function KakaoMap() {
     mapInstance.setCenter(newCenter);
   }, [mapInstance, addressState?.lat, addressState?.lng]);
 
-  // 현재 위치 마커(실시간 추적) — 권한 granted일 때만, 시청/저정확도 좌표는 무시
+  // 현재 위치 마커(실시간 추적) — 권한 체크 개선 및 폴백 추가
   useEffect(() => {
     if (!mapInstance) return;
 
     let watchId = null;
 
     const startWatch = () => {
+      console.log("[geo] Starting location watch...");
       watchId = navigator.geolocation.watchPosition(
         ({ coords }) => {
-          if (!isUsableCoords(coords)) return; // 시청/저정확도 버림
+          console.log("[geo] Position update:", coords);
+          if (!isUsableCoords(coords)) {
+            console.log("[geo] Coords not usable, skipping");
+            return;
+          }
           const { latitude, longitude } = coords;
           const position = new window.kakao.maps.LatLng(latitude, longitude);
 
           writeLastGeo(latitude, longitude);
 
           if (!currentMarkerRef.current) {
+            console.log("[geo] Creating new current location marker");
             const markerImage = new window.kakao.maps.MarkerImage(
               currentMarkerIcon,
               new window.kakao.maps.Size(40, 40),
@@ -780,26 +841,47 @@ export default function KakaoMap() {
             marker.setMap(mapInstance);
             currentMarkerRef.current = marker;
           } else {
+            console.log("[geo] Updating current location marker");
             currentMarkerRef.current.setPosition(position);
             currentMarkerRef.current.setMap(mapInstance);
           }
         },
-        () => {},
-        { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
+        (error) => {
+          console.warn("[geo] Watch position error:", error);
+        },
+        { enableHighAccuracy: false, maximumAge: 30000, timeout: 10000 }
       );
     };
 
-    if (navigator.permissions?.query) {
-      navigator.permissions
-        .query({ name: "geolocation" })
-        .then((p) => {
-          if (p.state === "granted") startWatch();
-        })
-        .catch(() => {});
-    }
+    // 권한 체크 개선: 권한 체크 실패 시에도 시도
+    const checkAndStartWatch = async () => {
+      try {
+        if (navigator.permissions?.query) {
+          const permission = await navigator.permissions.query({ name: "geolocation" });
+          console.log("[geo] Permission state:", permission.state);
+          if (permission.state === "granted") {
+            startWatch();
+          } else if (permission.state === "prompt") {
+            // 권한 요청 중이면 시도
+            startWatch();
+          }
+        } else {
+          // permissions API가 없으면 바로 시도
+          startWatch();
+        }
+      } catch (error) {
+        console.warn("[geo] Permission check failed, trying anyway:", error);
+        startWatch();
+      }
+    };
+
+    checkAndStartWatch();
 
     return () => {
-      if (watchId != null) navigator.geolocation.clearWatch(watchId);
+      if (watchId != null) {
+        console.log("[geo] Clearing location watch");
+        navigator.geolocation.clearWatch(watchId);
+      }
     };
   }, [mapInstance]);
 
@@ -1200,13 +1282,21 @@ export default function KakaoMap() {
         <>
           <KakaoMapBox ref={mapRef} />
 
-          {/* 현위치 버튼: usable한 좌표만 반영 */}
+          {/* 현위치 버튼: 개선된 에러 처리 및 로깅 */}
           <CurrentLocationButton
             onClick={async () => {
-              if (!mapInstance) return;
+              console.log("[button] Current location button clicked");
+              if (!mapInstance) {
+                console.warn("[button] Map instance not ready");
+                return;
+              }
+
               try {
-                const pos = await getPositionOnce({ timeout: 10000 });
+                console.log("[button] Getting current position...");
+                const pos = await getPositionOnce({ timeout: 15000 });
                 const { coords } = pos || {};
+
+                console.log("[button] Position result:", coords);
 
                 // usable 아니면 '조용히' 폴백
                 if (!isUsableCoords(coords)) {
@@ -1214,8 +1304,8 @@ export default function KakaoMap() {
                     readLastGeo() ||
                     (addressState?.lat && addressState?.lng
                       ? { lat: addressState.lat, lng: addressState.lng }
-                      : { lat: 37.5665, lng: 126.978 });
-                  console.warn("[geo] coarse or default coords. fallback to:", fb);
+                      : { lat: 37.5665, lng: 126.978 }); // 서울 중심
+                  console.warn("[button] Coords not usable, fallback to:", fb);
                   mapInstance.panTo(new window.kakao.maps.LatLng(fb.lat, fb.lng));
                   return;
                 }
@@ -1223,11 +1313,13 @@ export default function KakaoMap() {
                 // 정상 좌표일 때만 저장/이동/역지오코딩
                 const { latitude, longitude } = coords;
                 writeLastGeo(latitude, longitude);
+                console.log("[button] Moving to position:", { latitude, longitude });
 
                 const kakaoPos = new window.kakao.maps.LatLng(latitude, longitude);
                 mapInstance.panTo(kakaoPos);
 
                 if (!currentMarkerRef.current) {
+                  console.log("[button] Creating current location marker");
                   const markerImage = new window.kakao.maps.MarkerImage(
                     currentMarkerIcon,
                     new window.kakao.maps.Size(40, 40),
@@ -1241,6 +1333,7 @@ export default function KakaoMap() {
                   marker.setMap(mapInstance);
                   currentMarkerRef.current = marker;
                 } else {
+                  console.log("[button] Updating current location marker");
                   currentMarkerRef.current.setPosition(kakaoPos);
                   currentMarkerRef.current.setMap(mapInstance);
                 }
@@ -1266,9 +1359,10 @@ export default function KakaoMap() {
                     }
                   });
                 } catch (e) {
-                  void e;
+                  console.warn("[button] Geocoding failed:", e);
                 }
               } catch (err) {
+                console.error("[button] Current location error:", err);
                 // 진짜 실패(권한 거부/API 불가)일 때만 안내
                 let tip = "";
                 switch (err?.code) {
