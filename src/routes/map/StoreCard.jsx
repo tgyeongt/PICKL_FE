@@ -4,6 +4,7 @@ import { selectedAddressAtom } from "./state/addressAtom";
 import selectMarket from "@icon/map/selectMarket.svg";
 import selectMart from "@icon/map/selectMart.svg";
 import distanceIcon from "@icon/map/distanceMarker.svg";
+import marketImg from "@image/marketImage.png";
 
 import {
   StoreCardWrapper,
@@ -89,6 +90,7 @@ export default function StoreCard({ store, isListMode = false, onClick }) {
   const driveMin = Math.max(1, Math.round(distance / 250));
 
   const typeIcon = store.type === "market" ? selectMarket : selectMart;
+  const storeImg = store.type === "market" ? marketImg : store.imageUrl;
 
   return (
     <StoreCardWrapper
@@ -100,7 +102,7 @@ export default function StoreCard({ store, isListMode = false, onClick }) {
       style={isListMode ? { cursor: "pointer" } : undefined}
     >
       <ImageWrapper>
-        <StoreImage src={store.imageUrl} alt="상점 사진" />
+        <StoreImage src={storeImg} alt="상점 사진" />
         <TypeIcon src={typeIcon} alt="타입 아이콘" />
       </ImageWrapper>
       <BottomBox>
