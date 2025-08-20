@@ -1,6 +1,6 @@
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSeasonIdByRecipe } from "../../shared/lib/recipeSeasonMap";
+import { getSeasonIdByRecipe, upsertRecipeSeason } from "../../shared/lib/recipeSeasonMap";
 import { useSetAtom } from "jotai";
 import { useAtomValue } from "jotai";
 import { favoriteRecipesCountAtom } from "./state/favoriteRecipesCountAtom";
@@ -10,6 +10,7 @@ import useFavoriteRecipes from "./hooks/useFavoriteRecipes";
 import recipeIconImg from "@icon/my/recipeIcon.svg";
 import FavoriteItemCard from "./FavoriteItemCard";
 import { AnimatePresence, motion } from "framer-motion";
+import { APIService } from "../../shared/lib/api";
 
 const FAV_RECIPE_PREFIX = "favorite:RECIPE:";
 const countRecipeFavoritesFromLS = () => {
@@ -30,6 +31,7 @@ export default function MyRecipesPage() {
   useHeader({ title: "찜한 레시피 목록", showBack: true });
 
   const navigate = useNavigate();
+  const [isNavigating, setIsNavigating] = useState(false);
   const { recipes, loading, error, hasMore, loadMore, totalCount, unfavorite } =
     useFavoriteRecipes();
 
@@ -49,13 +51,101 @@ export default function MyRecipesPage() {
     };
   }, [setFavCount]);
 
-  const handleCardClick = (item) => {
-    const rid = String(item.id);
-    const seasonItemId = getSeasonIdByRecipe(rid);
-    if (seasonItemId) {
-      navigate(`/seasonal/${seasonItemId}/${rid}`);
-    } else {
-      navigate(`/recipes/resolve/${rid}`);
+  const handleCardClick = async (item) => {
+    if (isNavigating) return; // 이미 네비게이션 중이면 중복 클릭 방지
+
+    try {
+      setIsNavigating(true);
+      const rid = String(item.id);
+      console.log("클릭된 레시피 ID:", rid);
+
+      // 먼저 캐시된 seasonItemId를 확인
+      let seasonItemId = getSeasonIdByRecipe(rid);
+      console.log("캐시된 seasonItemId:", seasonItemId);
+
+      if (seasonItemId) {
+        // 캐시에 있는 경우 해당 경로로 이동
+        console.log("캐시된 정보로 이동:", `/seasonal/${seasonItemId}/${rid}`);
+        navigate(`/seasonal/${seasonItemId}/${rid}`);
+        return;
+      }
+
+      // 캐시에 없는 경우 직접 API에서 찾기
+      console.log("캐시에 없음, API에서 찾기 시작...");
+      try {
+        // 시즌 아이템 목록을 가져와서 해당 레시피가 있는지 확인
+        const seasonItemsResponse = await APIService.private.get("/season-items");
+        const seasonItems = seasonItemsResponse.data?.content || [];
+        console.log("시즌 아이템 개수:", seasonItems.length);
+
+        // 시즌 아이템이 없는 경우 다른 방법 시도
+        if (seasonItems.length === 0) {
+          console.log("시즌 아이템이 없음, 다른 방법 시도...");
+
+          // 직접 레시피 정보를 가져와보기
+          // 먼저 1부터 100까지의 ID로 시도 (일반적인 범위)
+          for (let i = 1; i <= 100; i++) {
+            try {
+              const recipesResponse = await APIService.private.get(`/season-items/${i}/recipes`);
+              const recipes = recipesResponse.data || [];
+
+              const foundRecipe = recipes.find((recipe) => String(recipe.id) === rid);
+              if (foundRecipe) {
+                seasonItemId = i;
+                console.log("레시피 찾음! seasonItemId:", seasonItemId);
+                // 캐시에 저장
+                upsertRecipeSeason(rid, seasonItemId);
+                break;
+              }
+            } catch (error) {
+              // 해당 ID가 존재하지 않는 경우 무시하고 계속
+              continue;
+            }
+          }
+        } else {
+          // 기존 로직
+          for (const seasonItem of seasonItems) {
+            try {
+              console.log(`시즌 아이템 ${seasonItem.id}의 레시피 확인 중...`);
+              const recipesResponse = await APIService.private.get(
+                `/season-items/${seasonItem.id}/recipes`
+              );
+              const recipes = recipesResponse.data || [];
+              console.log(`시즌 아이템 ${seasonItem.id}의 레시피 개수:`, recipes.length);
+
+              const foundRecipe = recipes.find((recipe) => String(recipe.id) === rid);
+              if (foundRecipe) {
+                seasonItemId = seasonItem.id;
+                console.log("레시피 찾음! seasonItemId:", seasonItemId);
+                // 캐시에 저장
+                upsertRecipeSeason(rid, seasonItemId);
+                break;
+              }
+            } catch (error) {
+              console.warn(`Failed to fetch recipes for season item ${seasonItem.id}:`, error);
+              continue;
+            }
+          }
+        }
+
+        if (seasonItemId) {
+          // 찾은 경우 해당 경로로 이동
+          console.log("찾은 seasonItemId로 이동:", `/seasonal/${seasonItemId}/${rid}`);
+          navigate(`/seasonal/${seasonItemId}/${rid}`);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to find season item for recipe:", error);
+      }
+
+      // 여전히 찾을 수 없는 경우 사용자에게 알림
+      console.log("seasonItemId를 찾을 수 없음");
+      alert("이 레시피의 상세 정보를 찾을 수 없습니다. 시즌 레시피에서 먼저 확인해주세요.");
+    } catch (error) {
+      console.error("Failed to navigate to recipe:", error);
+      alert("레시피로 이동하는 중 오류가 발생했습니다.");
+    } finally {
+      setIsNavigating(false);
     }
   };
 
