@@ -2,6 +2,7 @@ import { useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSeasonIdByRecipe } from "../../shared/lib/recipeSeasonMap";
 import { useSetAtom } from "jotai";
+import { useAtomValue } from "jotai";
 import { favoriteRecipesCountAtom } from "./state/favoriteRecipesCountAtom";
 import styled from "styled-components";
 import useHeader from "../../shared/hooks/useHeader";
@@ -9,6 +10,21 @@ import useFavoriteRecipes from "./hooks/useFavoriteRecipes";
 import recipeIconImg from "@icon/my/recipeIcon.svg";
 import FavoriteItemCard from "./FavoriteItemCard";
 import { AnimatePresence, motion } from "framer-motion";
+
+const FAV_RECIPE_PREFIX = "favorite:RECIPE:";
+const countRecipeFavoritesFromLS = () => {
+  try {
+    const ls = window.localStorage;
+    let c = 0;
+    for (let i = 0; i < ls.length; i++) {
+      const k = ls.key(i) || "";
+      if (k.startsWith(FAV_RECIPE_PREFIX) && ls.getItem(k) === "true") c++;
+    }
+    return c;
+  } catch {
+    return 0;
+  }
+};
 
 export default function MyRecipesPage() {
   useHeader({ title: "찜한 레시피 목록", showBack: true });
@@ -19,11 +35,19 @@ export default function MyRecipesPage() {
 
   const sentinelRef = useRef(null);
   const setFavCount = useSetAtom(favoriteRecipesCountAtom);
+  const favCount = useAtomValue(favoriteRecipesCountAtom);
 
   useEffect(() => {
-    const next = typeof totalCount === "number" && totalCount >= 0 ? totalCount : recipes.length;
-    setFavCount(next);
-  }, [totalCount, recipes.length, setFavCount]);
+    const sync = () => setFavCount(countRecipeFavoritesFromLS());
+    sync();
+    window.addEventListener("storage", sync);
+    // 같은 탭 반영: 간단히 setTimeout 폴링 0ms도 가능하지만, 필요 없으면 생략해도 OK
+    window.addEventListener("favorite:change", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("favorite:change", sync);
+    };
+  }, [setFavCount]);
 
   const handleCardClick = (item) => {
     const rid = String(item.id);
@@ -75,7 +99,7 @@ export default function MyRecipesPage() {
     <MyRecipesPageWrapper>
       <CountRow>
         <SubText>
-          총 <GreenText>{totalCount}</GreenText>개
+          총 <GreenText>{typeof favCount === "number" ? favCount : totalCount}</GreenText>개
         </SubText>
       </CountRow>
 

@@ -1,7 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { APIService } from "../../../shared/lib/api";
-import { upsertRecipeSeason } from "../../../shared/lib/recipeSeasonMap";
 import styled from "styled-components";
 import DetailItem from "./DetailItem";
 import useHeader from "@hooks/useHeader";
@@ -13,7 +12,7 @@ import Timer from "@icon/home/time_icon.svg";
 import Knife from "@icon/home/knife_icon.svg";
 
 export default function SeasonalRecipePage() {
-  const { id: seasonItemId, recipeId } = useParams();
+  const { id, recipeId } = useParams();
   const [recipe, setRecipe] = useState({});
 
   useHeader({
@@ -27,18 +26,15 @@ export default function SeasonalRecipePage() {
   useEffect(() => {
     async function fetchRecipe() {
       try {
-        const res = await APIService.private.get(`/season-items/${seasonItemId}/recipes`);
-        const selectedRecipe = (res?.data || []).find((r) => String(r.id) === String(recipeId));
+        const res = await APIService.private.get(`/season-items/${id}/recipes`);
+        const selectedRecipe = res.data.find((r) => String(r.id) === recipeId);
         setRecipe(selectedRecipe || {});
-        if (selectedRecipe) {
-          upsertRecipeSeason(String(recipeId), Number(seasonItemId));
-        }
       } catch (error) {
         console.error("Failed to fetch recipe:", error);
       }
     }
-    if (seasonItemId && recipeId) fetchRecipe();
-  }, [seasonItemId, recipeId]);
+    fetchRecipe();
+  }, [id, recipeId]);
 
   const [openStates, setOpenStates] = useState([true, true, true]);
   const toggleSection = (index) => {

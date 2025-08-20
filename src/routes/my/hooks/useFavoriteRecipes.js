@@ -69,6 +69,12 @@ export default function useFavoriteRecipes() {
     onSuccess: (_res, recipeId) => {
       console.log("[emit] 보내는 중:", { type: "RECIPE", id: recipeId, willFavorite: false });
       emitFavoriteChange({ type: "RECIPE", id: recipeId, willFavorite: false });
+      // ✅ 해제 성공 시 로컬 씨드 제거
+      try {
+        window.localStorage.removeItem(`favorite:RECIPE:${String(recipeId)}`);
+      } catch (e) {
+        void e;
+      }
     },
   });
 
@@ -78,6 +84,20 @@ export default function useFavoriteRecipes() {
   useEffect(() => {
     setFavCount(typeof totalCount === "number" && totalCount >= 0 ? totalCount : recipes.length);
   }, [totalCount, recipes.length, setFavCount]);
+
+  // ✅ 목록이 로드되면 각 레시피를 '찜됨' 씨드로 로컬에 기록
+  useEffect(() => {
+    if (!recipes?.length) return;
+    try {
+      for (const it of recipes) {
+        const rid = String(it?.recipeId ?? "");
+        if (!rid) continue;
+        window.localStorage.setItem(`favorite:RECIPE:${rid}`, "true");
+      }
+    } catch (e) {
+      void e;
+    }
+  }, [recipes]);
 
   return {
     recipes,
