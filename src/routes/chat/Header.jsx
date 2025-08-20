@@ -10,27 +10,37 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [chatList, setChatList] = useState([]);
 
-  const conversationId = 3;
-  const userId = 1;
+  // const conversationId = 1;
+  // const userId = 1;
 
   useEffect(() => {
     async function fetchChatList() {
       try {
-        const res = await APIService.private.get(
-          `/chatbot/conversations/${conversationId}?userId=${userId}`
-        );
-
-        if (res?.data?.messages) {
-          setChatList(res.data.messages);
+        const res = await APIService.private.get(`/chatbot/conversations`);
+        if (res?.data) {
+          setChatList(res.data);
         }
-        console.log("chatList:", res.data.messages);
       } catch (error) {
         console.error("Failed to fetch conversations:", error);
       }
     }
 
     fetchChatList();
-  }, [conversationId, userId]);
+  }, []);
+
+  const handleDeleteChat = async (conversationId) => {
+    try {
+      const res = await APIService.private.delete(`/chatbot/conversations/${conversationId}`);
+      if (res?.success) {
+        setChatList((prev) => prev.filter((chat) => chat.id !== conversationId));
+
+        alert("채팅이 삭제 되었습니다." + res.succes);
+      }
+    } catch (error) {
+      console.error("삭제 실패:", error);
+      alert("삭제 실패: " + (error.response?.data?.message || error.message));
+    }
+  };
 
   const handleMenuClick = () => {
     setIsMenuOpen((prev) => !prev);
@@ -58,7 +68,15 @@ export default function Header() {
               setIsMenuOpen(false);
             }}
           >
-            {chat.content}
+            {chat.title}
+            <img
+              src={exit}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteChat(chat.id);
+              }}
+              alt="삭제"
+            />
           </ChatItem>
         ))}
       </MenuBar>
@@ -68,7 +86,7 @@ export default function Header() {
 
 const Wrapper = styled.div`
   position: relative;
-  width: 95%;
+  width: 100%;
 `;
 
 const IconWrapper = styled.div`
@@ -95,13 +113,26 @@ const MenuBar = styled.div`
   top: 0;
   right: 0;
   width: 250px;
-  min-height: 800px;
+  height: 95vh;
   background: #fff;
   padding: 16px;
   z-index: 10;
 
+  overflow-y: auto;
+
+  opacity: ${(props) => (props.$open ? 1 : 0)};
   transform: translateX(${(props) => (props.$open ? "0" : "100%")});
-  transition: transform 0.3s ease-in-out;
+  pointer-events: ${(props) => (props.$open ? "auto" : "none")};
+
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
 `;
 
 const Title = styled.p`
@@ -111,6 +142,9 @@ const Title = styled.p`
 `;
 
 const ChatItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 10px 14px;
   background: #f9f9f9;
   border-radius: 8px;
@@ -118,4 +152,9 @@ const ChatItem = styled.div`
   cursor: pointer;
   font-size: 14px;
   color: #333;
+
+  img {
+    height: 15px;
+    width: 15px;
+  }
 `;
