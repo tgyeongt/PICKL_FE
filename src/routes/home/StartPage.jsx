@@ -6,7 +6,7 @@ import PicklImg from "@image/pickl_motion.png";
 export default function StartPage() {
   const handleStart = async () => {
     try {
-      const res = await APIService.private.post("/auths/test-login");
+      const res = await APIService.public.post("/auths/test-login");
 
       if (res?.success) {
         const { accessToken, refreshToken } = res.data;
