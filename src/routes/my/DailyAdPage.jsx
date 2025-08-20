@@ -26,10 +26,7 @@ export default function DailyAdPage() {
         return next;
       });
     }, 1000);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => timerRef.current && clearInterval(timerRef.current);
   }, []);
 
   useEffect(() => {
@@ -38,26 +35,20 @@ export default function DailyAdPage() {
 
   const handleClose = async () => {
     if (isLoading) return;
-
     setIsLoading(true);
     try {
       await testLoginIfNeeded();
       const res = await APIService.private.post("/quiz/attempts/extra");
-      // axios 원본이면 res.data, APIService가 data만 반환하면 res
       const box = res && res.data !== undefined ? res.data : res;
-      const remaining = box?.remaining ?? box?.data?.remaining ?? null;
+      const remaining = box?.remaining ?? null;
       console.log("[attempts/extra] ok, remaining =", remaining, "raw =", box);
 
-      if (remaining === null) {
-        // 스펙이 다르면 여기서 바로 확인
-        alert("추가 시도권 응답 형식을 확인해줘! (콘솔 raw 참고)");
-      }
       const adNonce = crypto.randomUUID();
       navigate(returnTo, { replace: true, state: { adWatched: true, adNonce } });
     } catch (error) {
       console.error("추가 시도 요청 실패:", error);
       alert("추가 시도권을 발급받지 못했어. 잠시 후 다시 시도해줘!");
-      return; // 실패하면 그대로 머물기
+      // 실패 시 현재 화면에 그대로 머묾
     } finally {
       setIsLoading(false);
     }
