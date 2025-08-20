@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import Header from "./Header";
 import PickL from "@image/chat_character.png";
 
 export default function Chat() {
@@ -12,6 +13,7 @@ export default function Chat() {
 
   return (
     <Wrapper>
+      <Header />
       <img className="img" src={PickL} />
       <TextBox>
         <p className="greeting">
@@ -102,7 +104,7 @@ const Wrapper = styled.div`
   height: auto;
 
   .img {
-    margin-top: 120px;
+    margin-top: 80px;
     margin-bottom: 20px;
     height: 250px;
   }

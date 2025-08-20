@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import styled from "styled-components";
 import useHeader from "../../shared/hooks/useHeader";
 import Arrow from "@icon/chat/arrow.svg";
@@ -12,21 +12,141 @@ export default function ChatbotPage() {
 
   const location = useLocation();
   const [searchText, setSearchText] = useState("");
+  const [conversationId, setConversationId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    if (location.state?.question) {
-      setSearchText(location.state.question);
-      handleSearch(location.state.question);
+    if (location.state?.question && !isStreaming && messages.length === 0) {
+      setSearchText("");
+      streamChat(location.state.question, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
-  const handleSearch = (text) => {
-    alert(text || searchText); // 추후 통신 연결
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSearch = async (text) => {
+    const content = text || searchText;
+    if (!content || isStreaming) return;
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text: content },
+      { role: "assistant", text: "" },
+    ]);
+    setSearchText("");
+
+    await streamChat(content);
+  };
+
+  const streamChat = async (message, isInitial = false) => {
+    setIsStreaming(true);
+    if (isInitial) {
+      setMessages([
+        { role: "user", text: message },
+        { role: "assistant", text: "" },
+      ]);
+    }
+
+    const baseUrl = import.meta.env.VITE_SERVER_BASE_URL;
+    const url = `${baseUrl}/chatbot/chat/stream`;
+    const token = localStorage.getItem("accessToken");
+
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          userId: 1,
+          conversationId,
+          message,
+        }),
+      });
+
+      if (!res.ok || !res.body) throw new Error("스트림 시작 실패");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      const appendAssistantText = (chunk) => {
+        if (!chunk) return;
+        setMessages((prev) => {
+          const updated = [...prev];
+          const lastIdx = updated.length - 1;
+          if (lastIdx >= 0 && updated[lastIdx].role === "assistant") {
+            updated[lastIdx] = {
+              role: "assistant",
+              text: (updated[lastIdx].text || "") + chunk,
+            };
+          }
+          return updated;
+        });
+      };
+
+      const processEvent = (eventChunk) => {
+        const lines = eventChunk.split("\n");
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const dataStr = line.slice(5);
+
+          if (dataStr === "[DONE]" || dataStr.includes("already-streaming")) return;
+
+          try {
+            const payload = JSON.parse(dataStr);
+            if (payload?.conversationId && !conversationId) {
+              setConversationId(payload.conversationId);
+            }
+            const tokenText = payload?.token || payload?.content || payload?.text || "";
+            appendAssistantText(tokenText);
+          } catch {
+            appendAssistantText(dataStr);
+          }
+        }
+      };
+
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        for (let i = 0; i < parts.length - 1; i++) {
+          processEvent(parts[i]);
+        }
+        buffer = parts[parts.length - 1];
+      }
+
+      if (buffer) processEvent(buffer);
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: "죄송해요. 답변 중 오류가 발생했어요." },
+      ]);
+    } finally {
+      setIsStreaming(false);
+    }
   };
 
   return (
     <Wrapper>
+      <MessageList>
+        {messages.map((m, i) => (
+          <Message key={i} $role={m.role}>
+            {m.text}
+          </Message>
+        ))}
+        <div ref={messagesEndRef} />
+      </MessageList>
       <SearchBox>
         <input
           type="text"
@@ -35,7 +155,7 @@ export default function ChatbotPage() {
           onChange={(e) => setSearchText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
         />
-        <button onClick={() => handleSearch()}>
+        <button onClick={() => handleSearch()} disabled={isStreaming}>
           <img src={Arrow} alt="" />
         </button>
       </SearchBox>
@@ -47,6 +167,26 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+`;
+
+const MessageList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  max-width: 480px;
+  padding: 80px 15px 90px;
+  box-sizing: border-box;
+`;
+
+const Message = styled.div`
+  align-self: ${(props) => (props.$role === "user" ? "flex-end" : "flex-start")};
+  background: ${(props) => (props.$role === "user" ? "#38b628" : "#eaeaed")};
+  color: ${(props) => (props.$role === "user" ? "#fff" : "#1c1b1a")};
+  padding: 10px 12px;
+  border-radius: 12px;
+  max-width: 85%;
+  white-space: pre-wrap;
 `;
 
 const SearchBox = styled.div`
