@@ -30,6 +30,7 @@ const SAFE = {
   IDLE_DEBOUNCE_MS: 700,
   MAP_MIN_LEVEL: 3,
   MAP_MAX_LEVEL: 7,
+  MARTS_VISIBLE_LEVEL: 5,
   BBOX_AREA_MAX: 0.05,
   TILE_SPLIT_THRESHOLD_2X2: 1.0,
   TILE_SPLIT_THRESHOLD_4X4: 1.8,
@@ -321,7 +322,7 @@ const lastQueryRef = { center: null, level: null, at: 0 };
 function shouldQuery(map) {
   if (!map?.getLevel || !map?.getCenter) return false;
   const level = map.getLevel();
-  if (level > 5) return false;
+  if (level > SAFE.MARTS_VISIBLE_LEVEL) return false;
 
   const center = map.getCenter();
   const now = Date.now();
@@ -497,6 +498,8 @@ export default function KakaoMap() {
   const [rateLimited, setRateLimited] = useState(false);
   const [netError, setNetError] = useState(false);
   const [tooWide, setTooWide] = useState(false);
+  const [zoomTooFar, setZoomTooFar] = useState(false); // ← 확대가 부족할 때 토스트 띄우는 플래그
+  const [, setCurrentLevel] = useState(null); // 디버그/판정용(필수는 아님)
 
   // ---------- Kakao SDK 준비 ----------
   const ensureKakaoReady = () =>
@@ -543,7 +546,12 @@ export default function KakaoMap() {
       const lvl = map.getLevel();
       if (lvl > SAFE.MAP_MAX_LEVEL) map.setLevel(SAFE.MAP_MAX_LEVEL);
       if (lvl < SAFE.MAP_MIN_LEVEL) map.setLevel(SAFE.MAP_MIN_LEVEL);
+      setCurrentLevel(lvl);
+      setZoomTooFar(lvl > SAFE.MARTS_VISIBLE_LEVEL); // 확대가 부족하면 true로
     });
+    // 생성 직후 한 번 초기화
+    setCurrentLevel(map.getLevel());
+    setZoomTooFar(map.getLevel() > SAFE.MARTS_VISIBLE_LEVEL);
 
     setMapInstance(map);
     setTimeout(() => window.kakao.maps.event.trigger(map, "resize"), 100);
@@ -805,6 +813,11 @@ export default function KakaoMap() {
     const update = () => {
       const b = mapInstance.getBounds?.();
       if (!b) return;
+      const lvl = mapInstance.getLevel?.();
+      if (typeof lvl === "number") {
+        setCurrentLevel(lvl);
+        setZoomTooFar(lvl > SAFE.MARTS_VISIBLE_LEVEL);
+      }
       const sw = b.getSouthWest();
       const ne = b.getNorthEast();
       const next = {
@@ -1082,6 +1095,27 @@ export default function KakaoMap() {
   // ---------- UI ----------
   return (
     <KakaoMapWrapper $isListMode={isListMode}>
+      {/* 마트 표시용 확대 안내 (줌 레벨 기준) */}
+      {!isListMode && zoomTooFar && (
+        <div
+          style={{
+            position: "fixed",
+            top: 12,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 99999,
+            background: "#1f2937",
+            color: "#fff",
+            padding: "8px 12px",
+            borderRadius: 8,
+            fontSize: 12,
+            boxShadow: "0 2px 8px rgba(0,0,0,.2)",
+          }}
+        >
+          지도를 확대하면 주변 대형마트 위치가 표시됩니다.
+          {/* (디버그용) 현재 레벨: {currentLevel} / 필요 레벨 ≤ {SAFE.MARTS_VISIBLE_LEVEL} */}
+        </div>
+      )}
       {/* 과대 영역 경고 */}
       {tooWide && (
         <div
@@ -1098,7 +1132,7 @@ export default function KakaoMap() {
             fontSize: 12,
           }}
         >
-          검색 범위가 너무 넓어. 지도를 조금 더 확대해줘
+          검색 범위가 넓어 일부 결과가 표시되지 않습니다. 지도를 확대하여 확인해 주세요.
         </div>
       )}
 
@@ -1119,7 +1153,8 @@ export default function KakaoMap() {
             boxShadow: "0 2px 8px rgba(0,0,0,.2)",
           }}
         >
-          호출 제한으로 일부 마커를 불러오지 못했어. 잠시 후 자동 재시도 중이야
+          요청이 일시적으로 제한되어 일부 마커가 표시되지 않았습니다. 잠시 후 자동으로 다시
+          불러옵니다.
         </div>
       )}
 
@@ -1139,7 +1174,7 @@ export default function KakaoMap() {
             fontSize: 12,
           }}
         >
-          네트워크/요청 형식 문제로 일부 마커를 불러오지 못했어.
+          네트워크 연결이 원활하지 않아 일부 마커가 표시되지 않았습니다. 다시 시도해 주세요.
           <button
             style={{
               marginLeft: 8,
