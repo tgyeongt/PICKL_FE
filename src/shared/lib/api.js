@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_SERVER_BASE_URL || "https://api.picklocal.site/api";
+const BASE_URL = import.meta.env.VITE_SERVER_BASE_URL;
 
 // 공용 API 인스턴스 (토큰이 필요 없는 경우)
 const publicAPI = axios.create({
