@@ -10,9 +10,6 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [chatList, setChatList] = useState([]);
 
-  // const conversationId = 1;
-  // const userId = 1;
-
   useEffect(() => {
     async function fetchChatList() {
       try {
@@ -34,7 +31,7 @@ export default function Header() {
       if (res?.success) {
         setChatList((prev) => prev.filter((chat) => chat.id !== conversationId));
 
-        alert("채팅이 삭제 되었습니다." + res.succes);
+        alert("채팅이 삭제되었습니다.");
       }
     } catch (error) {
       console.error("삭제 실패:", error);

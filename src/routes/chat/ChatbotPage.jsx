@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import styled from "styled-components";
 import useHeader from "../../shared/hooks/useHeader";
@@ -9,13 +9,42 @@ export default function ChatbotPage() {
     title: "피클이와 대화중",
     showBack: true,
   });
-
+  const { id } = useParams();
+  const [conversationId, setConversationId] = useState(id || null);
   const location = useLocation();
   const [searchText, setSearchText] = useState("");
-  const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!conversationId) return;
+      try {
+        const baseUrl = import.meta.env.VITE_SERVER_BASE_URL;
+        const token = localStorage.getItem("accessToken");
+        const res = await fetch(`${baseUrl}/chatbot/conversations/${conversationId}`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        const resData = await res.json();
+        if (res.ok) {
+          const apiMessages = resData.data?.messages || [];
+          const mapped = apiMessages.map((m) => ({
+            role: m.role.toLowerCase(),
+            text: m.content,
+          }));
+          setMessages(mapped);
+        }
+      } catch (err) {
+        console.error("이전 대화 불러오기 실패:", err);
+      }
+    };
+
+    fetchHistory();
+  }, [conversationId]);
 
   useEffect(() => {
     if (location.state?.question && !isStreaming && messages.length === 0) {

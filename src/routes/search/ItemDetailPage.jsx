@@ -28,8 +28,6 @@ export default function ItemDetailPage() {
     fetchSeasonItems();
   }, [id]);
 
-  console.log(item);
-
   return (
     <Wrapper>
       <TextBox>

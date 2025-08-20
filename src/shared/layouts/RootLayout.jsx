@@ -18,7 +18,10 @@ export default function RootLayout() {
   ];
 
   const hideNav =
-    (!hasToken && pathname === "/") || HIDE_NAV_ROUTES.includes(pathname) || helpSheetOpen;
+    (!hasToken && pathname === "/") ||
+    HIDE_NAV_ROUTES.includes(pathname) ||
+    /^\/chat\/[^/]+$/.test(pathname) ||
+    helpSheetOpen;
 
   return (
     <>
