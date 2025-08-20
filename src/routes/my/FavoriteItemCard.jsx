@@ -5,7 +5,7 @@ import { useLocation } from "react-router-dom";
 import { forwardRef } from "react";
 
 function FavoriteItemCardBase(
-  { img, title, description, liked = true, onClick, onClickHeart },
+  { img, title, description, liked = true, onClick, onClickHeart, disabled = false },
   ref
 ) {
   const { pathname } = useLocation();
@@ -16,8 +16,14 @@ function FavoriteItemCardBase(
     onClickHeart?.();
   };
 
+  const handleClick = () => {
+    if (!disabled && onClick) {
+      onClick();
+    }
+  };
+
   return (
-    <CardWrapper ref={ref} role="button" onClick={onClick}>
+    <CardWrapper ref={ref} role="button" onClick={handleClick} disabled={disabled}>
       <ThumbWrapper>
         <Thumb src={img} alt={title} />
         <RightTopIcon src={liked ? heartOn : heartOff} alt="heart" onClick={handleHeart} />
@@ -44,6 +50,23 @@ const CardWrapper = styled.div`
   display: flex;
   flex-direction: column;
   cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: ${(props) => (props.disabled ? "none" : "translateY(-2px)")};
+    box-shadow: ${(props) => (props.disabled ? "none" : "0 4px 12px rgba(0, 0, 0, 0.1)")};
+  }
+
+  &:active {
+    transform: ${(props) => (props.disabled ? "none" : "translateY(0)")};
+  }
+
+  ${(props) =>
+    props.disabled &&
+    `
+    cursor: not-allowed;
+    opacity: 0.6;
+  `}
 `;
 const ThumbWrapper = styled.div`
   position: relative;
