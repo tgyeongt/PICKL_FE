@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_SERVER_BASE_URL;
+const BASE_URL = import.meta.env.VITE_SERVER_BASE_URL || "https://api.picklocal.site/api";
 
 // 공용 API 인스턴스 (토큰이 필요 없는 경우)
 const publicAPI = axios.create({
@@ -60,6 +60,21 @@ export const APIService = {
     },
     patch: async (url, data = {}, config = {}) => {
       const response = await privateAPI.patch(url, data, config);
+      return response.data;
+    },
+  },
+
+  // AI 피클 히스토리 관련 API
+  chatbot: {
+    // 대화 목록 조회 (제목 + ID)
+    getConversations: async () => {
+      const response = await privateAPI.get("/chatbot/conversations");
+      return response.data;
+    },
+
+    // 특정 대화의 채팅 내역 조회
+    getConversationHistory: async (conversationId) => {
+      const response = await privateAPI.get(`/chatbot/conversations/${conversationId}`);
       return response.data;
     },
   },

@@ -20,6 +20,7 @@ import SearchLocationPage from "./routes/map/SearchLocationPage";
 import MyIngredientsPage from "./routes/my/MyIngredientsPage";
 import MyRecipesPage from "./routes/my/MyRecipesPage";
 import MyHistoryPage from "./routes/my/MyHistoryPage";
+import ConversationDetailPage from "./routes/my/ConversationDetailPage";
 import DailyPointsPage from "./routes/my/DailyPointsPage";
 import ConvertPointsPage from "./routes/my/ConvertPointsPage";
 import DailyPointsResultPage from "./routes/my/DailyPointsResultPage";
@@ -99,6 +100,7 @@ const router = createBrowserRouter([
                   { path: "list-ingredients", Component: MyIngredientsPage },
                   { path: "list-recipes", Component: MyRecipesPage },
                   { path: "history", Component: MyHistoryPage },
+                  { path: "history/:conversationId", Component: ConversationDetailPage },
                   { path: "points-daily", Component: DailyPointsPage },
                   { path: "points-convert", Component: ConvertPointsPage },
                   { path: "points-daily/result", Component: DailyPointsResultPage },
