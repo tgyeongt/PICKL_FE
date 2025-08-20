@@ -10,20 +10,20 @@ export default function Suggestion({ onSelectItem }) {
 
   const seasonalList = [
     {
-      id: 57,
+      id: 676,
       title: "새송이버섯",
       unit: "100g",
       img: "https://picklocal.s3.ap-northeast-2.amazonaws.com/images/2025/08/8ed68c0e-94c9-4762-ae9a-14b908617667",
       price: 545,
     },
     {
-      id: 20,
+      id: 672,
       title: "깐마늘(국산)",
       unit: "1kg",
       img: "https://picklocal.s3.ap-northeast-2.amazonaws.com/images/2025/08/204434f0-a9d7-450c-b7fe-446537601f0f",
       price: 10449,
     },
-    { id: 91, title: "갈치/국산(냉장)(中)", unit: "1마리", img: "", price: 7464 },
+    { id: 742, title: "갈치/국산(냉장)(中)", unit: "1마리", img: "", price: 7464 },
   ];
 
   return (
