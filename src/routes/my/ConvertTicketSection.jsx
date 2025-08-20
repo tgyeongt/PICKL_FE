@@ -1,17 +1,56 @@
 import styled from "styled-components";
 import { useConvertPoints } from "./convert/ConvertPointsContext";
+import { useAtomValue } from "jotai";
+import { selectedAddressAtom } from "../map/state/addressAtom";
+import useCurrentAddress from "../map/hooks/useCurrentAddress";
 
 import seoulLove from "@icon/my/seoulLove.svg";
-import seongbukLove from "@icon/my/sbLove.svg";
-
-const TICKETS = [
-  { key: "seoul", label: "서울사랑상품권", icon: seoulLove },
-  { key: "seongbuk", label: "성북사랑상품권", icon: seongbukLove },
-];
+import seochoIcon from "@icon/my/seochoIcon.svg";
 
 export default function ConvertTicketSection() {
   const { state, setVoucher } = useConvertPoints();
+  const selectedAddress = useAtomValue(selectedAddressAtom);
   const selected = state?.selectedVoucher ?? "seoul";
+
+  // PointStateSection과 정확히 동일한 방식으로 구현
+  const deriveGuDong = (addr = "") => {
+    const m1 = addr.match(/([\w가-힣]+구)\s+([\w가-힣]+동)/);
+    if (m1) return `${m1[1]} ${m1[2]}`;
+    const m2 = addr.match(/([\w가-힣]+구)/);
+    if (m2) return m2[1];
+    return addr.split(/\s+/).slice(0, 2).join(" ");
+  };
+
+  const hasGlobalAddr = !!(selectedAddress?.jibunAddress || selectedAddress?.roadAddress);
+  const { address: fallbackAddr } = useCurrentAddress(!hasGlobalAddr);
+
+  const rawAddr =
+    selectedAddress?.jibunAddress || selectedAddress?.roadAddress || fallbackAddr || "";
+
+  const shortAddr = deriveGuDong(rawAddr);
+
+  // 구 이름만 추출 (예: "중구 정동" -> "중구")
+  const getCurrentDistrict = () => {
+    const districtMatch = shortAddr.match(/([\w가-힣]+구)/);
+    console.log("District match debug:", { shortAddr, districtMatch });
+    return districtMatch ? districtMatch[0] : "서초";
+  };
+
+  const currentDistrict = getCurrentDistrict();
+
+  // 디버깅용 로그
+  console.log("ConvertTicketSection Debug:", {
+    selectedAddress,
+    fallbackAddr,
+    rawAddr,
+    shortAddr,
+    currentDistrict,
+  });
+
+  const TICKETS = [
+    { key: "seoul", label: "서울사랑상품권", icon: seoulLove },
+    { key: "seocho", label: `${currentDistrict}사랑상품권`, icon: seochoIcon },
+  ];
 
   const handleSelect = (key) => {
     if (selected !== key) setVoucher(key);
