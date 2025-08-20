@@ -77,6 +77,7 @@ const router = createBrowserRouter([
             children: [
               { index: true, Component: Chat },
               { path: "new-chat", Component: ChatbotPage },
+              { path: ":id", Component: ChatbotPage },
             ],
           },
 

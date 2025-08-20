@@ -1,5 +1,6 @@
 import useHeader from "@hooks/useHeader";
 import styled from "styled-components";
+import Chart from "./Chart";
 
 export default function CategoryDetailPage() {
   useHeader({
@@ -12,6 +13,7 @@ export default function CategoryDetailPage() {
       <p className="title">식량작물</p>
       <span className="price">21,108.31</span>
       <span className="rate">+50.36(0.2%)</span>
+      <Chart />
     </Wrapper>
   );
 }
