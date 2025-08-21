@@ -9,6 +9,7 @@ export default function ChatbotPage() {
     title: "피클이와 대화중",
     showBack: true,
   });
+
   const { id } = useParams();
   const [conversationId, setConversationId] = useState(null);
   const location = useLocation();
@@ -17,6 +18,7 @@ export default function ChatbotPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // 대화 ID 동기화
   useEffect(() => {
     if (id && !conversationId) {
       setConversationId(id);
@@ -24,6 +26,7 @@ export default function ChatbotPage() {
     }
   }, [id, conversationId]);
 
+  // 이전 대화 불러오기
   useEffect(() => {
     const fetchHistory = async () => {
       if (!conversationId) return;
@@ -58,6 +61,7 @@ export default function ChatbotPage() {
 
   const questionHandledRef = useRef(false);
 
+  // 외부에서 질문 받아오기
   useEffect(() => {
     if (location.state?.question && !isStreaming && !questionHandledRef.current) {
       handleSearch(location.state.question);
@@ -67,6 +71,7 @@ export default function ChatbotPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, isStreaming]);
 
+  // 스크롤 맨 밑 유지
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -90,6 +95,43 @@ export default function ChatbotPage() {
     conversationIdRef.current = conversationId;
   }, [conversationId]);
 
+  // ✅ 타이핑 큐 관련 ref
+  const typingQueueRef = useRef([]);
+  const typingIntervalRef = useRef(null);
+
+  const startTyping = () => {
+    if (typingIntervalRef.current) return; // 이미 실행 중이면 무시
+
+    typingIntervalRef.current = setInterval(() => {
+      if (typingQueueRef.current.length === 0) {
+        clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+        return;
+      }
+
+      const nextToken = typingQueueRef.current.shift();
+
+      setMessages((prev) => {
+        const updated = [...prev];
+        const lastIdx = updated.length - 1;
+        if (lastIdx >= 0 && updated[lastIdx].role === "assistant") {
+          updated[lastIdx] = {
+            role: "assistant",
+            text: (updated[lastIdx].text || "") + nextToken,
+          };
+        }
+        return updated;
+      });
+    }, 100); // 👉 출력 속도 (ms) 조절 가능
+  };
+
+  const enqueueAssistantText = (chunk) => {
+    if (!chunk) return;
+    typingQueueRef.current.push(chunk);
+    startTyping();
+  };
+
+  // ✅ 스트리밍 처리
   const streamChat = async (message) => {
     setIsStreaming(true);
 
@@ -120,21 +162,6 @@ export default function ChatbotPage() {
       const decoder = new TextDecoder("utf-8");
       let buffer = "";
 
-      const appendAssistantText = (chunk) => {
-        if (!chunk) return;
-        setMessages((prev) => {
-          const updated = [...prev];
-          const lastIdx = updated.length - 1;
-          if (lastIdx >= 0 && updated[lastIdx].role === "assistant") {
-            updated[lastIdx] = {
-              role: "assistant",
-              text: (updated[lastIdx].text || "") + chunk,
-            };
-          }
-          return updated;
-        });
-      };
-
       const processEvent = (eventChunk) => {
         const lines = eventChunk.split("\n");
         for (const line of lines) {
@@ -160,9 +187,9 @@ export default function ChatbotPage() {
             }
 
             const tokenText = payload?.token || payload?.content || payload?.text || "";
-            appendAssistantText(tokenText);
+            enqueueAssistantText(tokenText);
           } catch {
-            appendAssistantText(dataStr);
+            enqueueAssistantText(dataStr);
           }
         }
       };
