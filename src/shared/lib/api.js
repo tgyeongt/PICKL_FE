@@ -77,6 +77,12 @@ export const APIService = {
       const response = await privateAPI.get(`/chatbot/conversations/${conversationId}`);
       return response.data;
     },
+
+    // 대화 삭제
+    deleteConversation: async (conversationId) => {
+      const response = await privateAPI.delete(`/chatbot/conversations/${conversationId}`);
+      return response.data;
+    },
   },
 };
 

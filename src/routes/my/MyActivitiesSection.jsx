@@ -73,7 +73,7 @@ function patchLocalStorageForFavorites(onChange) {
 
 export default function MyActivitiesSection() {
   const navigate = useNavigate();
-  const { data: summary } = useMySummary();
+  const { data: summary, refetch } = useMySummary();
   const [favCount, setFavCount] = useAtom(favoriteRecipesCountAtom);
 
   // 로컬스토리지 기반 즉시 동기화
@@ -82,11 +82,21 @@ export default function MyActivitiesSection() {
     sync(); // 초기 1회
     const unpatch = patchLocalStorageForFavorites(sync); // 같은 탭
     window.addEventListener("storage", sync); // 다른 탭
+
+    // 대화 삭제 이벤트 감지
+    const handleConversationDeleted = () => {
+      // 히스토리 개수 즉시 업데이트
+      refetch();
+    };
+
+    window.addEventListener("conversationDeleted", handleConversationDeleted);
+
     return () => {
       window.removeEventListener("storage", sync);
+      window.removeEventListener("conversationDeleted", handleConversationDeleted);
       unpatch?.();
     };
-  }, [setFavCount]);
+  }, [setFavCount, summary]);
 
   const counts = {
     ingredients: countIngredientFavoritesFromLS(),

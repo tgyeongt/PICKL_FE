@@ -5,7 +5,7 @@ import useHeader from "../../shared/hooks/useHeader";
 import { APIService } from "../../shared/lib/api";
 import ConversationItem from "./ConversationItem";
 
-export default function MyHistoryPage() {
+export default function MyHistoryPage({ onConversationDeleted }) {
   const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +40,15 @@ export default function MyHistoryPage() {
 
   const handleConversationClick = (conversationId) => {
     navigate(`/my/history/${conversationId}`);
+  };
+
+  const handleDeleteConversation = (conversationId) => {
+    setConversations((prev) => prev.filter((conv) => conv.id !== conversationId));
+
+    // 상위 컴포넌트에 삭제 이벤트 알림
+    if (onConversationDeleted) {
+      onConversationDeleted();
+    }
   };
 
   const handleRetry = () => {
@@ -90,13 +99,13 @@ export default function MyHistoryPage() {
             key={conversation.id}
             conversation={conversation}
             onClick={handleConversationClick}
+            onDelete={handleDeleteConversation}
           />
         ))}
       </ConversationList>
     </Container>
   );
 }
-
 
 const Container = styled.div`
   min-height: 100vh;
