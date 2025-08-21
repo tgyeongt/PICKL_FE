@@ -56,13 +56,16 @@ export default function ChatbotPage() {
     fetchHistory();
   }, [conversationId]);
 
+  const questionHandledRef = useRef(false);
+
   useEffect(() => {
-    if (location.state?.question && !isStreaming && messages.length === 0) {
-      setSearchText("");
-      streamChat(location.state.question, true);
+    if (location.state?.question && !isStreaming && !questionHandledRef.current) {
+      handleSearch(location.state.question);
+      questionHandledRef.current = true;
+      window.history.replaceState({}, "", location.pathname);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state]);
+  }, [location.state, isStreaming]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -87,16 +90,8 @@ export default function ChatbotPage() {
     conversationIdRef.current = conversationId;
   }, [conversationId]);
 
-  const streamChat = async (message, isInitial = false) => {
+  const streamChat = async (message) => {
     setIsStreaming(true);
-
-    if (isInitial) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", text: message },
-        { role: "assistant", text: "" },
-      ]);
-    }
 
     const baseUrl = import.meta.env.VITE_SERVER_BASE_URL;
     const url = `${baseUrl}/chatbot/chat/stream`;
@@ -104,12 +99,6 @@ export default function ChatbotPage() {
 
     try {
       const currentConvId = conversationIdRef.current || null;
-
-      console.log("📤 요청 전송:", {
-        userId: 1,
-        conversationId: currentConvId,
-        message,
-      });
 
       const res = await fetch(url, {
         method: "POST",
