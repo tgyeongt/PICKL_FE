@@ -47,6 +47,7 @@ export default function ItemDetailPage() {
 
 const Wrapper = styled.div`
   padding: 10px;
+  margin-top: 50px;
 `;
 
 const TextBox = styled.div`

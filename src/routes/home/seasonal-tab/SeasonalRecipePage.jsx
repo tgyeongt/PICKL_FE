@@ -93,6 +93,7 @@ const Wrapper = styled.div`
   background-color: #f6f6f6;
   height: 90vh;
   padding-bottom: 80px;
+  margin-top: 50px;
 `;
 
 const Title = styled.p`

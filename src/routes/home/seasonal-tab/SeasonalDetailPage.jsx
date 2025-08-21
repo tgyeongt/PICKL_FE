@@ -106,6 +106,7 @@ const Wrapper = styled.div`
   align-items: center;
   padding: 20px;
   padding-bottom: 120px;
+  margin-top: 50px;
 `;
 
 const MainCard = styled.div`

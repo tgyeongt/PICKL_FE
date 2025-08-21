@@ -20,6 +20,7 @@ export default function CategoryDetailPage() {
 
 const Wrapper = styled.div`
   padding: 0 25px;
+  margin-top: 50px;
 
   .title {
     font-size: 22px;

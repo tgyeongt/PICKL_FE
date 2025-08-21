@@ -38,6 +38,7 @@ const NavWrapper = styled.div`
   align-items: center;
   gap: 70px;
   padding: 20px 0 30px 0;
+  margin-top: 50px;
 `;
 
 const NavButton = styled.button`
