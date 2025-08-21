@@ -59,9 +59,9 @@ export default function useMySummary(options = {}) {
       const res = await APIService.private.get("/users/me/summary");
       return mapSummary(res?.data ?? res);
     },
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: false,
+    staleTime: 0, // 항상 최신 데이터 가져오기
+    refetchOnMount: true, // 마운트 시마다 새로 가져오기
+    refetchOnWindowFocus: true, // 윈도우 포커스 시 새로 가져오기
     retry: 1,
     ...options,
   });

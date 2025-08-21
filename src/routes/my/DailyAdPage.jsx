@@ -26,10 +26,7 @@ export default function DailyAdPage() {
         return next;
       });
     }, 1000);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => timerRef.current && clearInterval(timerRef.current);
   }, []);
 
   useEffect(() => {
@@ -38,25 +35,20 @@ export default function DailyAdPage() {
 
   const handleClose = async () => {
     if (isLoading) return;
-
     setIsLoading(true);
     try {
-      // 광고 시청 완료 후 추가 시도 API 호출
       await testLoginIfNeeded();
-      await APIService.private.post("/quiz/attempts/extra");
+      const res = await APIService.private.post("/quiz/attempts/extra");
+      const box = res && res.data !== undefined ? res.data : res;
+      const remaining = box?.remaining ?? null;
+      console.log("[attempts/extra] ok, remaining =", remaining, "raw =", box);
 
       const adNonce = crypto.randomUUID();
-      navigate(returnTo, {
-        replace: true,
-        state: { adWatched: true, adNonce },
-      });
+      navigate(returnTo, { replace: true, state: { adWatched: true, adNonce } });
     } catch (error) {
       console.error("추가 시도 요청 실패:", error);
-      const adNonce = crypto.randomUUID();
-      navigate(returnTo, {
-        replace: true,
-        state: { adWatched: true, adNonce },
-      });
+      alert("추가 시도권을 발급받지 못했어. 잠시 후 다시 시도해줘!");
+      // 실패 시 현재 화면에 그대로 머묾
     } finally {
       setIsLoading(false);
     }

@@ -1,19 +1,107 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import useMySummary from "./hooks/useMySummary";
+import { useAtom } from "jotai";
+import { favoriteRecipesCountAtom } from "./state/favoriteRecipesCountAtom";
+import { useEffect } from "react";
 
 import tomatoIcon from "@icon/my/tomatoIcon.svg";
 import recipeIcon from "@icon/my/saladIcon.svg";
 import historyIcon from "@icon/my/fileIcon.svg";
 import chevronRight from "@icon/my/chevron-right.svg";
 
+// ---- 보조 유틸 (이 파일 안에만) ----
+const FAV_RECIPE_PREFIX = "favorite:RECIPE:";
+const FAV_INGREDIENT_PREFIX = "favorite:INGREDIENT:";
+
+function countRecipeFavoritesFromLS() {
+  try {
+    const ls = window.localStorage;
+    let cnt = 0;
+    for (let i = 0; i < ls.length; i++) {
+      const k = ls.key(i) || "";
+      if (k.startsWith(FAV_RECIPE_PREFIX) && ls.getItem(k) === "true") cnt++;
+    }
+    return cnt;
+  } catch {
+    return 0;
+  }
+}
+
+function countIngredientFavoritesFromLS() {
+  try {
+    const ls = window.localStorage;
+    let cnt = 0;
+    for (let i = 0; i < ls.length; i++) {
+      const k = ls.key(i) || "";
+      if (k.startsWith(FAV_INGREDIENT_PREFIX) && ls.getItem(k) === "true") cnt++;
+    }
+    return cnt;
+  } catch {
+    return 0;
+  }
+}
+function patchLocalStorageForFavorites(onChange) {
+  const ls = window.localStorage;
+  if (window.__favPatchApplied) return () => {};
+  window.__favPatchApplied = true;
+  const origSet = ls.setItem.bind(ls);
+  const origRemove = ls.removeItem.bind(ls);
+  const origClear = ls.clear.bind(ls);
+  ls.setItem = (k, v) => {
+    origSet(k, v);
+    if (String(k).startsWith(FAV_RECIPE_PREFIX) || String(k).startsWith(FAV_INGREDIENT_PREFIX))
+      onChange();
+  };
+  ls.removeItem = (k) => {
+    origRemove(k);
+    if (String(k).startsWith(FAV_RECIPE_PREFIX) || String(k).startsWith(FAV_INGREDIENT_PREFIX))
+      onChange();
+  };
+  ls.clear = () => {
+    origClear();
+    onChange();
+  };
+  return () => {
+    ls.setItem = origSet;
+    ls.removeItem = origRemove;
+    ls.clear = origClear;
+    window.__favPatchApplied = false;
+  };
+}
+// -----------------------------------
+
 export default function MyActivitiesSection() {
   const navigate = useNavigate();
-  const { data: summary } = useMySummary();
+  const { data: summary, refetch } = useMySummary();
+  const [favCount, setFavCount] = useAtom(favoriteRecipesCountAtom);
+
+  // 로컬스토리지 기반 즉시 동기화
+  useEffect(() => {
+    const sync = () => setFavCount(countRecipeFavoritesFromLS());
+    sync(); // 초기 1회
+    const unpatch = patchLocalStorageForFavorites(sync); // 같은 탭
+    window.addEventListener("storage", sync); // 다른 탭
+
+    // 대화 삭제 이벤트 감지
+    const handleConversationDeleted = () => {
+      // 히스토리 개수 즉시 업데이트
+      refetch();
+    };
+
+    window.addEventListener("conversationDeleted", handleConversationDeleted);
+
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("conversationDeleted", handleConversationDeleted);
+      unpatch?.();
+    };
+  }, [setFavCount, summary]);
 
   const counts = {
-    ingredients: summary?.favoriteIngredientCount ?? 0,
-    recipes: summary?.favoriteRecipeCount ?? 0,
+    ingredients: countIngredientFavoritesFromLS(),
+    //  리스트 페이지가 갱신해둔 전역값을 우선 사용, 없으면 요약값
+    recipes: (typeof favCount === "number" ? favCount : summary?.favoriteRecipeCount) ?? 0,
     history: summary?.pickleHistoryCount ?? 0,
   };
 

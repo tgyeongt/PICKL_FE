@@ -1,10 +1,9 @@
 import styled from "styled-components";
-import { useAtomValue } from "jotai";
+import { useAtomValue } from "jotai"; // ✅ 추가
 import { selectedAddressAtom } from "../map/state/addressAtom";
 import useCurrentAddress from "../map/hooks/useCurrentAddress";
-import { pointsAtom } from "./convert/ConvertPointsContext";
-import useMySummary from "./hooks/useMySummary";
 import pPoint from "@icon/my/pPointIcon.svg";
+import useCurrentPoints from "./hooks/useCurrentPoints";
 
 function deriveGuDong(addr = "") {
   const m1 = addr.match(/([\w가-힣]+구)\s+([\w가-힣]+동)/);
@@ -15,14 +14,9 @@ function deriveGuDong(addr = "") {
 }
 
 export default function PointStateSection() {
-  const selectedAddress = useAtomValue(selectedAddressAtom);
+  const selectedAddress = useAtomValue(selectedAddressAtom); // ✅ 정상 동작
 
-  // 전역 포인트 상태 사용
-  const globalPoints = useAtomValue(pointsAtom);
-  const { data: summary } = useMySummary();
-
-  // 전역 상태가 있으면 사용, 없으면 API 데이터 사용
-  const currentPoints = globalPoints !== null ? globalPoints : summary?.points ?? 0;
+  const currentPoints = useCurrentPoints();
 
   const hasGlobalAddr = !!(selectedAddress?.jibunAddress || selectedAddress?.roadAddress);
   const { address: fallbackAddr } = useCurrentAddress(!hasGlobalAddr);
@@ -31,6 +25,14 @@ export default function PointStateSection() {
     selectedAddress?.jibunAddress || selectedAddress?.roadAddress || fallbackAddr || "";
 
   const shortAddr = deriveGuDong(rawAddr);
+
+  // 디버깅용 로그
+  console.log("PointStateSection Debug:", {
+    selectedAddress,
+    fallbackAddr,
+    rawAddr,
+    shortAddr,
+  });
 
   return (
     <PointStateSectionWrapper>
@@ -64,7 +66,7 @@ const PointStateSectionWrapper = styled.div`
 const LocationText = styled.p`
   color: #adadaf;
   font-family: Pretendard;
-  font-size: 8px;
+  font-size: 12px;
   font-style: normal;
   font-weight: 400;
   line-height: 20px;
@@ -73,7 +75,7 @@ const LocationText = styled.p`
 const Label = styled.p`
   color: #323232;
   font-family: Pretendard;
-  font-size: 14px;
+  font-size: 16px;
   font-style: normal;
   font-weight: 400;
   line-height: 22px;
