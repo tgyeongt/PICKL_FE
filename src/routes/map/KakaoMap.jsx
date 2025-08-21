@@ -481,6 +481,9 @@ export default function KakaoMap() {
   const [zoomTooFar, setZoomTooFar] = useState(false); // ← 확대가 부족할 때 토스트 띄우는 플래그
   const [, setCurrentLevel] = useState(null); // 디버그/판정용(필수는 아님)
 
+  // 대형마트 의무휴업일 알림 상태
+  const [showMartNotice, setShowMartNotice] = useState(false);
+
   // ---------- Kakao SDK 준비 ----------
   const ensureKakaoReady = () =>
     new Promise((resolve) => {
@@ -870,6 +873,19 @@ export default function KakaoMap() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [createMap, isListMode, setSelectedAddress]);
+
+  // 대형마트 의무휴업일 알림 표시 (경로가 /map일 때)
+  useEffect(() => {
+    if (window.location.pathname === "/map") {
+      setShowMartNotice(true);
+      // 5초 후 자동으로 숨김
+      const timer = setTimeout(() => {
+        setShowMartNotice(false);
+      }, 2300);
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // 주소 변경 시 센터 이동
   useEffect(() => {
@@ -1350,6 +1366,32 @@ export default function KakaoMap() {
           >
             재시도
           </button>
+        </div>
+      )}
+
+      {/* 대형마트 의무휴업일 알림 */}
+      {showMartNotice && (
+        <div
+          style={{
+            position: "fixed",
+            top: 228,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 99999,
+            background: "#5A5B6A",
+            color: "#fff",
+            padding: "12px 16px",
+            borderRadius: 30,
+            fontSize: 14,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            maxWidth: "90%",
+            textAlign: "center",
+            lineHeight: 1.4,
+            fontWeight: 400,
+          }}
+        >
+          매월 <span style={{ color: "#58d848", fontWeight: "700" }}>둘째, 넷째</span> 주 일요일은{" "}
+          <span style={{ color: "#58d848", fontWeight: "700" }}>대형마트</span> 의무휴업일입니다.
         </div>
       )}
 
