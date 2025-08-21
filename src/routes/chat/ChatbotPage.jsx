@@ -18,7 +18,13 @@ export default function ChatbotPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // 대화 ID 동기화
+  const conversationIdRef = useRef(conversationId);
+  useEffect(() => {
+    conversationIdRef.current = conversationId;
+  }, [conversationId]);
+
+  const firstDataProcessedRef = useRef(false);
+
   useEffect(() => {
     if (id && !conversationId) {
       setConversationId(id);
@@ -26,7 +32,6 @@ export default function ChatbotPage() {
     }
   }, [id, conversationId]);
 
-  // 이전 대화 불러오기
   useEffect(() => {
     const fetchHistory = async () => {
       if (!conversationId) return;
@@ -46,22 +51,17 @@ export default function ChatbotPage() {
             role: m.role.toLowerCase(),
             text: m.content,
           }));
-          setMessages((prev) => {
-            if (prev.length > 0) return prev;
-            return mapped;
-          });
+          setMessages((prev) => (prev.length > 0 ? prev : mapped));
         }
       } catch (err) {
         console.error("이전 대화 불러오기 실패:", err);
       }
     };
-
     fetchHistory();
   }, [conversationId]);
 
   const questionHandledRef = useRef(false);
 
-  // 외부에서 질문 받아오기
   useEffect(() => {
     if (location.state?.question && !isStreaming && !questionHandledRef.current) {
       handleSearch(location.state.question);
@@ -71,7 +71,6 @@ export default function ChatbotPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, isStreaming]);
 
-  // 스크롤 맨 밑 유지
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -90,17 +89,11 @@ export default function ChatbotPage() {
     await streamChat(content);
   };
 
-  const conversationIdRef = useRef(conversationId);
-  useEffect(() => {
-    conversationIdRef.current = conversationId;
-  }, [conversationId]);
-
-  // ✅ 타이핑 큐 관련 ref
   const typingQueueRef = useRef([]);
   const typingIntervalRef = useRef(null);
 
   const startTyping = () => {
-    if (typingIntervalRef.current) return; // 이미 실행 중이면 무시
+    if (typingIntervalRef.current) return;
 
     typingIntervalRef.current = setInterval(() => {
       if (typingQueueRef.current.length === 0) {
@@ -108,9 +101,7 @@ export default function ChatbotPage() {
         typingIntervalRef.current = null;
         return;
       }
-
       const nextToken = typingQueueRef.current.shift();
-
       setMessages((prev) => {
         const updated = [...prev];
         const lastIdx = updated.length - 1;
@@ -122,7 +113,7 @@ export default function ChatbotPage() {
         }
         return updated;
       });
-    }, 100); // 👉 출력 속도 (ms) 조절 가능
+    }, 100);
   };
 
   const enqueueAssistantText = (chunk) => {
@@ -131,10 +122,8 @@ export default function ChatbotPage() {
     startTyping();
   };
 
-  // ✅ 스트리밍 처리
   const streamChat = async (message) => {
     setIsStreaming(true);
-
     const baseUrl = import.meta.env.VITE_SERVER_BASE_URL;
     const url = `${baseUrl}/chatbot/chat/stream`;
     const token = localStorage.getItem("accessToken");
@@ -167,29 +156,28 @@ export default function ChatbotPage() {
         for (const line of lines) {
           if (!line.startsWith("data:")) continue;
           const dataStr = line.slice(5);
-          if (dataStr === "[DONE]" || dataStr.includes("already-streaming")) return;
+          const dataForIdCheck = dataStr.trim();
 
-          if (!isNaN(dataStr) && !conversationIdRef.current) {
-            const newId = Number(dataStr);
-            setConversationId(newId);
-            conversationIdRef.current = newId;
-            window.history.replaceState(null, "", `/chat/${newId}`);
-            return;
+          if (!firstDataProcessedRef.current) {
+            if (/^\d+$/.test(dataForIdCheck)) {
+              const newId = Number(dataForIdCheck);
+              setConversationId(newId);
+              conversationIdRef.current = newId;
+              window.history.replaceState(null, "", `/chat/${newId}`);
+              firstDataProcessedRef.current = true;
+              continue;
+            }
+            firstDataProcessedRef.current = true;
           }
 
           try {
             const payload = JSON.parse(dataStr);
-
-            if (payload?.conversationId) {
-              setConversationId(payload.conversationId);
-              conversationIdRef.current = payload.conversationId;
-              window.history.replaceState(null, "", `/chat/${payload.conversationId}`);
-            }
-
-            const tokenText = payload?.token || payload?.content || payload?.text || "";
-            enqueueAssistantText(tokenText);
+            const tokenText = payload?.token ?? payload?.content ?? payload?.text ?? "";
+            if (tokenText) enqueueAssistantText(tokenText);
           } catch {
-            enqueueAssistantText(dataStr);
+            if (firstDataProcessedRef.current) {
+              enqueueAssistantText(dataStr);
+            }
           }
         }
       };
@@ -200,15 +188,13 @@ export default function ChatbotPage() {
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         const parts = buffer.split("\n\n");
-        for (let i = 0; i < parts.length - 1; i++) {
-          processEvent(parts[i]);
-        }
+        for (let i = 0; i < parts.length - 1; i++) processEvent(parts[i]);
         buffer = parts[parts.length - 1];
       }
 
       if (buffer) processEvent(buffer);
     } catch (err) {
-      console.error("❌ streamChat 오류:", err);
+      console.error("streamChat 오류:", err);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", text: "죄송해요. 답변 중 오류가 발생했어요." },
