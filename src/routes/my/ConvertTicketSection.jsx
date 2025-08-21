@@ -31,9 +31,23 @@ export default function ConvertTicketSection() {
 
   // 구 이름만 추출
   const getCurrentDistrict = () => {
+    // 먼저 구(구)를 찾아보기
     const districtMatch = shortAddr.match(/([\w가-힣]+구)/);
-    console.log("District match debug:", { shortAddr, districtMatch });
-    return districtMatch ? districtMatch[0] : "서초";
+    if (districtMatch) {
+      console.log("District found:", districtMatch[0]);
+      return districtMatch[0];
+    }
+
+    // 구가 없으면 시(시)를 찾아보기
+    const cityMatch = shortAddr.match(/([\w가-힣]+시)/);
+    if (cityMatch) {
+      console.log("City found:", cityMatch[0]);
+      return cityMatch[0];
+    }
+
+    // 구나 시가 모두 없으면 기본값 반환
+    console.log("No district or city found, using default");
+    return "서초";
   };
 
   const currentDistrict = getCurrentDistrict();
