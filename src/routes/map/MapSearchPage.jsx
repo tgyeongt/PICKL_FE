@@ -220,7 +220,7 @@ export default function MapSearchPage() {
         {keyword ? (
           <SearchInfoText>
             <GreenText>{keyword}</GreenText>으로 검색된 결과{" "}
-            <GreenText>{isLoading ? "로딩중" : isError ? 0 : filtered.length}</GreenText>건
+            <GreenText>{isLoading ? "로딩중" : filtered.length}</GreenText>건
           </SearchInfoText>
         ) : (
           <LocationBox onClick={() => navigate("/map/edit-location")}>
