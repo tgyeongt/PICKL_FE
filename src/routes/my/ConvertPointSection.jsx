@@ -86,7 +86,7 @@ const RateText = styled.p`
   justify-content: flex-end;
   color: #8b98a6;
   font-family: Pretendard;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   line-height: 18px;
   margin: 0 11px 28px 0;
@@ -109,7 +109,7 @@ const Label = styled.span`
 const ConvertedText = styled.span`
   color: #58d748;
   font-family: Pretendard;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   line-height: 24px;
 `;
@@ -168,7 +168,7 @@ const AllButton = styled.button`
   color: #fff;
   font-family: Pretendard;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 24px;
   text-align: center;
   cursor: pointer;

@@ -1,11 +1,15 @@
-// src/routes/my/hooks/useFavoriteRecipes.js
+import { useEffect } from "react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { APIService } from "../../../shared/lib/api";
+import { emitFavoriteChange } from "../../../shared/lib/favoritesBus";
+import { useSetAtom } from "jotai";
+import { favoriteRecipesCountAtom } from "../state/favoriteRecipesCountAtom";
 
 const PAGE_SIZE = 20;
 
 export default function useFavoriteRecipes() {
   const qc = useQueryClient();
+  const setFavCount = useSetAtom(favoriteRecipesCountAtom);
 
   const query = useInfiniteQuery({
     queryKey: ["favorites", "recipes"],
@@ -25,7 +29,6 @@ export default function useFavoriteRecipes() {
       lastPage.page < lastPage.totalPages - 1 ? lastPage.page + 1 : undefined,
   });
 
-  // ✅ 찜 해제(낙관적 업데이트로 즉시 카드 제거)
   const unfavoriteMutation = useMutation({
     mutationFn: async (recipeId) => {
       const res = await APIService.private.delete("/favorites", {
@@ -34,44 +37,67 @@ export default function useFavoriteRecipes() {
       return res?.data ?? res;
     },
     onMutate: async (recipeId) => {
-      // 기존 요청 취소
       await qc.cancelQueries({ queryKey: ["favorites", "recipes"] });
 
-      // 이전 스냅샷 저장
       const previous = qc.getQueryData(["favorites", "recipes"]);
 
-      // 캐시에서 해당 아이템 제거
       qc.setQueryData(["favorites", "recipes"], (old) => {
         if (!old) return old;
-        // old는 useInfiniteQuery의 데이터 셰이프를 따름
-        const pages = old.pages.map((p) => ({
+        const pages = old.pages.map((p, idx) => ({
           ...p,
-          content: (p.content || []).filter((it) => it.recipeId !== recipeId),
-          // totalElements는 대략적으로 감소시켜 UX만 맞춤
+          content: (p.content || []).filter((it) => String(it.recipeId) !== String(recipeId)),
           totalElements:
-            typeof p.totalElements === "number" && p.totalElements > 0
+            idx === 0 && typeof p.totalElements === "number" && p.totalElements > 0
               ? p.totalElements - 1
               : p.totalElements,
         }));
         return { ...old, pages };
       });
 
-      // 롤백용 컨텍스트 반환
+      setFavCount((prev) => Math.max(0, (typeof prev === "number" ? prev : 0) - 1));
+
       return { previous };
     },
     onError: (_err, _recipeId, ctx) => {
-      // 실패 시 롤백
       if (ctx?.previous) qc.setQueryData(["favorites", "recipes"], ctx.previous);
+      setFavCount((prev) => (typeof prev === "number" ? prev + 1 : prev));
       alert("찜 해제에 실패했어. 잠시 후 다시 시도해줘");
     },
     onSettled: () => {
-      // 서버 정합성 보장을 위해 최종 invalidate
       qc.invalidateQueries({ queryKey: ["favorites", "recipes"] });
+    },
+    onSuccess: (_res, recipeId) => {
+      console.log("[emit] 보내는 중:", { type: "RECIPE", id: recipeId, willFavorite: false });
+      emitFavoriteChange({ type: "RECIPE", id: recipeId, willFavorite: false });
+      // ✅ 해제 성공 시 로컬 씨드 제거
+      try {
+        window.localStorage.removeItem(`favorite:RECIPE:${String(recipeId)}`);
+      } catch (e) {
+        void e;
+      }
     },
   });
 
   const recipes = query.data?.pages.flatMap((p) => p.content) ?? [];
-  const totalCount = query.data?.pages?.[0]?.totalElements ?? 0;
+  const totalCount = query.data?.pages?.[0]?.totalElements ?? recipes.length;
+
+  useEffect(() => {
+    setFavCount(typeof totalCount === "number" && totalCount >= 0 ? totalCount : recipes.length);
+  }, [totalCount, recipes.length, setFavCount]);
+
+  // ✅ 목록이 로드되면 각 레시피를 '찜됨' 씨드로 로컬에 기록
+  useEffect(() => {
+    if (!recipes?.length) return;
+    try {
+      for (const it of recipes) {
+        const rid = String(it?.recipeId ?? "");
+        if (!rid) continue;
+        window.localStorage.setItem(`favorite:RECIPE:${rid}`, "true");
+      }
+    } catch (e) {
+      void e;
+    }
+  }, [recipes]);
 
   return {
     recipes,

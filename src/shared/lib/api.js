@@ -63,6 +63,27 @@ export const APIService = {
       return response.data;
     },
   },
+
+  // AI 피클 히스토리 관련 API
+  chatbot: {
+    // 대화 목록 조회 (제목 + ID)
+    getConversations: async () => {
+      const response = await privateAPI.get("/chatbot/conversations");
+      return response.data;
+    },
+
+    // 특정 대화의 채팅 내역 조회
+    getConversationHistory: async (conversationId) => {
+      const response = await privateAPI.get(`/chatbot/conversations/${conversationId}`);
+      return response.data;
+    },
+
+    // 대화 삭제
+    deleteConversation: async (conversationId) => {
+      const response = await privateAPI.delete(`/chatbot/conversations/${conversationId}`);
+      return response.data;
+    },
+  },
 };
 
 export { publicAPI, privateAPI };
