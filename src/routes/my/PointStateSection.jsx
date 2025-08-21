@@ -66,7 +66,7 @@ const PointStateSectionWrapper = styled.div`
 const LocationText = styled.p`
   color: #adadaf;
   font-family: Pretendard;
-  font-size: 8px;
+  font-size: 12px;
   font-style: normal;
   font-weight: 400;
   line-height: 20px;
@@ -75,7 +75,7 @@ const LocationText = styled.p`
 const Label = styled.p`
   color: #323232;
   font-family: Pretendard;
-  font-size: 14px;
+  font-size: 16px;
   font-style: normal;
   font-weight: 400;
   line-height: 22px;
