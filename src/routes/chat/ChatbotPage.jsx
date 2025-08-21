@@ -10,12 +10,19 @@ export default function ChatbotPage() {
     showBack: true,
   });
   const { id } = useParams();
-  const [conversationId, setConversationId] = useState(id || null);
+  const [conversationId, setConversationId] = useState(null);
   const location = useLocation();
   const [searchText, setSearchText] = useState("");
   const [messages, setMessages] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (id && !conversationId) {
+      setConversationId(id);
+      conversationIdRef.current = id;
+    }
+  }, [id, conversationId]);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -96,6 +103,14 @@ export default function ChatbotPage() {
     const token = localStorage.getItem("accessToken");
 
     try {
+      const currentConvId = conversationIdRef.current || null;
+
+      console.log("📤 요청 전송:", {
+        userId: 1,
+        conversationId: currentConvId,
+        message,
+      });
+
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -105,7 +120,7 @@ export default function ChatbotPage() {
         },
         body: JSON.stringify({
           userId: 1,
-          conversationId: conversationIdRef.current || null,
+          conversationId: currentConvId,
           message,
         }),
       });
@@ -136,14 +151,20 @@ export default function ChatbotPage() {
         for (const line of lines) {
           if (!line.startsWith("data:")) continue;
           const dataStr = line.slice(5);
-
           if (dataStr === "[DONE]" || dataStr.includes("already-streaming")) return;
+
+          if (!isNaN(dataStr) && !conversationIdRef.current) {
+            const newId = Number(dataStr);
+            setConversationId(newId);
+            conversationIdRef.current = newId;
+            window.history.replaceState(null, "", `/chat/${newId}`);
+            return;
+          }
 
           try {
             const payload = JSON.parse(dataStr);
 
-            // ✅ conversationId가 없을 때만 최초 세팅 (기존에 있으면 덮어쓰지 않음)
-            if (payload?.conversationId && !conversationIdRef.current) {
+            if (payload?.conversationId) {
               setConversationId(payload.conversationId);
               conversationIdRef.current = payload.conversationId;
               window.history.replaceState(null, "", `/chat/${payload.conversationId}`);
@@ -171,7 +192,7 @@ export default function ChatbotPage() {
 
       if (buffer) processEvent(buffer);
     } catch (err) {
-      console.error(err);
+      console.error("❌ streamChat 오류:", err);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", text: "죄송해요. 답변 중 오류가 발생했어요." },
