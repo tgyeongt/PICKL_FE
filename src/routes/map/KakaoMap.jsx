@@ -559,7 +559,7 @@ export default function KakaoMap() {
   const createMarkerElement = (store, imageSrc) => {
     const marker = document.createElement("div");
     marker.style.cssText =
-      "width:50px;height:50px;background:#fff;border-radius:50%;display:flex;justify-content:center;align-items:center;box-shadow:1px 1px 4px 0 #E1E1E3;cursor:pointer;transform:scale(.8);opacity:0;transition:opacity .3s,transform .3s;";
+      "width:50px;height:50px;background:#fff;border-radius:50%;display:flex;justify-content:center;align-items:center;box-shadow:1px 1px 4px 0 #E1E1E3;cursor:pointer;transform:scale(0);opacity:0;transition:opacity 0.4s ease,transform 0.4s ease;";
     const icon = document.createElement("img");
     icon.src = imageSrc;
     icon.alt = store.name;
@@ -567,10 +567,13 @@ export default function KakaoMap() {
     icon.style.height = "30px";
     marker.appendChild(icon);
     marker.addEventListener("click", (e) => e.stopPropagation());
-    setTimeout(() => {
+
+    // 부드러운 등장 애니메이션
+    requestAnimationFrame(() => {
       marker.style.opacity = "1";
       marker.style.transform = "scale(1)";
-    }, 10);
+    });
+
     return marker;
   };
 
@@ -653,77 +656,130 @@ export default function KakaoMap() {
 
       console.log("[markers] Rendering markers:", stores.length);
 
-      // 기존 마커들 정리
-      markersRef.current.forEach((m) => {
-        if (m && m.setMap) {
-          m.setMap(null);
-          // 이벤트 리스너도 정리
-          const content = m.getContent?.();
-          if (content && content.removeEventListener) {
-            content.removeEventListener("click", content._clickHandler);
+      // 기존 마커들을 부드럽게 제거
+      const removeMarkers = async () => {
+        const promises = [];
+
+        markersRef.current.forEach((m) => {
+          if (m && m.setMap) {
+            const promise = new Promise((resolve) => {
+              const content = m.getContent?.();
+              if (content) {
+                // 부드러운 사라짐 애니메이션
+                content.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+                content.style.opacity = "0";
+                content.style.transform = "scale(0.8)";
+
+                setTimeout(() => {
+                  m.setMap(null);
+                  // 이벤트 리스너도 정리
+                  if (content.removeEventListener) {
+                    content.removeEventListener("click", content._clickHandler);
+                  }
+                  resolve();
+                }, 300);
+              } else {
+                m.setMap(null);
+                resolve();
+              }
+            });
+            promises.push(promise);
           }
-        }
-      });
-      markersRef.current = [];
-
-      Object.values(overlayMapRef.current.round).forEach((o) => {
-        if (o && o.setMap) {
-          o.setMap(null);
-          const content = o.getContent?.();
-          if (content && content.removeEventListener) {
-            content.removeEventListener("click", content._clickHandler);
-          }
-        }
-      });
-      overlayMapRef.current.round = {};
-
-      const bounds = mapInstance.getBounds();
-
-      stores.forEach((store) => {
-        const key = `${store.latitude},${store.longitude}`;
-        if (selectedCategory !== "all" && (store.type || "").toLowerCase() !== selectedCategory)
-          return;
-
-        const pos = new window.kakao.maps.LatLng(store.latitude, store.longitude);
-        if (!bounds.contain(pos)) return;
-        if (overlayMapRef.current.bubbleTargetKey === key) return;
-
-        const imageSrc = (store.type || "").toLowerCase() === "market" ? marketIcon : martIcon;
-        const markerEl = createMarkerElement(store, imageSrc);
-
-        // 클릭 핸들러를 함수로 분리하여 참조 보존
-        const clickHandler = (e) => {
-          console.log("[markers] Marker clicked:", store.name, store);
-          e.stopPropagation();
-
-          // 디버깅: 현재위치 상태와 무관하게 마커 클릭 처리
-          try {
-            showBubbleOverlay(store, pos, imageSrc);
-            console.log("[markers] Bubble overlay shown successfully");
-          } catch (error) {
-            console.error("[markers] Failed to show bubble overlay:", error);
-            // 에러가 발생해도 최소한 selectedStore는 설정
-            setSelectedStore(store);
-          }
-        };
-
-        // 이벤트 리스너 추가
-        markerEl.addEventListener("click", clickHandler);
-        // 참조 보존을 위해 핸들러를 요소에 저장
-        markerEl._clickHandler = clickHandler;
-
-        const roundOverlay = new window.kakao.maps.CustomOverlay({
-          position: pos,
-          content: markerEl,
-          yAnchor: 1,
         });
-        roundOverlay.setMap(mapInstance);
-        overlayMapRef.current.round[key] = roundOverlay;
 
-        markersRef.current.push(roundOverlay);
-      });
+        // 모든 마커 제거 완료 대기
+        await Promise.all(promises);
+        markersRef.current = [];
+      };
 
-      console.log("[markers] Rendered", markersRef.current.length, "markers");
+      // 기존 오버레이들도 부드럽게 제거
+      const removeOverlays = async () => {
+        const promises = [];
+
+        Object.values(overlayMapRef.current.round).forEach((o) => {
+          if (o && o.setMap) {
+            const promise = new Promise((resolve) => {
+              const content = o.getContent?.();
+              if (content) {
+                // 부드러운 사라짐 애니메이션
+                content.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+                content.style.opacity = "0";
+                content.style.transform = "scale(0.8)";
+
+                setTimeout(() => {
+                  o.setMap(null);
+                  if (content.removeEventListener) {
+                    content.removeEventListener("click", content._clickHandler);
+                  }
+                  resolve();
+                }, 300);
+              } else {
+                o.setMap(null);
+                resolve();
+              }
+            });
+            promises.push(promise);
+          }
+        });
+
+        // 모든 오버레이 제거 완료 대기
+        await Promise.all(promises);
+        overlayMapRef.current.round = {};
+      };
+
+      // 마커와 오버레이를 순차적으로 제거 후 새로 생성
+      (async () => {
+        await removeMarkers();
+        await removeOverlays();
+
+        const bounds = mapInstance.getBounds();
+
+        stores.forEach((store) => {
+          const key = `${store.latitude},${store.longitude}`;
+          if (selectedCategory !== "all" && (store.type || "").toLowerCase() !== selectedCategory)
+            return;
+
+          const pos = new window.kakao.maps.LatLng(store.latitude, store.longitude);
+          if (!bounds.contain(pos)) return;
+          if (overlayMapRef.current.bubbleTargetKey === key) return;
+
+          const imageSrc = (store.type || "").toLowerCase() === "market" ? marketIcon : martIcon;
+          const markerEl = createMarkerElement(store, imageSrc);
+
+          // 클릭 핸들러를 함수로 분리하여 참조 보존
+          const clickHandler = (e) => {
+            console.log("[markers] Marker clicked:", store.name, store);
+            e.stopPropagation();
+
+            // 디버깅: 현재위치 상태와 무관하게 마커 클릭 처리
+            try {
+              showBubbleOverlay(store, pos, imageSrc);
+              console.log("[markers] Bubble overlay shown successfully");
+            } catch (error) {
+              console.error("[markers] Failed to show bubble overlay:", error);
+              // 에러가 발생해도 최소한 selectedStore는 설정
+              setSelectedStore(store);
+            }
+          };
+
+          // 이벤트 리스너 추가
+          markerEl.addEventListener("click", clickHandler);
+          // 참조 보존을 위해 핸들러를 요소에 저장
+          markerEl._clickHandler = clickHandler;
+
+          const roundOverlay = new window.kakao.maps.CustomOverlay({
+            position: pos,
+            content: markerEl,
+            yAnchor: 1,
+          });
+          roundOverlay.setMap(mapInstance);
+          overlayMapRef.current.round[key] = roundOverlay;
+
+          markersRef.current.push(roundOverlay);
+        });
+
+        console.log("[markers] Rendered", markersRef.current.length, "markers");
+      })();
     },
     [mapInstance, selectedCategory, showBubbleOverlay]
   );
@@ -1105,8 +1161,12 @@ export default function KakaoMap() {
     select: (raw) =>
       raw
         .map((r) => {
+          console.log("=== 대형마트 원본 데이터 ===", r);
           const m = mapMarketFromAPI(r);
-          return m && { ...m, type: "mart" };
+          console.log("=== mapMarketFromAPI 결과 ===", m);
+          const result = m && { ...m, type: "mart" };
+          console.log("=== 최종 대형마트 데이터 ===", result);
+          return result;
         })
         .filter(Boolean),
   });
