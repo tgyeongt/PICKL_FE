@@ -1275,7 +1275,7 @@ export default function KakaoMap() {
         <div
           style={{
             position: "fixed",
-            top: 12,
+            top: 228,
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 99999,
@@ -1296,7 +1296,7 @@ export default function KakaoMap() {
         <div
           style={{
             position: "fixed",
-            top: 12,
+            top: 228,
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 99999,
@@ -1316,7 +1316,7 @@ export default function KakaoMap() {
         <div
           style={{
             position: "fixed",
-            top: tooWide ? 44 : 12,
+            top: tooWide ? 44 : 228,
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 99999,
