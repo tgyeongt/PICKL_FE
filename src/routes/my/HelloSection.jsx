@@ -4,15 +4,34 @@ import { selectedAddressAtom } from "../map/state/addressAtom";
 import useCurrentAddress from "../map/hooks/useCurrentAddress";
 import useMySummary from "./hooks/useMySummary";
 
+// 기본 위치 상수 (KakaoMap.jsx와 동일)
+const DEFAULT_LOCATION = {
+  lat: 37.5013, // 서울 서초구 강남대로 27 (강남역 근처)
+  lng: 127.0254,
+  name: "서울 서초구 강남대로 27",
+};
+
 export default function HelloSection() {
   const { data: summary } = useMySummary();
 
   const selectedAddress = useAtomValue(selectedAddressAtom);
-  const hasGlobalAddr = !!(selectedAddress?.jibunAddress || selectedAddress?.roadAddress);
-  const { address: fallbackAddr } = useCurrentAddress(!hasGlobalAddr);
-  const rawAddr =
-    selectedAddress?.jibunAddress || selectedAddress?.roadAddress || fallbackAddr || "";
+  const { address: fallbackAddr, isLoading } = useCurrentAddress(true);
+
+  // 디버깅: 각 값 확인
+  console.log("[HelloSection] selectedAddress:", selectedAddress);
+  console.log("[HelloSection] fallbackAddr:", fallbackAddr);
+  console.log("[HelloSection] isLoading:", isLoading);
+
+  // 현재위치를 못 읽으면 기본 위치 사용
+  // selectedAddress에 실제 유효한 주소가 있을 때만 사용
+  const hasValidSelectedAddress = selectedAddress?.jibunAddress || selectedAddress?.roadAddress;
+
+  const rawAddr = hasValidSelectedAddress || fallbackAddr || DEFAULT_LOCATION.name;
+
+  console.log("[HelloSection] hasValidSelectedAddress:", hasValidSelectedAddress);
+  console.log("[HelloSection] rawAddr:", rawAddr);
   const shortAddr = deriveGuDong(rawAddr);
+  console.log("[HelloSection] shortAddr:", shortAddr);
 
   return (
     <HelloSectionWrapper>

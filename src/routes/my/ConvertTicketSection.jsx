@@ -29,7 +29,7 @@ export default function ConvertTicketSection() {
 
   const shortAddr = deriveGuDong(rawAddr);
 
-  // 구 이름만 추출 (예: "중구 정동" -> "중구")
+  // 구 이름만 추출
   const getCurrentDistrict = () => {
     const districtMatch = shortAddr.match(/([\w가-힣]+구)/);
     console.log("District match debug:", { shortAddr, districtMatch });

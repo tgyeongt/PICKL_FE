@@ -58,7 +58,10 @@ export default function StoreCard({ store, isListMode = false, onClick }) {
     loadAddress();
   }, [store]);
 
-  if (!store || !address.lat || !address.lng) return null;
+  if (!store) return null;
+
+  // 현재위치가 없어도 카드는 보이도록 수정
+  const hasValidAddress = address?.lat && address?.lng;
 
   const getDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371;
@@ -71,8 +74,13 @@ export default function StoreCard({ store, isListMode = false, onClick }) {
     return Math.round(R * c * 1000);
   };
 
-  const formatDistance = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)}km` : `${m}m`);
+  const formatDistance = (m) => {
+    if (m === null || m === undefined) return "거리 정보 없음";
+    return m >= 1000 ? `${(m / 1000).toFixed(1)}km` : `${m}m`;
+  };
+
   const formatTime = (min) => {
+    if (min === null || min === undefined) return "시간 정보 없음";
     if (min >= 1440) {
       const days = Math.floor(min / 1440);
       const hours = Math.floor((min % 1440) / 60);
@@ -85,9 +93,16 @@ export default function StoreCard({ store, isListMode = false, onClick }) {
     }
   };
 
-  const distance = getDistance(address.lat, address.lng, store.latitude, store.longitude);
-  const walkMin = Math.max(1, Math.round(distance / 67));
-  const driveMin = Math.max(1, Math.round(distance / 250));
+  // 현재위치가 있을 때만 거리 계산
+  let distance = null;
+  let walkMin = null;
+  let driveMin = null;
+
+  if (hasValidAddress) {
+    distance = getDistance(address.lat, address.lng, store.latitude, store.longitude);
+    walkMin = Math.max(1, Math.round(distance / 67));
+    driveMin = Math.max(1, Math.round(distance / 250));
+  }
 
   const typeIcon = store.type === "market" ? selectMarket : selectMart;
   const storeImg = store.type === "market" ? marketImg : store.imageUrl;
@@ -108,20 +123,29 @@ export default function StoreCard({ store, isListMode = false, onClick }) {
       <BottomBox>
         <StoreName>{store.name}</StoreName>
         <StoreAddress>{store.address || resolvedAddress || "주소 불러오는 중"}</StoreAddress>
-        <DetailInfoBox>
-          <InfoBox>
-            <DistanceIcon src={distanceIcon} alt="위치 아이콘" />
-            <InfoText>{formatDistance(distance)}</InfoText>
-          </InfoBox>
-          <InfoBox>
-            <ByText>도보</ByText>
-            <InfoText>{formatTime(walkMin)}</InfoText>
-          </InfoBox>
-          <InfoBox>
-            <ByText>차량</ByText>
-            <InfoText>{formatTime(driveMin)}</InfoText>
-          </InfoBox>
-        </DetailInfoBox>
+        {hasValidAddress ? (
+          <DetailInfoBox>
+            <InfoBox>
+              <DistanceIcon src={distanceIcon} alt="위치 아이콘" />
+              <InfoText>{formatDistance(distance)}</InfoText>
+            </InfoBox>
+            <InfoBox>
+              <ByText>도보</ByText>
+              <InfoText>{formatTime(walkMin)}</InfoText>
+            </InfoBox>
+            <InfoBox>
+              <ByText>차량</ByText>
+              <InfoText>{formatTime(driveMin)}</InfoText>
+            </InfoBox>
+          </DetailInfoBox>
+        ) : (
+          <DetailInfoBox>
+            <InfoBox>
+              <DistanceIcon src={distanceIcon} alt="위치 아이콘" />
+              <InfoText>현재 위치를 확인할 수 없습니다</InfoText>
+            </InfoBox>
+          </DetailInfoBox>
+        )}
       </BottomBox>
     </StoreCardWrapper>
   );

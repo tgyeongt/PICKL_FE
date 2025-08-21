@@ -44,6 +44,13 @@ const SAFE = {
   MART_MIN_SPAN: 0.03,
 };
 
+// ====== 기본 위치 상수 ======
+const DEFAULT_LOCATION = {
+  lat: 37.5013, // 서울 서초구 강남대로 27 (강남역 근처)
+  lng: 127.0254,
+  name: "서울 서초구 강남대로 27",
+};
+
 // ====== 서킷 브레이커(폭주 차단) ======
 const circuitRef = { openUntil: 0, strikes: 0, lastStrikeAt: 0 };
 const CIRCUIT = { STRIKE_WINDOW_MS: 20000, OPEN_AFTER_STRIKES: 3, OPEN_MS: 60000 };
@@ -348,7 +355,7 @@ const LAST_GEO_LS_KEY = "pickl:lastGeo";
 
 // 간단한 GPS 위치 검증만 필요
 
-// === GPS 위치 검증 (잘못된 위치 필터링) ===
+// === GPS 위치 검증 (기본적인 유효성만 체크) ===
 function isUsableCoords(coords) {
   const lat = Number(coords?.latitude);
   const lng = Number(coords?.longitude);
@@ -357,18 +364,6 @@ function isUsableCoords(coords) {
   // 기본적인 유효성만 체크
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     console.log("[usable] Invalid coordinates");
-    return false;
-  }
-
-  // 서울 시청 근처 좌표는 거부 (잘못된 GPS 신호)
-  const cityHallLat = 37.5665;
-  const cityHallLng = 126.978;
-  const latDiff = Math.abs(lat - cityHallLat);
-  const lngDiff = Math.abs(lng - cityHallLng);
-
-  // 서울 시청 근처 1km 이내면 거부
-  if (latDiff < 0.01 && lngDiff < 0.01) {
-    console.log("[usable] Rejecting city hall area coordinates:", { lat, lng, acc });
     return false;
   }
 
@@ -599,36 +594,49 @@ export default function KakaoMap() {
 
   const showBubbleOverlay = useCallback(
     (store, storePosition, imageSrc, opts = { useOffset: true, offsetLat: 0.0007 }) => {
-      const key = `${store.latitude},${store.longitude}`;
-      const prevRound = overlayMapRef.current.round[key];
-      if (prevRound) {
-        prevRound.setMap(null);
-        prevRound.getContent()?.remove?.();
-        delete overlayMapRef.current.round[key];
-      }
+      console.log("[bubble] Showing bubble overlay for store:", store.name, store);
 
-      if (opts?.useOffset) {
-        const offsetLat = opts.offsetLat ?? 0.0007;
-        const adjustedLat = store.latitude - offsetLat;
-        const adjustedCenter = new window.kakao.maps.LatLng(adjustedLat, store.longitude);
-        mapInstance?.panTo(adjustedCenter);
-      } else {
-        mapInstance?.panTo(storePosition);
-      }
+      try {
+        const key = `${store.latitude},${store.longitude}`;
+        const prevRound = overlayMapRef.current.round[key];
+        if (prevRound) {
+          prevRound.setMap(null);
+          prevRound.getContent()?.remove?.();
+          delete overlayMapRef.current.round[key];
+        }
 
-      const bubbleEl = createBubbleElement(store, imageSrc);
-      const bubbleOverlay = new window.kakao.maps.CustomOverlay({
-        position: storePosition,
-        content: bubbleEl,
-        yAnchor: 1.1,
-        clickable: true,
-        zIndex: 10000,
-      });
-      bubbleOverlay.setMap(mapInstance);
-      overlayMapRef.current.bubble = bubbleOverlay;
-      overlayMapRef.current.bubbleTargetKey = key;
-      justOpenedAtRef.current = Date.now();
-      setSelectedStore(store);
+        if (opts?.useOffset) {
+          const offsetLat = opts.offsetLat ?? 0.0007;
+          const adjustedLat = store.latitude - offsetLat;
+          const adjustedCenter = new window.kakao.maps.LatLng(adjustedLat, store.longitude);
+          mapInstance?.panTo(adjustedCenter);
+        } else {
+          mapInstance?.panTo(storePosition);
+        }
+
+        const bubbleEl = createBubbleElement(store, imageSrc);
+        const bubbleOverlay = new window.kakao.maps.CustomOverlay({
+          position: storePosition,
+          content: bubbleEl,
+          yAnchor: 1.1,
+          clickable: true,
+          zIndex: 10000,
+        });
+        bubbleOverlay.setMap(mapInstance);
+        overlayMapRef.current.bubble = bubbleOverlay;
+        overlayMapRef.current.bubbleTargetKey = key;
+        justOpenedAtRef.current = Date.now();
+
+        // 핵심: 현재위치 상태와 무관하게 selectedStore 설정
+        console.log("[bubble] Setting selectedStore:", store);
+        setSelectedStore(store);
+
+        console.log("[bubble] Bubble overlay created successfully");
+      } catch (error) {
+        console.error("[bubble] Error creating bubble overlay:", error);
+        // 에러가 발생해도 최소한 selectedStore는 설정하여 카드가 보이도록
+        setSelectedStore(store);
+      }
     },
     [mapInstance]
   );
@@ -685,9 +693,18 @@ export default function KakaoMap() {
 
         // 클릭 핸들러를 함수로 분리하여 참조 보존
         const clickHandler = (e) => {
-          console.log("[markers] Marker clicked:", store.name);
+          console.log("[markers] Marker clicked:", store.name, store);
           e.stopPropagation();
-          showBubbleOverlay(store, pos, imageSrc);
+
+          // 디버깅: 현재위치 상태와 무관하게 마커 클릭 처리
+          try {
+            showBubbleOverlay(store, pos, imageSrc);
+            console.log("[markers] Bubble overlay shown successfully");
+          } catch (error) {
+            console.error("[markers] Failed to show bubble overlay:", error);
+            // 에러가 발생해도 최소한 selectedStore는 설정
+            setSelectedStore(store);
+          }
         };
 
         // 이벤트 리스너 추가
@@ -779,10 +796,10 @@ export default function KakaoMap() {
           }
         }
 
-        // 기본값으로 서울 중심 사용
+        // 기본값으로 서울 서초구 강남대로 27 사용
         if (!center) {
-          center = { lat: 37.5665, lng: 126.978 }; // 서울 중심
-          console.log("[init] Using default position (Seoul center):", center);
+          center = DEFAULT_LOCATION;
+          console.log("[init] Using default position (Seoul Seocho-gu):", center);
         }
 
         console.log("[init] Creating map with center:", center);
@@ -1304,7 +1321,7 @@ export default function KakaoMap() {
                     readLastGeo() ||
                     (addressState?.lat && addressState?.lng
                       ? { lat: addressState.lat, lng: addressState.lng }
-                      : { lat: 37.5665, lng: 126.978 }); // 서울 중심
+                      : DEFAULT_LOCATION); // 서울 서초구 강남대로 27
                   console.warn("[button] Coords not usable, fallback to:", fb);
                   mapInstance.panTo(new window.kakao.maps.LatLng(fb.lat, fb.lng));
                   return;
