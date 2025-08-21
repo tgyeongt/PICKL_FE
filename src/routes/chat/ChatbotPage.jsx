@@ -36,7 +36,10 @@ export default function ChatbotPage() {
             role: m.role.toLowerCase(),
             text: m.content,
           }));
-          setMessages(mapped);
+          setMessages((prev) => {
+            if (prev.length > 0) return prev;
+            return mapped;
+          });
         }
       } catch (err) {
         console.error("이전 대화 불러오기 실패:", err);
@@ -72,10 +75,17 @@ export default function ChatbotPage() {
     await streamChat(content);
   };
 
+  const conversationIdRef = useRef(conversationId);
+  useEffect(() => {
+    conversationIdRef.current = conversationId;
+  }, [conversationId]);
+
   const streamChat = async (message, isInitial = false) => {
     setIsStreaming(true);
+
     if (isInitial) {
-      setMessages([
+      setMessages((prev) => [
+        ...prev,
         { role: "user", text: message },
         { role: "assistant", text: "" },
       ]);
@@ -95,7 +105,7 @@ export default function ChatbotPage() {
         },
         body: JSON.stringify({
           userId: 1,
-          conversationId,
+          conversationId: conversationIdRef.current || null,
           message,
         }),
       });
@@ -131,9 +141,14 @@ export default function ChatbotPage() {
 
           try {
             const payload = JSON.parse(dataStr);
-            if (payload?.conversationId && !conversationId) {
+
+            // ✅ conversationId가 없을 때만 최초 세팅 (기존에 있으면 덮어쓰지 않음)
+            if (payload?.conversationId && !conversationIdRef.current) {
               setConversationId(payload.conversationId);
+              conversationIdRef.current = payload.conversationId;
+              window.history.replaceState(null, "", `/chat/${payload.conversationId}`);
             }
+
             const tokenText = payload?.token || payload?.content || payload?.text || "";
             appendAssistantText(tokenText);
           } catch {
