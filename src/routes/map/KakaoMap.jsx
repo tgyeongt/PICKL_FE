@@ -183,8 +183,9 @@ export default function KakaoMap() {
   const [tooWide, setTooWide] = useState(false);
   const [, setCurrentLevel] = useState(null); // 디버그/판정용(필수는 아님)
 
-  // 대형마트 의무휴업일 알림 상태
+  // 대형마트 휴업일 알림 상태
   const [showMartNotice, setShowMartNotice] = useState(false);
+  const [isHiding, setIsHiding] = useState(false);
 
   // ---------- Kakao SDK 준비 ----------
   const ensureKakaoReady = () =>
@@ -576,9 +577,15 @@ export default function KakaoMap() {
   useEffect(() => {
     if (window.location.pathname === "/map") {
       setShowMartNotice(true);
+      setIsHiding(false);
       // 5초 후 자동으로 숨김
       const timer = setTimeout(() => {
-        setShowMartNotice(false);
+        setIsHiding(true);
+        // 애니메이션 완료 후 실제로 제거
+        setTimeout(() => {
+          setShowMartNotice(false);
+          setIsHiding(false);
+        }, 500);
       }, 2300);
 
       return () => clearTimeout(timer);
@@ -982,7 +989,7 @@ export default function KakaoMap() {
             position: "fixed",
             top: 228,
             left: "50%",
-            transform: "translateX(-50%)",
+            transform: `translateX(-50%) ${isHiding ? "translateY(-20px)" : "translateY(0)"}`,
             zIndex: 99999,
             background: "#5A5B6A",
             color: "#fff",
@@ -994,6 +1001,8 @@ export default function KakaoMap() {
             textAlign: "center",
             lineHeight: 1.4,
             fontWeight: 400,
+            transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
+            opacity: isHiding ? 0 : 1,
           }}
         >
           매월 <span style={{ color: "#58d848", fontWeight: "700" }}>둘째, 넷째</span> 주 일요일은{" "}
