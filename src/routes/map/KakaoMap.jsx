@@ -27,21 +27,9 @@ import StoreListImg from "@icon/map/storeListIcon.svg";
 
 // ============== 안전 상수 (보수화) ==============
 const SAFE = {
-  IDLE_DEBOUNCE_MS: 700,
-  MAP_MIN_LEVEL: 3,
   MAP_MAX_LEVEL: 7,
-  MARTS_VISIBLE_LEVEL: 5,
   BBOX_AREA_MAX: 0.05,
-  TILE_SPLIT_THRESHOLD_2X2: 1.0,
-  TILE_SPLIT_THRESHOLD_4X4: 1.8,
-  TILE_COOLDOWN_MS: 450,
-  MART_GLOBAL_COOLDOWN_MS: 12000,
-  BACKOFF_BASE_MS: 1200,
-  BACKOFF_TRIES: 4,
-  MART_PAGE_SIZE: 15,
   MARKET_PAGE_SIZE: 50,
-  MART_BBOX_AREA_MAX: 0.015,
-  MART_MIN_SPAN: 0.03,
 };
 
 // ====== 기본 위치 상수 ======
@@ -51,303 +39,24 @@ const DEFAULT_LOCATION = {
   name: "서울 서초구 강남대로 27",
 };
 
-// ====== 서킷 브레이커(폭주 차단) ======
-const circuitRef = { openUntil: 0, strikes: 0, lastStrikeAt: 0 };
-const CIRCUIT = { STRIKE_WINDOW_MS: 20000, OPEN_AFTER_STRIKES: 3, OPEN_MS: 60000 };
-function circuitRecord(status) {
-  const now = Date.now();
-  if (status === 429 || status === 500 || status === 504) {
-    if (now - circuitRef.lastStrikeAt > CIRCUIT.STRIKE_WINDOW_MS) circuitRef.strikes = 0;
-    circuitRef.lastStrikeAt = now;
-    circuitRef.strikes += 1;
-    if (circuitRef.strikes >= CIRCUIT.OPEN_AFTER_STRIKES) {
-      circuitRef.openUntil = now + CIRCUIT.OPEN_MS;
-      circuitRef.strikes = 0;
-    }
-  } else {
-    circuitRef.strikes = 0;
-  }
-}
-function circuitOpen() {
-  return Date.now() < circuitRef.openUntil;
-}
-
-// ====== 클라이언트 타일 LRU 캐시 ======
-const martTileCache = new Map();
-const MART_TILE_TTL_MS = 5 * 60_000;
-function cacheKeyFromParams(p) {
-  return `${p.minX},${p.minY},${p.maxX},${p.maxY},${p.size}`;
-}
-function cacheGet(key) {
-  const v = martTileCache.get(key);
-  if (!v) return null;
-  if (Date.now() > v.until) {
-    martTileCache.delete(key);
-    return null;
-  }
-  return v.data;
-}
-function cacheSet(key, data) {
-  martTileCache.set(key, { data, until: Date.now() + MART_TILE_TTL_MS });
-}
-
-// ============== 유틸 ==============
-const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
-const n5 = (v) => Math.round(Number(v) * 1e5) / 1e5;
-const clamp = (v, lo, hi) => Math.min(Math.max(Number(v), lo), hi);
-
-// Retry-After 헤더 파싱
-function parseRetryAfter(err) {
-  const h = err?.response?.headers ?? {};
-  const ra = h["retry-after"] ?? h["Retry-After"] ?? err?.response?.data?.retryAfter;
-  if (!ra) return null;
-  const secs = Number(String(ra).match(/\d+/)?.[0]);
-  return Number.isFinite(secs) ? secs * 1000 : null;
-}
-
-// 박스 정규화 + 최소 스팬 보정 + 한반도 대략 클램프 + 소수 5자리 스냅
-function normalizeBbox(bb, minSpan = SAFE.MART_MIN_SPAN) {
-  let minX = Math.min(bb.minX, bb.maxX);
-  let maxX = Math.max(bb.minX, bb.maxX);
-  let minY = Math.min(bb.minY, bb.maxY);
-  let maxY = Math.max(bb.minY, bb.maxY);
-
-  if (maxX - minX < minSpan) {
-    const mid = (minX + maxX) / 2;
-    minX = mid - minSpan / 2;
-    maxX = mid + minSpan / 2;
-  }
-  if (maxY - minY < minSpan) {
-    const mid = (minY + maxY) / 2;
-    minY = mid - minSpan / 2;
-    maxY = mid + minSpan / 2;
-  }
-
-  // 한국 대략 영역 클램프(경도 124~132, 위도 33~39)
-  minX = clamp(minX, 124, 132);
-  maxX = clamp(maxX, 124, 132);
-  minY = clamp(minY, 33, 39);
-  maxY = clamp(maxY, 33, 39);
-
-  return { minX: n5(minX), minY: n5(minY), maxX: n5(maxX), maxY: n5(maxY) };
-}
-
-function validateMartParams(p) {
-  if (!(p.minX < p.maxX) || !(p.minY < p.maxY)) return false;
-  const area = Math.abs(p.maxX - p.minX) * Math.abs(p.maxY - p.minY);
-  if (area <= 0 || area > SAFE.MART_BBOX_AREA_MAX) return false;
-  return true;
-}
-
-/** 디듀프: 동일 키 동시요청을 하나로 합치기 */
-const pendingRequests = new Map();
-function withDedup(key, fn) {
-  if (pendingRequests.has(key)) return pendingRequests.get(key);
-  const p = Promise.resolve()
-    .then(fn)
-    .finally(() => pendingRequests.delete(key));
-  pendingRequests.set(key, p);
-  return p;
-}
-
-/** 429/504에서만 지수 백오프(+ Retry-After 존중) */
-async function backoffRequest(
-  reqFn,
-  { tries = SAFE.BACKOFF_TRIES, base = SAFE.BACKOFF_BASE_MS } = {}
-) {
-  let delay = base;
-  for (let i = 0; i < tries; i++) {
-    try {
-      return await reqFn();
-    } catch (err) {
-      const status = err?.response?.status ?? err?.status;
-      if (status !== 429 && status !== 504) throw err;
-      const ra = parseRetryAfter(err);
-      const wait = ra ?? delay + Math.random() * 300;
-      await sleep(wait);
-      delay *= 2;
-    }
-  }
-  return reqFn();
-}
-
-/** BBOX N×N 분할 */
-function splitBbox(b, tiles = 2) {
-  const xs = [],
-    ys = [];
-  for (let i = 0; i <= tiles; i++) {
-    xs.push(b.minX + ((b.maxX - b.minX) * i) / tiles);
-    ys.push(b.minY + ((b.maxY - b.minY) * i) / tiles);
-  }
-  const parts = [];
-  for (let i = 0; i < tiles; i++) {
-    for (let j = 0; j < tiles; j++) {
-      parts.push({ minX: xs[i], maxX: xs[i + 1], minY: ys[j], maxY: ys[j + 1] });
-    }
-  }
-  return parts;
-}
-const bboxArea = (b) => Math.abs(b.maxX - b.minX) * Math.abs(b.maxY - b.minY);
-const split2x2 = (b) => splitBbox(b, 2).map((t) => normalizeBbox(t, SAFE.MART_MIN_SPAN));
-
-// 타일 에러 캐시(짧은 TTL 블랙리스트)
-const tileErrorCache = new Map(); // key -> { until: ts, count: n }
-const tileKeyFromParams = (p) => [p.minX, p.minY, p.maxX, p.maxY].join(",");
-function isTileBlacklisted(p) {
-  const k = tileKeyFromParams(p);
-  const rec = tileErrorCache.get(k);
-  if (!rec) return false;
-  if (Date.now() > rec.until) {
-    tileErrorCache.delete(k);
-    return false;
-  }
-  return true;
-}
-function markTileError(p, { ttlMs = 90_000 } = {}) {
-  const k = tileKeyFromParams(p);
-  const prev = tileErrorCache.get(k) || { until: 0, count: 0 };
-  tileErrorCache.set(k, { until: Date.now() + ttlMs, count: prev.count + 1 });
-}
-
-// 400인데 사실상 일시적 서버오류일 때 식별
-function isTransient400(err) {
-  const s = err?.response?.status;
-  if (s !== 400) return false;
-  const d = err?.response?.data;
-  const msg = (d?.message || d?.error || "").toString().toLowerCase();
-  return msg.includes("retries exhausted") || msg.includes("temporary") || msg.includes("timeout");
-}
-
 /**
- * 단일 타일 호출 (캐시+디듀프+백오프)
+ * 대형마트/슈퍼마켓 조회 (새로운 API)
  */
-async function fetchMartTile(params, controller, depth = 0) {
-  const norm = normalizeBbox(params, SAFE.MART_MIN_SPAN);
-  if (isTileBlacklisted(norm)) return [];
-  const key = cacheKeyFromParams({ ...norm, size: params.size });
-  const hit = cacheGet(key);
-  if (hit) return hit;
-
-  const call = async () => {
-    const res = await APIService.private.get("/marts", {
-      params: { ...norm, page: 1, size: params.size },
+async function fetchMarts(params, controller) {
+  try {
+    const res = await APIService.private.get("/places", {
+      params: {
+        bounds: `${params.minX},${params.minY},${params.maxX},${params.maxY}`,
+        center: `${(params.minX + params.maxX) / 2},${(params.minY + params.maxY) / 2}`,
+        limit: params.size || 300,
+      },
       signal: controller.signal,
     });
-    return res?.data ?? res?.content ?? res?.items ?? res ?? [];
-  };
-  const dedupKey = `marts:${key}`;
-
-  try {
-    const data = await withDedup(dedupKey, () => backoffRequest(call));
-    const arr = Array.isArray(data) ? data : data?.content ?? [];
-    cacheSet(key, arr);
-    return arr;
+    return res?.data ?? [];
   } catch (e) {
-    const s = e?.response?.status;
-    circuitRecord(s || 500);
-
-    // 일시적 400 → 500처럼 재시도
-    if (isTransient400(e)) {
-      if (depth < 2) {
-        const tinyTiles = split2x2(norm);
-        const merged = [];
-        for (const tt of tinyTiles) {
-          if (bboxArea(tt) <= 0) continue;
-          const part = await fetchMartTile(
-            { ...tt, page: 1, size: params.size },
-            controller,
-            depth + 1
-          );
-          if (Array.isArray(part)) merged.push(...part);
-        }
-        if (merged.length === 0) markTileError(norm, { ttlMs: 60_000 });
-        cacheSet(key, merged);
-        return merged;
-      }
-      markTileError(norm, { ttlMs: 60_000 });
-      return [];
-    }
-
-    // 진짜 파라미터 400
-    if (s === 400) {
-      console.groupCollapsed("%c[/marts 400] params", "color:#d97706;font-weight:700");
-      console.log(norm);
-      console.log("resp:", {
-        data: e?.response?.data,
-        headers: e?.response?.headers,
-        requestId:
-          e?.response?.headers?.["x-request-id"] ||
-          e?.response?.headers?.["x-amzn-requestid"] ||
-          e?.response?.headers?.["x-amz-request-id"],
-      });
-      console.groupEnd();
-      return [];
-    }
-
-    // 500: 재귀 분할
-    if (s === 500 && depth < 2) {
-      const tinyTiles = split2x2(norm);
-      const merged = [];
-      for (const tt of tinyTiles) {
-        if (bboxArea(tt) <= 0) continue;
-        const part = await fetchMartTile(
-          { ...tt, page: 1, size: params.size },
-          controller,
-          depth + 1
-        );
-        if (Array.isArray(part)) merged.push(...part);
-      }
-      if (merged.length === 0) markTileError(norm);
-      cacheSet(key, merged);
-      return merged;
-    }
-    if (s === 500) {
-      markTileError(norm);
-      return [];
-    }
-
-    throw e;
+    console.warn("[fetchMarts] API 호출 실패:", e);
+    return [];
   }
-}
-
-/** 여러 타일을 순차 호출해서 합치기 */
-async function fetchMartTilesSequential(tiles, size, controller) {
-  const results = [];
-  for (const t of tiles) {
-    const tNorm = normalizeBbox(t, SAFE.MART_MIN_SPAN);
-    if (isTileBlacklisted(tNorm)) continue;
-    const params = { ...tNorm, page: 1, size };
-    const arr = await fetchMartTile(params, controller, 0);
-    if (Array.isArray(arr)) results.push(...arr);
-    await sleep(SAFE.TILE_COOLDOWN_MS);
-  }
-  return results;
-}
-
-// ====== 적응형 게이팅(줌/이동량/쿨다운) ======
-const lastQueryRef = { center: null, level: null, at: 0 };
-function shouldQuery(map) {
-  if (!map?.getLevel || !map?.getCenter) return false;
-  const level = map.getLevel();
-  if (level > SAFE.MARTS_VISIBLE_LEVEL) return false;
-
-  const center = map.getCenter();
-  const now = Date.now();
-  const last = lastQueryRef;
-  const moved =
-    !last.center ||
-    Math.abs(center.getLat() - last.center.getLat?.()) > 0.004 ||
-    Math.abs(center.getLng() - last.center.getLng?.()) > 0.004;
-  const leveled = last.level == null || Math.abs(level - last.level) >= 1;
-  const cooled = now - (last.at || 0) > 10_000; // 최소 10초
-
-  if ((moved || leveled) && cooled) {
-    lastQueryRef.center = center;
-    lastQueryRef.level = level;
-    lastQueryRef.at = now;
-    return true;
-  }
-  return false;
 }
 
 // ====== 현위치 유틸(리팩터링 핵심) ======
@@ -463,11 +172,6 @@ export default function KakaoMap() {
   const markersRef = useRef([]);
   const currentMarkerRef = useRef(null);
 
-  // 마트 과호출 제어
-  const martNextAllowedAtRef = useRef(0);
-  const lastMartKeyRef = useRef("");
-  const martAbortRef = useRef(null);
-
   const centerLockUntilRef = useRef(0);
   const overlayMapRef = useRef({ round: {}, bubble: null, bubbleTargetKey: null });
   const justOpenedAtRef = useRef(0);
@@ -475,10 +179,8 @@ export default function KakaoMap() {
   const [bbox, setBbox] = useState(null);
 
   // 안내 상태
-  const [rateLimited, setRateLimited] = useState(false);
   const [netError, setNetError] = useState(false);
   const [tooWide, setTooWide] = useState(false);
-  const [zoomTooFar, setZoomTooFar] = useState(false); // ← 확대가 부족할 때 토스트 띄우는 플래그
   const [, setCurrentLevel] = useState(null); // 디버그/판정용(필수는 아님)
 
   // 대형마트 의무휴업일 알림 상태
@@ -528,7 +230,6 @@ export default function KakaoMap() {
     const map = new window.kakao.maps.Map(mapRef.current, {
       center: centerLatLng,
       level: 3,
-      minLevel: SAFE.MAP_MIN_LEVEL,
       maxLevel: SAFE.MAP_MAX_LEVEL,
       draggable: true,
       scrollwheel: true,
@@ -538,14 +239,11 @@ export default function KakaoMap() {
     window.kakao.maps.event.addListener(map, "zoom_changed", function () {
       const lvl = map.getLevel();
       if (lvl > SAFE.MAP_MAX_LEVEL) map.setLevel(SAFE.MAP_MAX_LEVEL);
-      if (lvl < SAFE.MAP_MIN_LEVEL) map.setLevel(SAFE.MAP_MIN_LEVEL);
       setCurrentLevel(lvl);
-      setZoomTooFar(lvl > SAFE.MARTS_VISIBLE_LEVEL); // 확대가 부족하면 true로
     });
 
     // 생성 직후 한 번 초기화
     setCurrentLevel(map.getLevel());
-    setZoomTooFar(map.getLevel() > SAFE.MARTS_VISIBLE_LEVEL);
 
     setMapInstance(map);
 
@@ -974,11 +672,9 @@ export default function KakaoMap() {
     };
   }, [mapInstance]);
 
-  // ---------- idle → BBOX 갱신(디바운스) ----------
+  // ---------- idle → BBOX 갱신(즉시) ----------
   useEffect(() => {
     if (!mapInstance) return;
-    const DEBOUNCE_MS = SAFE.IDLE_DEBOUNCE_MS;
-    let t = null;
     const snap = (v, step = 0.005) => Math.round(v / step) * step;
 
     const update = () => {
@@ -987,7 +683,6 @@ export default function KakaoMap() {
       const lvl = mapInstance.getLevel?.();
       if (typeof lvl === "number") {
         setCurrentLevel(lvl);
-        setZoomTooFar(lvl > SAFE.MARTS_VISIBLE_LEVEL);
       }
       const sw = b.getSouthWest();
       const ne = b.getNorthEast();
@@ -1015,14 +710,12 @@ export default function KakaoMap() {
     };
 
     const onIdle = () => {
-      clearTimeout(t);
-      t = setTimeout(update, DEBOUNCE_MS);
+      update();
     };
     window.kakao.maps.event.addListener(mapInstance, "idle", onIdle);
     onIdle();
 
     return () => {
-      clearTimeout(t);
       window.kakao.maps.event.removeListener(mapInstance, "idle", onIdle);
     };
   }, [mapInstance]);
@@ -1068,10 +761,6 @@ export default function KakaoMap() {
     page: 1,
     size: SAFE.MARKET_PAGE_SIZE,
   });
-  const buildMartParams = (bb) => {
-    const norm = normalizeBbox(bb, SAFE.MART_MIN_SPAN);
-    return { ...norm, page: 1, size: SAFE.MART_PAGE_SIZE };
-  };
 
   // ================= 전통시장 =================
   const { data: storesData = [], refetch } = useQuery({
@@ -1114,63 +803,23 @@ export default function KakaoMap() {
     keepPreviousData: true,
     staleTime: 60 * 1000,
     queryFn: async () => {
-      if (circuitOpen()) return [];
-      if (!isListMode && !shouldQuery(mapInstance)) return [];
-
-      await sleep(200);
-      setNetError(false);
-
-      const now = Date.now();
-      const wait = martNextAllowedAtRef.current - now;
-      if (wait > 0) await sleep(wait);
-      martNextAllowedAtRef.current = Date.now() + SAFE.MART_GLOBAL_COOLDOWN_MS;
-
       try {
         await testLoginIfNeeded();
       } catch (e) {
         void e;
       }
 
-      const p = buildMartParams(bbox);
-      if (!validateMartParams(p)) return [];
+      if (!bbox) return [];
 
-      const key = [p.minX, p.minY, p.maxX, p.maxY, p.page, p.size].join("|");
-      if (key === lastMartKeyRef.current && Date.now() < martNextAllowedAtRef.current) return [];
-      lastMartKeyRef.current = key;
-
-      if (martAbortRef.current) {
-        try {
-          martAbortRef.current.abort();
-        } catch (e) {
-          void e;
-        }
-      }
       const controller = new AbortController();
-      martAbortRef.current = controller;
-
-      const area = Math.abs(p.maxX - p.minX) * Math.abs(p.maxY - p.minY);
-      const tiles =
-        area > SAFE.TILE_SPLIT_THRESHOLD_4X4
-          ? splitBbox(p, 4)
-          : area > SAFE.TILE_SPLIT_THRESHOLD_2X2
-          ? splitBbox(p, 2)
-          : [p];
 
       try {
-        const results = await fetchMartTilesSequential(tiles, p.size, controller);
-        if (results.length) setRateLimited(false);
+        const results = await fetchMarts(bbox, controller);
+        setNetError(false);
         return results;
       } catch (err) {
-        const status = err?.response?.status ?? err?.status;
-        circuitRecord(status || 500);
-        if (status === 429) {
-          setRateLimited(true);
-          const raMs = parseRetryAfter(err);
-          const extra = raMs ?? SAFE.MART_GLOBAL_COOLDOWN_MS * 2;
-          martNextAllowedAtRef.current = Math.max(martNextAllowedAtRef.current, Date.now() + extra);
-        } else {
-          setNetError(true);
-        }
+        console.warn("[marts] API 호출 실패:", err);
+        setNetError(true);
         return [];
       }
     },
@@ -1270,27 +919,6 @@ export default function KakaoMap() {
   // ---------- UI ----------
   return (
     <KakaoMapWrapper $isListMode={isListMode}>
-      {/* 마트 표시용 확대 안내 (줌 레벨 기준) */}
-      {!isListMode && zoomTooFar && (
-        <div
-          style={{
-            position: "fixed",
-            top: 228,
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 99999,
-            background: "#1f2937",
-            color: "#fff",
-            padding: "8px 12px",
-            borderRadius: 8,
-            fontSize: 12,
-            boxShadow: "0 2px 8px rgba(0,0,0,.2)",
-          }}
-        >
-          지도를 확대하면 주변 대형마트 위치가 표시됩니다.
-          {/* (디버그용) 현재 레벨: {currentLevel} / 필요 레벨 ≤ {SAFE.MARTS_VISIBLE_LEVEL} */}
-        </div>
-      )}
       {/* 과대 영역 경고 */}
       {tooWide && (
         <div
@@ -1308,28 +936,6 @@ export default function KakaoMap() {
           }}
         >
           검색 범위가 넓어 일부 결과가 표시되지 않습니다. 지도를 확대하여 확인해 주세요.
-        </div>
-      )}
-
-      {/* 레이트리밋 안내 */}
-      {rateLimited && (
-        <div
-          style={{
-            position: "fixed",
-            top: tooWide ? 44 : 228,
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 99999,
-            background: "#1f2937",
-            color: "#fff",
-            padding: "8px 12px",
-            borderRadius: 8,
-            fontSize: 12,
-            boxShadow: "0 2px 8px rgba(0,0,0,.2)",
-          }}
-        >
-          요청이 일시적으로 제한되어 일부 마커가 표시되지 않았습니다. 잠시 후 자동으로 다시
-          불러옵니다.
         </div>
       )}
 
