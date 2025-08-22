@@ -76,6 +76,8 @@ export default function MyIngredientsPage() {
         id: ingredient.ingredientId,
         name: ingredient.name,
         img: ingredient.thumbnailUrl,
+        unit: ingredient.unit,
+        price: ingredient.price,
       })),
     [ingredients]
   );
@@ -144,7 +146,7 @@ export default function MyIngredientsPage() {
               <FavoriteItemCard
                 img={item.img}
                 title={item.name}
-                description={`식재료 ${item.id}`}
+                description={item.unit ? `${item.unit}` : `식재료 ${item.id}`}
                 liked={true}
                 onClick={() => handleCardClick(item)}
                 onClickHeart={() => handleUnfavorite(item.id)}

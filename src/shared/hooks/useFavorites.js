@@ -109,6 +109,8 @@ export default function useFavorites(type, options = {}) {
                 ingredientId: id,
                 name: res.data.productName || res.data.name || `식재료 ${id}`,
                 thumbnailUrl: imageUrl || "/default-ingredient-image.svg", // 기본 이미지 설정
+                unit: res.data.unit || "",
+                price: res.data.latestPrice || res.data.price || null,
                 // 필요한 다른 필드들도 추가
               };
               ingredients.push(ingredient);
