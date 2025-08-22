@@ -33,7 +33,6 @@ export default function Header() {
 
         <TitleOnly ref={titleRef}>{title}</TitleOnly>
 
-        {/* 도움말 아이콘: 제목 우측에 살짝 붙여 배치 */}
         {showHelp && (
           <HelpButton
             aria-label="도움말"

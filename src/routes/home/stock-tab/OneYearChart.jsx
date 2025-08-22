@@ -1,6 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
-export default function Chart() {
+export default function OneYearChart() {
   const data = [
     { name: "어제날짜", value: 3500 },
     { name: "오늘날짜", value: 3000 },
@@ -18,10 +18,10 @@ export default function Chart() {
 
   return (
     <LineChart
-      width={300}
+      width={330}
       height={300}
       data={data}
-      margin={{ top: 28, right: 16, bottom: 6, left: 0 }}
+      margin={{ top: 28, right: 20, bottom: 6, left: 20 }}
     >
       <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
       <XAxis dataKey="name" tickMargin={6} tickLine={false} />
@@ -39,7 +39,7 @@ export default function Chart() {
         strokeWidth={2}
         dot={{ r: 4 }}
         label={{ position: "top", fill: lineColor, fontSize: 12, offset: 8 }}
-        isAnimationActive={false}
+        isAnimationActive={true}
       />
     </LineChart>
   );
