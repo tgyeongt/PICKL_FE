@@ -39,7 +39,7 @@ export default function MyHistoryPage({ onConversationDeleted }) {
   }, []);
 
   const handleConversationClick = (conversationId) => {
-    navigate(`/my/history/${conversationId}`);
+    navigate(`/chat/${conversationId}`);
   };
 
   const handleDeleteConversation = (conversationId) => {
