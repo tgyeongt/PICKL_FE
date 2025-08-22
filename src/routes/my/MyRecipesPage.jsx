@@ -43,11 +43,27 @@ export default function MyRecipesPage() {
     const sync = () => setFavCount(countRecipeFavoritesFromLS());
     sync();
     window.addEventListener("storage", sync);
-    // 같은 탭 반영: 간단히 setTimeout 폴링 0ms도 가능하지만, 필요 없으면 생략해도 OK
-    window.addEventListener("favorite:change", sync);
+
+    // favorite:change 이벤트 감지하여 찜 해제된 항목 처리
+    const handleFavoriteChange = (event) => {
+      const { type, id, willFavorite } = event.detail;
+      if (type === "RECIPE" && !willFavorite) {
+        // 레시피 찜 해제 시 로컬스토리지에서 제거
+        try {
+          const storageKey = `favorite:RECIPE:${id}`;
+          console.log(`이벤트로 인한 로컬스토리지 제거: ${storageKey}`);
+          window.localStorage.removeItem(storageKey);
+        } catch (e) {
+          console.error("이벤트로 인한 로컬스토리지 제거 실패:", e);
+        }
+      }
+      sync(); // 개수 업데이트
+    };
+
+    window.addEventListener("favorite:change", handleFavoriteChange);
     return () => {
       window.removeEventListener("storage", sync);
-      window.removeEventListener("favorite:change", sync);
+      window.removeEventListener("favorite:change", handleFavoriteChange);
     };
   }, [setFavCount]);
 
@@ -149,15 +165,20 @@ export default function MyRecipesPage() {
     }
   };
 
-  const items = useMemo(
-    () =>
-      recipes.map((recipe) => ({
-        id: recipe.recipeId,
-        name: recipe.recipeName,
-        img: recipeIconImg, // 필요 시 recipe.thumbnail 등으로 교체
-      })),
-    [recipes]
-  );
+  const items = useMemo(() => {
+    console.log("=== MyRecipesPage 레시피 데이터 ===");
+    console.log("recipes:", recipes);
+    if (recipes && recipes.length > 0) {
+      console.log("첫 번째 레시피:", recipes[0]);
+      console.log("레시피 필드들:", Object.keys(recipes[0]));
+    }
+
+    return recipes.map((recipe) => ({
+      id: recipe.recipeId,
+      name: recipe.recipeName,
+      img: recipeIconImg, // 필요 시 recipe.thumbnail 등으로 교체
+    }));
+  }, [recipes]);
 
   useEffect(() => {
     if (!hasMore || loading) return;
@@ -211,6 +232,33 @@ export default function MyRecipesPage() {
                 onClick={() => handleCardClick(item)}
                 onClickHeart={(e) => {
                   e?.stopPropagation?.();
+
+                  // 레시피 타입에 맞는 로컬스토리지 키로 직접 삭제
+                  try {
+                    const storageKey = `favorite:RECIPE:${item.id}`;
+                    console.log(`=== 레시피 찜 해제 디버깅 ===`);
+                    console.log(
+                      `삭제 전 로컬스토리지 상태:`,
+                      window.localStorage.getItem(storageKey)
+                    );
+                    console.log(`레시피 로컬스토리지에서 제거 시도: ${storageKey}`);
+
+                    window.localStorage.removeItem(storageKey);
+
+                    console.log(
+                      `삭제 후 로컬스토리지 상태:`,
+                      window.localStorage.getItem(storageKey)
+                    );
+                    console.log(
+                      `삭제 완료 여부:`,
+                      window.localStorage.getItem(storageKey) === null
+                    );
+                  } catch (e) {
+                    console.error("로컬스토리지 제거 실패:", e);
+                  }
+
+                  // API 호출로 찜 해제
+                  console.log(`API 호출 시작: unfavorite(${item.id})`);
                   unfavorite(item.id);
                 }}
               />
