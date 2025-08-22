@@ -226,7 +226,7 @@ export default function DailyPointsPage() {
         state: {
           result: res?.result,
           awarded: res?.awarded ?? 0,
-          ingredientName: res?.ingredientName || res?.item?.name,
+          ingredientName: data?.itemName || res?.ingredientName || res?.item?.name,
         },
       });
     },

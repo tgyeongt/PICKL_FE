@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import styled from "styled-components";
 import useDebounce from "@hooks/useDebounce";
 import ItemCard from "./ItemCard";
@@ -9,7 +9,8 @@ import ClearIcon from "@icon/search/clear_icon.svg";
 import { APIService } from "../../shared/lib/api";
 
 export default function Search() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const { state } = useLocation();
+  const [searchQuery, setSearchQuery] = useState(state?.searchQuery || "");
   const debouncedSearchQuery = useDebounce(searchQuery.trim(), 200);
   const showClearButton = searchQuery.length > 0;
   const navigate = useNavigate();

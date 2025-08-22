@@ -1,4 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { APIService } from "../../shared/lib/api";
+import { testLoginIfNeeded } from "../../shared/lib/auth";
 import {
   DailyPointsResultWrapper,
   SuccessBox,
@@ -38,6 +40,31 @@ export default function DailyPointsResultPage() {
   const result = payload.result ?? payload.status;
   const awarded = payload.awarded ?? payload.points ?? 0;
   const itemName = payload.ingredientName ?? payload.itemName ?? "토마토";
+
+  // 식재료 검색 및 상세 페이지 이동 함수
+  const handleViewIngredientPrice = async () => {
+    try {
+      await testLoginIfNeeded();
+
+      // 식재료 이름으로 검색
+      const searchRes = await APIService.private.get("/daily-price-change/store/items/search", {
+        params: { name: itemName },
+      });
+
+      if (searchRes.success && searchRes.data.length > 0) {
+        // 검색 결과가 있으면 첫 번째 결과의 상세 페이지로 이동
+        const ingredientId = searchRes.data[0].id;
+        navigate(`/search/ingredients/${ingredientId}`);
+      } else {
+        // 검색 결과가 없으면 검색 페이지로 이동
+        navigate("/search", { state: { searchQuery: itemName } });
+      }
+    } catch (error) {
+      console.error("식재료 검색 실패:", error);
+      // 에러 발생 시 검색 페이지로 이동
+      navigate("/search", { state: { searchQuery: itemName } });
+    }
+  };
 
   if (!result) {
     return (
@@ -123,7 +150,9 @@ export default function DailyPointsResultPage() {
             />
           </ImgBox>
           <Buttons>
-            <GhostBtn onClick={() => navigate("/", { replace: true })}>현재가 보기</GhostBtn>
+            <GhostBtn onClick={() => navigate("/my/points-convert", { replace: true })}>
+              포인트 전환하러 가기
+            </GhostBtn>
             <PrimaryBtn
               onClick={() =>
                 navigate("/my/points-daily/ad", {
@@ -203,9 +232,7 @@ export default function DailyPointsResultPage() {
           </ImgBox>
 
           <Buttons>
-            <GhostBtn onClick={() => navigate("/", { replace: true })}>
-              오늘의 {itemName} 가격 보러가기
-            </GhostBtn>
+            <GhostBtn onClick={handleViewIngredientPrice}>오늘의 {itemName} 가격 보러가기</GhostBtn>
             <PrimaryBtn onClick={() => navigate("/", { replace: true })}>
               홈으로 돌아가기
             </PrimaryBtn>
