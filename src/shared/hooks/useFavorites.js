@@ -39,7 +39,7 @@ export default function useFavorites(type, options = {}) {
     };
 
     const handleFavoriteChange = (event) => {
-      if (event.type === type) {
+      if (event.detail?.type === type) {
         setLocalFavoriteIds(getFavoriteIdsFromLS(prefix));
       }
     };
@@ -59,9 +59,81 @@ export default function useFavorites(type, options = {}) {
   const query = useInfiniteQuery({
     queryKey: ["favorites", type.toLowerCase()],
     queryFn: async ({ pageParam = 0 }) => {
-      // API 엔드포인트 매핑 수정
-      const endpoint = type === "RECIPE" ? "recipes" : "ingredients";
+      // 식재료인 경우 로컬스토리지 기반으로 직접 데이터 가져오기
+      if (type === "INGREDIENT") {
+        const favoriteIds = getFavoriteIdsFromLS(prefix);
+        console.log("로컬스토리지에서 가져온 찜한 식재료 ID들:", favoriteIds);
 
+        if (favoriteIds.length === 0) {
+          return {
+            content: [],
+            totalElements: 0,
+            totalPages: 1,
+            page: pageParam,
+          };
+        }
+
+        // 페이지네이션 처리
+        const startIndex = pageParam * PAGE_SIZE;
+        const endIndex = startIndex + PAGE_SIZE;
+        const pageIds = favoriteIds.slice(startIndex, endIndex);
+
+        console.log(`페이지 ${pageParam}: ${startIndex}-${endIndex}`, pageIds);
+
+        // 각 ID에 대해 식재료 정보 가져오기
+        const ingredients = [];
+        for (const id of pageIds) {
+          try {
+            const res = await APIService.private.get(`/daily-price-change/store/items/${id}`);
+            console.log(`식재료 ID ${id} API 응답:`, res.data);
+
+            if (res.data) {
+              // API 응답에서 이미지 URL 찾기
+              let imageUrl = null;
+              if (res.data.imageUrl) {
+                imageUrl = res.data.imageUrl;
+              } else if (res.data.image) {
+                imageUrl = res.data.image;
+              } else if (res.data.img) {
+                imageUrl = res.data.img;
+              } else if (res.data.thumbnailUrl) {
+                imageUrl = res.data.thumbnailUrl;
+              } else if (res.data.thumbnail) {
+                imageUrl = res.data.thumbnail;
+              }
+
+              console.log(`식재료 ID ${id} 이미지 URL:`, imageUrl);
+
+              // API 응답을 ingredients 형식에 맞게 변환
+              const ingredient = {
+                ingredientId: id,
+                name: res.data.productName || res.data.name || `식재료 ${id}`,
+                thumbnailUrl: imageUrl || "/default-ingredient-image.svg", // 기본 이미지 설정
+                // 필요한 다른 필드들도 추가
+              };
+              ingredients.push(ingredient);
+            }
+          } catch (error) {
+            console.warn(`식재료 ID ${id} 정보 가져오기 실패:`, error);
+            // 실패한 경우에도 기본 정보로 추가
+            ingredients.push({
+              ingredientId: id,
+              name: `식재료 ${id}`,
+              thumbnailUrl: "/default-ingredient-image.svg",
+            });
+          }
+        }
+
+        return {
+          content: ingredients,
+          totalElements: favoriteIds.length,
+          totalPages: Math.ceil(favoriteIds.length / PAGE_SIZE),
+          page: pageParam,
+        };
+      }
+
+      // 레시피는 기존 API 사용
+      const endpoint = "recipes";
       const res = await APIService.private.get(`/favorites/${endpoint}`, {
         params: {
           page: pageParam,
