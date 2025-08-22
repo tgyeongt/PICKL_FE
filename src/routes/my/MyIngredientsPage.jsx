@@ -36,14 +36,13 @@ export default function MyIngredientsPage() {
   console.log("ingredients length:", ingredients?.length);
 
   const handleCardClick = async (item) => {
-    if (isNavigating) return; // 이미 네비게이션 중이면 중복 클릭 방지
+    if (isNavigating) return;
 
     try {
       setIsNavigating(true);
       const ingredientId = String(item.id);
       console.log("클릭된 식재료 ID:", ingredientId);
 
-      // 식재료 상세 페이지로 이동
       console.log("식재료 상세 페이지로 이동:", `/search/ingredients/${ingredientId}`);
       navigate(`/search/ingredients/${ingredientId}`);
     } catch (error) {
@@ -57,7 +56,6 @@ export default function MyIngredientsPage() {
   const handleUnfavorite = (ingredientId) => {
     console.log("찜 해제 시도:", ingredientId);
 
-    // 식재료 타입에 맞는 로컬스토리지 키로 직접 삭제
     try {
       const storageKey = `favorite:INGREDIENT:${ingredientId}`;
       console.log(`식재료 로컬스토리지에서 제거: ${storageKey}`);
@@ -66,7 +64,6 @@ export default function MyIngredientsPage() {
       console.error("로컬스토리지 제거 실패:", e);
     }
 
-    // API 호출로 찜 해제
     unfavorite(ingredientId);
   };
 
@@ -85,7 +82,6 @@ export default function MyIngredientsPage() {
   console.log("items:", items);
   console.log("items length:", items?.length);
 
-  // 로컬스토리지 기반 개수 사용
   const displayTotal = localFavCount;
 
   useEffect(() => {
@@ -134,7 +130,7 @@ export default function MyIngredientsPage() {
 
       <Grid as={motion.div} layout>
         <AnimatePresence>
-          {items.map((item, idx) => (
+          {items.map((item) => (
             <motion.div
               key={item.id}
               layout

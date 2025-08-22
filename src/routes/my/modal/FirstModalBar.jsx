@@ -43,7 +43,6 @@ function TextSection() {
     !selectedAddress?.jibunAddress && !selectedAddress?.roadAddress
   );
 
-  // 현재위치 기반으로 구/시 이름 추출
   const deriveGuDong = (addr = "") => {
     const m1 = addr.match(/([\w가-힣]+구)\s+([\w가-힣]+동)/);
     if (m1) return `${m1[1]} ${m1[2]}`;
@@ -57,19 +56,16 @@ function TextSection() {
       selectedAddress?.jibunAddress || selectedAddress?.roadAddress || fallbackAddr || "";
     const shortAddr = deriveGuDong(rawAddr);
 
-    // 먼저 구(구)를 찾아보기
     const districtMatch = shortAddr.match(/([\w가-힣]+구)/);
     if (districtMatch) {
       return districtMatch[0];
     }
 
-    // 구가 없으면 시(시)를 찾아보기
     const cityMatch = shortAddr.match(/([\w가-힣]+시)/);
     if (cityMatch) {
       return cityMatch[0];
     }
 
-    // 구나 시가 모두 없으면 기본값 반환
     return "서초";
   };
 
@@ -103,7 +99,6 @@ function ButtonSection({ onClose, onNext }) {
       return;
     }
 
-    // API 호출 없이 바로 성공 처리
     await convert(Number(state?.pointAmount || 0));
     onNext?.();
   };

@@ -127,7 +127,6 @@ export default function MapSearchPage() {
       try {
         await testLoginIfNeeded();
       } catch (e) {
-        // 로그인 필요 없으면 무시
         // console.warn("[auth] testLoginIfNeeded 실패(무시 가능)", e);
       }
       const res = await APIService.private.get("/markets", { params: buildMarketParams(baseBbox) });

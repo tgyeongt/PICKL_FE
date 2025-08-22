@@ -45,7 +45,6 @@ export default function MyHistoryPage({ onConversationDeleted }) {
   const handleDeleteConversation = (conversationId) => {
     setConversations((prev) => prev.filter((conv) => conv.id !== conversationId));
 
-    // 상위 컴포넌트에 삭제 이벤트 알림
     if (onConversationDeleted) {
       onConversationDeleted();
     }

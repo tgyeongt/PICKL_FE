@@ -5,9 +5,8 @@ import DropdownIcon from "@icon/map/dropdown.svg";
 import { useAtomValue } from "jotai";
 import { selectedAddressAtom } from "./state/addressAtom";
 
-// 기본 위치 상수 (KakaoMap.jsx와 동일)
 const DEFAULT_LOCATION = {
-  lat: 37.5013, // 서울 서초구 강남대로 27 (강남역 근처)
+  lat: 37.5013, 
   lng: 127.0254,
   name: "서울 서초구 강남대로 27",
 };
@@ -16,7 +15,6 @@ export default function MapCategory() {
   const navigate = useNavigate();
   const selectedAddress = useAtomValue(selectedAddressAtom);
 
-  // 주소가 없으면 기본 위치 사용
   const displayAddress =
     selectedAddress.roadAddress || selectedAddress.jibunAddress || DEFAULT_LOCATION.name;
 

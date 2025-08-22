@@ -25,23 +25,18 @@ import martIcon from "@icon/map/selectMart.svg";
 import currentMarkerIcon from "@icon/map/currentLocationMarker.svg";
 import StoreListImg from "@icon/map/storeListIcon.svg";
 
-// ============== 안전 상수 (보수화) ==============
 const SAFE = {
   MAP_MAX_LEVEL: 7,
   BBOX_AREA_MAX: 0.05,
   MARKET_PAGE_SIZE: 50,
 };
 
-// ====== 기본 위치 상수 ======
 const DEFAULT_LOCATION = {
-  lat: 37.5013, // 서울 서초구 강남대로 27 (강남역 근처)
+  lat: 37.5013, 
   lng: 127.0254,
   name: "서울 서초구 강남대로 27",
 };
 
-/**
- * 대형마트/슈퍼마켓 조회 (새로운 API)
- */
 async function fetchMarts(params, controller) {
   try {
     const res = await APIService.private.get("/places", {
@@ -59,24 +54,18 @@ async function fetchMarts(params, controller) {
   }
 }
 
-// ====== 현위치 유틸(리팩터링 핵심) ======
 const LAST_GEO_LS_KEY = "pickl:lastGeo";
 
-// 간단한 GPS 위치 검증만 필요
-
-// === GPS 위치 검증 (기본적인 유효성만 체크) ===
 function isUsableCoords(coords) {
   const lat = Number(coords?.latitude);
   const lng = Number(coords?.longitude);
   const acc = Number(coords?.accuracy ?? 99999);
 
-  // 기본적인 유효성만 체크
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     console.log("[usable] Invalid coordinates");
     return false;
   }
 
-  // 정확도가 너무 낮으면 거부 (200km 이상)
   if (acc > 200000) {
     console.log("[usable] Accuracy too low:", acc);
     return false;
@@ -102,14 +91,12 @@ function readLastGeo(maxAgeMs = 3 * 24 * 60 * 60 * 1000) {
 
 function writeLastGeo(lat, lng) {
   try {
-    // 모든 유효한 좌표 저장
     localStorage.setItem(LAST_GEO_LS_KEY, JSON.stringify({ lat, lng, at: Date.now() }));
   } catch (e) {
     void e;
   }
 }
 
-// === 변경 ②: 최근 30초 캐시 허용으로 튐 완화 ===
 function getPositionOnce({ timeout = 10000 } = {}) {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error("geolocation unsupported"));
@@ -147,15 +134,14 @@ function getPositionOnce({ timeout = 10000 } = {}) {
         reject(err);
       },
       {
-        enableHighAccuracy: false, // 정확도보다 안정성 우선
-        maximumAge: 60000, // 1분 이내의 최근 측위 재사용
+        enableHighAccuracy: false, 
+        maximumAge: 60000,
         timeout,
       }
     );
   });
 }
 
-// ====== 컴포넌트 ======
 export default function KakaoMap() {
   const mapRef = useRef(null);
   const { state: navState } = useLocation();
@@ -178,16 +164,13 @@ export default function KakaoMap() {
   const pendingFocusRef = useRef(null);
   const [bbox, setBbox] = useState(null);
 
-  // 안내 상태
   const [netError, setNetError] = useState(false);
   const [tooWide, setTooWide] = useState(false);
-  const [, setCurrentLevel] = useState(null); // 디버그/판정용(필수는 아님)
+  const [, setCurrentLevel] = useState(null); 
 
-  // 대형마트 휴업일 알림 상태
   const [showMartNotice, setShowMartNotice] = useState(false);
   const [isHiding, setIsHiding] = useState(false);
 
-  // ---------- Kakao SDK 준비 ----------
   const ensureKakaoReady = () =>
     new Promise((resolve) => {
       const onReady = () => window.kakao.maps.load(resolve);

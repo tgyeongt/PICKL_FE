@@ -41,27 +41,22 @@ export default function DailyPointsResultPage() {
   const awarded = payload.awarded ?? payload.points ?? 0;
   const itemName = payload.ingredientName ?? payload.itemName ?? "토마토";
 
-  // 식재료 검색 및 상세 페이지 이동 함수
   const handleViewIngredientPrice = async () => {
     try {
       await testLoginIfNeeded();
 
-      // 식재료 이름으로 검색
       const searchRes = await APIService.private.get("/daily-price-change/store/items/search", {
         params: { name: itemName },
       });
 
       if (searchRes.success && searchRes.data.length > 0) {
-        // 검색 결과가 있으면 첫 번째 결과의 상세 페이지로 이동
         const ingredientId = searchRes.data[0].id;
         navigate(`/search/ingredients/${ingredientId}`);
       } else {
-        // 검색 결과가 없으면 검색 페이지로 이동
         navigate("/search", { state: { searchQuery: itemName } });
       }
     } catch (error) {
       console.error("식재료 검색 실패:", error);
-      // 에러 발생 시 검색 페이지로 이동
       navigate("/search", { state: { searchQuery: itemName } });
     }
   };

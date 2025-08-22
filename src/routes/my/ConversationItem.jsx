@@ -124,8 +124,7 @@ export default function ConversationItem({ conversation, onClick, onDelete }) {
     try {
       await APIService.chatbot.deleteConversation(conversation.id);
       onDelete(conversation.id);
-
-      // 히스토리 개수 업데이트를 위한 이벤트 발생
+      
       window.dispatchEvent(new CustomEvent("conversationDeleted"));
     } catch (error) {
       console.error("대화 삭제 실패:", error);
@@ -133,7 +132,6 @@ export default function ConversationItem({ conversation, onClick, onDelete }) {
     }
   };
 
-  // 외부 클릭 시 옵션 메뉴 닫기
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (

@@ -10,7 +10,6 @@ import recipeIcon from "@icon/my/saladIcon.svg";
 import historyIcon from "@icon/my/fileIcon.svg";
 import chevronRight from "@icon/my/chevron-right.svg";
 
-// ---- 보조 유틸 (이 파일 안에만) ----
 const FAV_RECIPE_PREFIX = "favorite:RECIPE:";
 const FAV_INGREDIENT_PREFIX = "favorite:INGREDIENT:";
 
@@ -69,23 +68,19 @@ function patchLocalStorageForFavorites(onChange) {
     window.__favPatchApplied = false;
   };
 }
-// -----------------------------------
 
 export default function MyActivitiesSection() {
   const navigate = useNavigate();
   const { data: summary, refetch } = useMySummary();
   const [favCount, setFavCount] = useAtom(favoriteRecipesCountAtom);
 
-  // 로컬스토리지 기반 즉시 동기화
   useEffect(() => {
     const sync = () => setFavCount(countRecipeFavoritesFromLS());
-    sync(); // 초기 1회
-    const unpatch = patchLocalStorageForFavorites(sync); // 같은 탭
-    window.addEventListener("storage", sync); // 다른 탭
+    sync(); 
+    const unpatch = patchLocalStorageForFavorites(sync); 
+    window.addEventListener("storage", sync); 
 
-    // 대화 삭제 이벤트 감지
     const handleConversationDeleted = () => {
-      // 히스토리 개수 즉시 업데이트
       refetch();
     };
 
@@ -100,7 +95,6 @@ export default function MyActivitiesSection() {
 
   const counts = {
     ingredients: countIngredientFavoritesFromLS(),
-    //  리스트 페이지가 갱신해둔 전역값을 우선 사용, 없으면 요약값
     recipes: (typeof favCount === "number" ? favCount : summary?.favoriteRecipeCount) ?? 0,
     history: summary?.pickleHistoryCount ?? 0,
   };

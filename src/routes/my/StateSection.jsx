@@ -9,7 +9,6 @@ export default function StateSection() {
   const points = formatNumber(currentPoints);
   const joinedDays = summary?.daysSinceFriend ?? 0;
 
-  // 디버깅을 위한 로깅
   console.log("🔍 StateSection - Summary:", summary);
   console.log("🔍 StateSection - Current Points:", currentPoints);
   console.log("🔍 StateSection - Points:", points);

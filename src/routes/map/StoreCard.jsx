@@ -61,7 +61,6 @@ export default function StoreCard({ store, isListMode = false, onClick }) {
 
   if (!store) return null;
 
-  // 현재위치가 없어도 카드는 보이도록 수정
   const hasValidAddress = address?.lat && address?.lng;
 
   const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -94,7 +93,6 @@ export default function StoreCard({ store, isListMode = false, onClick }) {
     }
   };
 
-  // 현재위치가 있을 때만 거리 계산
   let distance = null;
   let walkMin = null;
   let driveMin = null;

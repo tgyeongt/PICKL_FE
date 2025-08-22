@@ -9,7 +9,6 @@ export default function useFavoriteRecipes() {
     onCountChange: setFavCount,
   });
 
-  // 기존 인터페이스와 호환되도록 매핑
   return {
     recipes: result.data,
     totalCount: result.totalCount,
