@@ -26,13 +26,13 @@ import currentMarkerIcon from "@icon/map/currentLocationMarker.svg";
 import StoreListImg from "@icon/map/storeListIcon.svg";
 
 const SAFE = {
-  MAP_MAX_LEVEL: 7,
+  MAP_MAX_LEVEL: 10,
   BBOX_AREA_MAX: 0.05,
   MARKET_PAGE_SIZE: 50,
 };
 
 const DEFAULT_LOCATION = {
-  lat: 37.5013, 
+  lat: 37.5013,
   lng: 127.0254,
   name: "서울 서초구 강남대로 27",
 };
@@ -134,7 +134,7 @@ function getPositionOnce({ timeout = 10000 } = {}) {
         reject(err);
       },
       {
-        enableHighAccuracy: false, 
+        enableHighAccuracy: false,
         maximumAge: 60000,
         timeout,
       }
@@ -166,7 +166,7 @@ export default function KakaoMap() {
 
   const [netError, setNetError] = useState(false);
   const [tooWide, setTooWide] = useState(false);
-  const [, setCurrentLevel] = useState(null); 
+  const [, setCurrentLevel] = useState(null);
 
   const [showMartNotice, setShowMartNotice] = useState(false);
   const [isHiding, setIsHiding] = useState(false);
