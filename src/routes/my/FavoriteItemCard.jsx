@@ -110,7 +110,7 @@ const Desc = styled.p`
   color: #787885;
   text-align: center;
   font-family: Pretendard;
-  font-size: 7.75px;
+  font-size: 12px;
   font-weight: 400;
   line-height: 10.85px;
 `;
