@@ -5,11 +5,11 @@ import Header from "./Header";
 import PickL from "@image/chat_character.png";
 
 export default function Chat() {
-  const handleCardClick = (text) => {
-    navigate("/chat/new-chat", { state: { question: text } });
-  };
-
   const navigate = useNavigate();
+
+  const handleCardClick = (text) => {
+    navigate("/chat/new-chat", { state: { question: text }, replace: true });
+  };
 
   return (
     <Wrapper>

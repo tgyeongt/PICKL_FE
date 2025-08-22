@@ -9,13 +9,28 @@ export default function ChatbotPage() {
     title: "피클이와 대화중",
     showBack: true,
   });
+
   const { id } = useParams();
-  const [conversationId, setConversationId] = useState(id || null);
+  const [conversationId, setConversationId] = useState(null);
   const location = useLocation();
   const [searchText, setSearchText] = useState("");
   const [messages, setMessages] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef(null);
+
+  const conversationIdRef = useRef(conversationId);
+  useEffect(() => {
+    conversationIdRef.current = conversationId;
+  }, [conversationId]);
+
+  const firstDataProcessedRef = useRef(false);
+
+  useEffect(() => {
+    if (id && !conversationId) {
+      setConversationId(id);
+      conversationIdRef.current = id;
+    }
+  }, [id, conversationId]);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -36,23 +51,25 @@ export default function ChatbotPage() {
             role: m.role.toLowerCase(),
             text: m.content,
           }));
-          setMessages(mapped);
+          setMessages((prev) => (prev.length > 0 ? prev : mapped));
         }
       } catch (err) {
         console.error("이전 대화 불러오기 실패:", err);
       }
     };
-
     fetchHistory();
   }, [conversationId]);
 
+  const questionHandledRef = useRef(false);
+
   useEffect(() => {
-    if (location.state?.question && !isStreaming && messages.length === 0) {
-      setSearchText("");
-      streamChat(location.state.question, true);
+    if (location.state?.question && !isStreaming && !questionHandledRef.current) {
+      handleSearch(location.state.question);
+      questionHandledRef.current = true;
+      window.history.replaceState({}, "", location.pathname);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state]);
+  }, [location.state, isStreaming]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -72,20 +89,48 @@ export default function ChatbotPage() {
     await streamChat(content);
   };
 
-  const streamChat = async (message, isInitial = false) => {
-    setIsStreaming(true);
-    if (isInitial) {
-      setMessages([
-        { role: "user", text: message },
-        { role: "assistant", text: "" },
-      ]);
-    }
+  const typingQueueRef = useRef([]);
+  const typingIntervalRef = useRef(null);
 
+  const startTyping = () => {
+    if (typingIntervalRef.current) return;
+
+    typingIntervalRef.current = setInterval(() => {
+      if (typingQueueRef.current.length === 0) {
+        clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+        return;
+      }
+      const nextToken = typingQueueRef.current.shift();
+      setMessages((prev) => {
+        const updated = [...prev];
+        const lastIdx = updated.length - 1;
+        if (lastIdx >= 0 && updated[lastIdx].role === "assistant") {
+          updated[lastIdx] = {
+            role: "assistant",
+            text: (updated[lastIdx].text || "") + nextToken,
+          };
+        }
+        return updated;
+      });
+    }, 100);
+  };
+
+  const enqueueAssistantText = (chunk) => {
+    if (!chunk) return;
+    typingQueueRef.current.push(chunk);
+    startTyping();
+  };
+
+  const streamChat = async (message) => {
+    setIsStreaming(true);
     const baseUrl = import.meta.env.VITE_SERVER_BASE_URL;
     const url = `${baseUrl}/chatbot/chat/stream`;
     const token = localStorage.getItem("accessToken");
 
     try {
+      const currentConvId = conversationIdRef.current || null;
+
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -95,7 +140,7 @@ export default function ChatbotPage() {
         },
         body: JSON.stringify({
           userId: 1,
-          conversationId,
+          conversationId: currentConvId,
           message,
         }),
       });
@@ -106,38 +151,33 @@ export default function ChatbotPage() {
       const decoder = new TextDecoder("utf-8");
       let buffer = "";
 
-      const appendAssistantText = (chunk) => {
-        if (!chunk) return;
-        setMessages((prev) => {
-          const updated = [...prev];
-          const lastIdx = updated.length - 1;
-          if (lastIdx >= 0 && updated[lastIdx].role === "assistant") {
-            updated[lastIdx] = {
-              role: "assistant",
-              text: (updated[lastIdx].text || "") + chunk,
-            };
-          }
-          return updated;
-        });
-      };
-
       const processEvent = (eventChunk) => {
         const lines = eventChunk.split("\n");
         for (const line of lines) {
           if (!line.startsWith("data:")) continue;
           const dataStr = line.slice(5);
+          const dataForIdCheck = dataStr.trim();
 
-          if (dataStr === "[DONE]" || dataStr.includes("already-streaming")) return;
+          if (!firstDataProcessedRef.current) {
+            if (/^\d+$/.test(dataForIdCheck)) {
+              const newId = Number(dataForIdCheck);
+              setConversationId(newId);
+              conversationIdRef.current = newId;
+              window.history.replaceState(null, "", `/chat/${newId}`);
+              firstDataProcessedRef.current = true;
+              continue;
+            }
+            firstDataProcessedRef.current = true;
+          }
 
           try {
             const payload = JSON.parse(dataStr);
-            if (payload?.conversationId && !conversationId) {
-              setConversationId(payload.conversationId);
-            }
-            const tokenText = payload?.token || payload?.content || payload?.text || "";
-            appendAssistantText(tokenText);
+            const tokenText = payload?.token ?? payload?.content ?? payload?.text ?? "";
+            if (tokenText) enqueueAssistantText(tokenText);
           } catch {
-            appendAssistantText(dataStr);
+            if (firstDataProcessedRef.current) {
+              enqueueAssistantText(dataStr);
+            }
           }
         }
       };
@@ -148,15 +188,13 @@ export default function ChatbotPage() {
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         const parts = buffer.split("\n\n");
-        for (let i = 0; i < parts.length - 1; i++) {
-          processEvent(parts[i]);
-        }
+        for (let i = 0; i < parts.length - 1; i++) processEvent(parts[i]);
         buffer = parts[parts.length - 1];
       }
 
       if (buffer) processEvent(buffer);
     } catch (err) {
-      console.error(err);
+      console.error("streamChat 오류:", err);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", text: "죄송해요. 답변 중 오류가 발생했어요." },
