@@ -54,7 +54,10 @@ export default function ItemDetailPage() {
       {item ? (
         <>
           <TextWrapper>
-            <p className="title">{item.productName}</p>
+            <TitleText>
+              <span className="title">{item.productName}</span>
+              <span className="unit">{item.unit}</span>
+            </TitleText>
             <DiffText $isPositive={item.priceDiff >= 0}>
               <span className="price">{item.latestPrice?.toLocaleString() || "-"}원</span>
               {item.priceDiff >= 0 ? "+" : ""}
@@ -92,17 +95,26 @@ const Wrapper = styled.div`
 `;
 
 const TextWrapper = styled.div`
-  margin-top: 50px;
+  margin-top: 70px;
   width: 100%;
+`;
 
+const TitleText = styled.p`
   .title {
     font-size: 22px;
     font-weight: 600;
     margin-top: 20px;
   }
+
+  .unit {
+    font-size: 14px;
+    font-weight: 400;
+    margin-left: 7px;
+    color: #adadaf;
+  }
 `;
 
-const DiffText = styled.span`
+const DiffText = styled.p`
   font-size: 16px;
   font-weight: 400;
   color: ${({ $isPositive }) => ($isPositive ? "#e42938" : "#1677FF")};
