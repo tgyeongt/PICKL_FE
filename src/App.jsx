@@ -1,7 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RootLayout from "./shared/layouts/RootLayout";
-import ServiceLayout from "./shared/layouts/ServiceLayout";
 import ProtectedRoute from "./shared/layouts/ProtectedRoute";
 
 import RootPage from "./routes/home";
@@ -82,32 +81,27 @@ const router = createBrowserRouter([
             ],
           },
 
-          // 패딩 포함 섹션들
           {
-            Component: ServiceLayout,
+            path: "search",
             children: [
-              {
-                path: "search",
-                children: [
-                  { index: true, Component: Search },
-                  { path: "ingredients/:productNo", Component: ItemDetailPage },
-                ],
-              },
-              {
-                path: "my",
-                children: [
-                  { index: true, Component: My },
-                  { path: "list-ingredients", Component: MyIngredientsPage },
-                  { path: "list-recipes", Component: MyRecipesPage },
-                  { path: "history", Component: MyHistoryPage },
-                  { path: "history/:conversationId", Component: ConversationDetailPage },
-                  { path: "points-daily", Component: DailyPointsPage },
-                  { path: "points-convert", Component: ConvertPointsPage },
-                  { path: "points-daily/result", Component: DailyPointsResultPage },
-                  { path: "points-daily/closed", Component: DailyPointsClosedPage },
-                  { path: "points-daily/ad", Component: DailyAdPage },
-                ],
-              },
+              { index: true, Component: Search },
+              { path: "ingredients/:productNo", Component: ItemDetailPage },
+            ],
+          },
+
+          {
+            path: "my",
+            children: [
+              { index: true, Component: My },
+              { path: "list-ingredients", Component: MyIngredientsPage },
+              { path: "list-recipes", Component: MyRecipesPage },
+              { path: "history", Component: MyHistoryPage },
+              { path: "history/:conversationId", Component: ConversationDetailPage },
+              { path: "points-daily", Component: DailyPointsPage },
+              { path: "points-convert", Component: ConvertPointsPage },
+              { path: "points-daily/result", Component: DailyPointsResultPage },
+              { path: "points-daily/closed", Component: DailyPointsClosedPage },
+              { path: "points-daily/ad", Component: DailyAdPage },
             ],
           },
         ],

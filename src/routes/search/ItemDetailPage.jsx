@@ -87,7 +87,7 @@ export default function ItemDetailPage() {
 }
 
 const Wrapper = styled.div`
-  padding: 0 10px;
+  padding: 0 30px;
   margin-top: 50px;
   display: flex;
   flex-direction: column;
