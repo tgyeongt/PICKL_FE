@@ -108,6 +108,7 @@ export default function MyHistoryPage({ onConversationDeleted }) {
 
 const Container = styled.div`
   min-height: 100vh;
+  padding-top: 50px;
 `;
 
 const ConversationList = styled.div``;

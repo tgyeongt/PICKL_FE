@@ -164,6 +164,7 @@ export default function MyIngredientsPage() {
 const MyIngredientsPageWrapper = styled.div`
   min-height: 100vh;
   background: #fbfbfb;
+  padding-top: 50px;
   padding-bottom: 90px;
 `;
 

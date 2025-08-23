@@ -13,16 +13,17 @@ const MyTopBarWrapper = styled.div`
   width: 100%;
   margin: 0 auto;
   display: flex;
+  position: fixed;
   align-items: center;
   justify-content: center;
   background-color: #fbfbfb;
-  position: sticky;
   top: 0;
   left: 0;
   right: 0;
+  height: 50px;
+  text-align: center;
   z-index: 100;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
-  padding-bottom: 43px;
+  padding: 0 20px;
 `;
 
 const TopText = styled.p`

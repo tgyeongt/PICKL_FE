@@ -55,7 +55,7 @@ export default function MyRecipesPage() {
           console.error("이벤트로 인한 로컬스토리지 제거 실패:", e);
         }
       }
-      sync(); 
+      sync();
     };
 
     window.addEventListener("favorite:change", handleFavoriteChange);
@@ -66,7 +66,7 @@ export default function MyRecipesPage() {
   }, [setFavCount]);
 
   const handleCardClick = async (item) => {
-    if (isNavigating) return; 
+    if (isNavigating) return;
 
     try {
       setIsNavigating(true);
@@ -259,6 +259,7 @@ export default function MyRecipesPage() {
 const MyRecipesPageWrapper = styled.div`
   min-height: 100vh;
   background: #fbfbfb;
+  padding-top: 50px;
   padding-bottom: 90px;
 `;
 const CountRow = styled.div`
