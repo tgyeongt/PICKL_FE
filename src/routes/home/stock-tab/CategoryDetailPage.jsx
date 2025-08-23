@@ -24,7 +24,7 @@ export default function CategoryDetailPage() {
           params: { market, categoryCode },
         });
         if (res.success) {
-          setDetail(res.data);
+          setDetail(res.data[0]);
         }
       } catch (err) {
         console.error(err);
@@ -48,28 +48,34 @@ export default function CategoryDetailPage() {
 
   return (
     <Wrapper>
-      <TextWrapper>
-        <p className="title">{detail.categoryName}</p>
-        <DiffText $isNegative={detail.priceDiff < 0}>
-          <span className="price">{detail.avgLatestPrice?.toLocaleString() || "-"}</span>
-          {detail.priceDiff >= 0 ? "+" : ""}
-          {detail.priceDiff} ({detail.priceDiffRate}%)
-        </DiffText>
-      </TextWrapper>
+      {detail ? (
+        <>
+          <TextWrapper>
+            <p className="title">{detail.categoryName}</p>
+            <DiffText $isPositive={detail.priceDiff >= 0}>
+              <span className="price">{detail.avgLatestPrice?.toLocaleString() || "-"}</span>
+              {detail.priceDiff >= 0 ? "+" : ""}
+              {detail.priceDiff} ({detail.priceDiffRate}%)
+            </DiffText>
+          </TextWrapper>
 
-      <ChartWrapper>{renderChart()}</ChartWrapper>
+          <ChartWrapper>{renderChart()}</ChartWrapper>
 
-      <ButtonWrapper>
-        <button className={period === "1D" ? "active" : ""} onClick={() => setPeriod("1D")}>
-          1일
-        </button>
-        <button className={period === "1Y" ? "active" : ""} onClick={() => setPeriod("1Y")}>
-          1년
-        </button>
-        <button className={period === "5Y" ? "active" : ""} onClick={() => setPeriod("5Y")}>
-          5년
-        </button>
-      </ButtonWrapper>
+          <ButtonWrapper>
+            <button className={period === "1D" ? "active" : ""} onClick={() => setPeriod("1D")}>
+              1일
+            </button>
+            <button className={period === "1Y" ? "active" : ""} onClick={() => setPeriod("1Y")}>
+              1년
+            </button>
+            <button className={period === "5Y" ? "active" : ""} onClick={() => setPeriod("5Y")}>
+              5년
+            </button>
+          </ButtonWrapper>
+        </>
+      ) : (
+        <p>로딩 중...</p>
+      )}
     </Wrapper>
   );
 }
@@ -96,12 +102,12 @@ const TextWrapper = styled.div`
 const DiffText = styled.span`
   font-size: 16px;
   font-weight: 400;
-  margin-left: 5px;
   color: ${({ $isPositive }) => ($isPositive ? "#e42938" : "#1677FF")};
 
   .price {
     font-size: 26px;
     font-weight: 700;
+    margin-right: 5px;
   }
 `;
 

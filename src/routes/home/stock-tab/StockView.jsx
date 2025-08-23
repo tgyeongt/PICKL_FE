@@ -3,13 +3,16 @@ import styled from "styled-components";
 import StockCard from "./StockCard";
 import QuestionIcon from "@icon/home/question_icon.svg";
 import { APIService } from "../../../shared/lib/api";
-// import { useNavigate } from "react-router-dom";
 
 export default function StockView() {
   const [selected, setSelected] = useState("소매");
   const [item, setItem] = useState([]);
   const [tooltipOpen, setTooltipOpen] = useState(false);
-  // const navigate = useNavigate();
+
+  const MARKET_MAP = {
+    소매: "소매",
+    "중도매인 판매": "도매",
+  };
 
   const tooltipContent =
     selected === "소매"
@@ -21,7 +24,7 @@ export default function StockView() {
       try {
         const res = await APIService.private.get("/daily-price-change/store/category", {
           params: {
-            market: selected,
+            market: MARKET_MAP[selected],
           },
         });
         if (res.success) {
@@ -32,6 +35,7 @@ export default function StockView() {
       }
     }
     fetchItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
   return (
@@ -39,7 +43,7 @@ export default function StockView() {
       <Header>
         <TabGroup>
           <TabButton
-            isActive={selected === "소매"}
+            $isActive={selected === "소매"}
             onClick={() => {
               setSelected("소매");
               setTooltipOpen(false);
@@ -48,7 +52,7 @@ export default function StockView() {
             소매
           </TabButton>
           <TabButton
-            isActive={selected === "중도매인 판매"}
+            $isActive={selected === "중도매인 판매"}
             onClick={() => {
               setSelected("중도매인 판매");
               setTooltipOpen(false);
@@ -112,8 +116,8 @@ const TabButton = styled.button`
   border-radius: 20px;
   font-weight: 500;
   cursor: pointer;
-  background-color: ${({ isActive }) => (isActive ? "#1C1B1A" : "#E4E4E7")};
-  color: ${({ isActive }) => (isActive ? "#fff" : "#5A5B6A")};
+  background-color: ${({ $isActive }) => ($isActive ? "#1C1B1A" : "#E4E4E7")};
+  color: ${({ $isActive }) => ($isActive ? "#fff" : "#5A5B6A")};
 `;
 
 const TooltipWrapper = styled.div`

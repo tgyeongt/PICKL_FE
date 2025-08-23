@@ -14,7 +14,6 @@ export default function StockCard({
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/category/${title}`);
     navigate(`/category/${market}/${categoryCode}`);
   };
 
