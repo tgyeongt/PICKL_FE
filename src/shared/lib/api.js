@@ -22,11 +22,47 @@ privateAPI.interceptors.request.use((config) => {
   return config;
 });
 
-/**
- * API 서비스 객체
- * 실제 API 호출을 위한 메서드들을 제공
- * public과 private으로 구분하여 각각의 용도에 맞는 메서드 제공
- */
+// refresh 토큰 요청 로직
+privateAPI.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      (error.response?.status === 401 || error.response?.status === 500) &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (!refreshToken) {
+        localStorage.clear();
+        window.location.href = "/";
+        return Promise.reject(error);
+      }
+
+      try {
+        const res = await publicAPI.post("/auth/refresh", {
+          refreshToken,
+        });
+
+        const newAccessToken = res.data?.accessToken;
+        if (newAccessToken) {
+          localStorage.setItem("accessToken", newAccessToken);
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return privateAPI(originalRequest);
+        }
+      } catch (refreshError) {
+        localStorage.clear();
+        window.location.href = "/";
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export const APIService = {
   // 공용 API 메서드 (토큰 불필요)
   public: {
