@@ -1,24 +1,24 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceDot } from "recharts";
-import { APIService } from "../../../shared/lib/api";
+import { APIService } from "../../shared/lib/api";
 
 export default function OneYearChart() {
-  const { market, categoryCode } = useParams();
+  const { productNo } = useParams();
   const [priceData, setPriceData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchPrice() {
       try {
-        const res = await APIService.private.get("/kamis/monthly/series/category/table", {
-          params: { market, categoryCode },
+        const res = await APIService.private.get("/kamis/monthly/series/item", {
+          params: { productNo },
         });
         if (!res) {
           setPriceData([]);
           return;
         }
-        const transformedData = Object.entries(res)
+        const transformedData = Object.entries(res[productNo])
           .filter(([key]) => /^\d{6}$/.test(key))
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([key, value]) => ({
@@ -36,7 +36,7 @@ export default function OneYearChart() {
     }
 
     fetchPrice();
-  }, [market, categoryCode]);
+  }, [productNo]);
 
   if (loading) return <p>로딩 중...</p>;
   if (!priceData || priceData.length < 2) return <p>데이터 없음</p>;

@@ -41,12 +41,13 @@ export default function Search() {
 
         if (res.success) {
           const mapped = res.data.map((item) => ({
-            id: item.id,
+            productNo: item.productNo,
             title: item.productName,
             unit: item.unit,
             img: item.imageUrl,
             price: item.latestPrice,
           }));
+          console.log(res);
           setItemList(mapped);
         } else {
           setItemList([]);
@@ -84,8 +85,8 @@ export default function Search() {
           {filteredList.length > 0 ? (
             filteredList.map((item) => (
               <ItemCard
-                id={item.id}
-                key={item.id}
+                productNo={item.productNo}
+                key={item.productNo}
                 title={item.title}
                 unit={item.unit}
                 img={item.img}

@@ -53,9 +53,9 @@ export default function CategoryDetailPage() {
           <TextWrapper>
             <p className="title">{detail.categoryName}</p>
             <DiffText $isPositive={detail.priceDiff >= 0}>
-              <span className="price">{detail.avgLatestPrice?.toLocaleString() || "-"}</span>
+              <span className="price">{detail.avgLatestPrice?.toLocaleString() || "-"}원</span>
               {detail.priceDiff >= 0 ? "+" : ""}
-              {detail.priceDiff} ({detail.priceDiffRate}%)
+              {detail.priceDiff}원 ({detail.priceDiffRate}%)
             </DiffText>
           </TextWrapper>
 
@@ -112,7 +112,7 @@ const DiffText = styled.span`
 `;
 
 const ButtonWrapper = styled.div`
-  margin-top: 20px;
+  margin-top: 30px;
   display: flex;
   gap: 10px;
 
@@ -132,7 +132,6 @@ const ButtonWrapper = styled.div`
 `;
 
 const ChartWrapper = styled.div`
-  margin-top: 20px;
-  width: 100%;
+  margin-top: 30px;
   height: 300px;
 `;

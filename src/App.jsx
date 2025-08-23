@@ -90,7 +90,7 @@ const router = createBrowserRouter([
                 path: "search",
                 children: [
                   { index: true, Component: Search },
-                  { path: "ingredients/:id", Component: ItemDetailPage },
+                  { path: "ingredients/:productNo", Component: ItemDetailPage },
                 ],
               },
               {

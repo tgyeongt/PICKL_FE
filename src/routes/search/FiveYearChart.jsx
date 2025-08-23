@@ -1,31 +1,30 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceDot } from "recharts";
-import { APIService } from "../../../shared/lib/api";
+import { APIService } from "../../shared/lib/api";
 
-export default function OneYearChart() {
-  const { market, categoryCode } = useParams();
+export default function FiveYearChart() {
+  const { productNo } = useParams();
   const [priceData, setPriceData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchPrice() {
       try {
-        const res = await APIService.private.get("/kamis/monthly/series/category/table", {
-          params: { market, categoryCode },
+        const res = await APIService.private.get("/kamis/yearly/series/item", {
+          params: { productNo },
         });
         if (!res) {
           setPriceData([]);
           return;
         }
-        const transformedData = Object.entries(res)
-          .filter(([key]) => /^\d{6}$/.test(key))
+        const transformedData = Object.entries(res[productNo])
+          .filter(([key]) => /^\d{4}$/.test(key))
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([key, value]) => ({
             name: key,
             value: value,
           }));
-
         setPriceData(transformedData);
       } catch (err) {
         console.error(err);
@@ -36,7 +35,7 @@ export default function OneYearChart() {
     }
 
     fetchPrice();
-  }, [market, categoryCode]);
+  }, [productNo]);
 
   if (loading) return <p>로딩 중...</p>;
   if (!priceData || priceData.length < 2) return <p>데이터 없음</p>;
@@ -65,7 +64,7 @@ export default function OneYearChart() {
         dataKey="name"
         tickMargin={6}
         tickLine={false}
-        tickFormatter={(tick) => `${tick.slice(2, 4)}-${tick.slice(4)}`}
+        tickFormatter={(tick) => `${tick.slice(0, 4)}`}
         tick={{ fontSize: 12, fill: "#666" }}
       />
       <YAxis
@@ -76,7 +75,7 @@ export default function OneYearChart() {
       />
       <Tooltip
         formatter={(value) => [`${value.toLocaleString()}원`, "가격"]}
-        labelFormatter={(label) => `${label.slice(0, 4)}-${label.slice(4)}`}
+        labelFormatter={(label) => `${label.slice(0, 4)}년`}
       />
       <Line
         type="monotone"

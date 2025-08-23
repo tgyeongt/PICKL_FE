@@ -79,7 +79,7 @@ export default function StockView() {
             price={item.avgLatestPrice}
             diff={item.priceDiff}
             diffrate={item.priceDiffRate}
-            market={selected}
+            market={MARKET_MAP[selected]}
             categoryCode={item.categoryCode}
             oneDayAgoPrice={item.avgOneDayAgoPrice}
           />

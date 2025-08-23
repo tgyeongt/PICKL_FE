@@ -86,7 +86,6 @@ export default function FiveYearChart() {
         isAnimationActive={true}
       />
 
-      {/* 최소값 표시 */}
       <ReferenceDot
         x={minPoint.name}
         y={minPoint.value}
@@ -101,7 +100,6 @@ export default function FiveYearChart() {
         }}
       />
 
-      {/* 최대값 표시 */}
       <ReferenceDot
         x={maxPoint.name}
         y={maxPoint.value}
