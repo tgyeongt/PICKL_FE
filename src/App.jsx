@@ -56,7 +56,7 @@ const router = createBrowserRouter([
               { path: "monthly-pick", Component: MonthlyPickPage },
               { path: "seasonal/:id", Component: SeasonalDetailPage },
               { path: "seasonal/:id/:recipeId", Component: SeasonalRecipePage },
-              { path: "category/:title", Component: CategoryDetailPage },
+              { path: "category/:market/:categoryCode", Component: CategoryDetailPage },
             ],
           },
 
@@ -90,7 +90,7 @@ const router = createBrowserRouter([
                 path: "search",
                 children: [
                   { index: true, Component: Search },
-                  { path: "ingredients/:id", Component: ItemDetailPage },
+                  { path: "ingredients/:productNo", Component: ItemDetailPage },
                 ],
               },
               {

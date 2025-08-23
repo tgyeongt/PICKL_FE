@@ -1,24 +1,49 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styled from "styled-components";
-import RetailPrice from "./RetailPrice";
-import WholesalePrice from "./WholesalePrice";
-import QuestionIcon from "@icon/home/question_icon.svg"; // 물음표 아이콘
+import StockCard from "./StockCard";
+import QuestionIcon from "@icon/home/question_icon.svg";
+import { APIService } from "../../../shared/lib/api";
 
 export default function StockView() {
-  const [selected, setSelected] = useState("소매"); // 기본값 소매
+  const [selected, setSelected] = useState("소매");
+  const [item, setItem] = useState([]);
   const [tooltipOpen, setTooltipOpen] = useState(false);
+
+  const MARKET_MAP = {
+    소매: "소매",
+    "중도매인 판매": "도매",
+  };
 
   const tooltipContent =
     selected === "소매"
       ? "일반 소비자에게 판매되는 가격"
       : "도매상·중간상인에게 대량 판매 시 적용되는 가격";
 
+  useEffect(() => {
+    async function fetchItems() {
+      try {
+        const res = await APIService.private.get("/daily-price-change/store/category", {
+          params: {
+            market: MARKET_MAP[selected],
+          },
+        });
+        if (res.success) {
+          setItem(res.data);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    fetchItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
+
   return (
     <Wrapper>
       <Header>
         <TabGroup>
           <TabButton
-            isActive={selected === "소매"}
+            $isActive={selected === "소매"}
             onClick={() => {
               setSelected("소매");
               setTooltipOpen(false);
@@ -27,7 +52,7 @@ export default function StockView() {
             소매
           </TabButton>
           <TabButton
-            isActive={selected === "중도매인 판매"}
+            $isActive={selected === "중도매인 판매"}
             onClick={() => {
               setSelected("중도매인 판매");
               setTooltipOpen(false);
@@ -46,10 +71,20 @@ export default function StockView() {
         </TooltipWrapper>
       </Header>
 
-      <div>
-        {selected === "소매" && <RetailPrice selected={selected} />}
-        {selected === "중도매인 판매" && <WholesalePrice selected={selected} />}
-      </div>
+      <CardWrapper>
+        {item.map((item, idx) => (
+          <StockCard
+            key={idx}
+            title={item.categoryName}
+            price={item.avgLatestPrice}
+            diff={item.priceDiff}
+            diffrate={item.priceDiffRate}
+            market={MARKET_MAP[selected]}
+            categoryCode={item.categoryCode}
+            oneDayAgoPrice={item.avgOneDayAgoPrice}
+          />
+        ))}
+      </CardWrapper>
     </Wrapper>
   );
 }
@@ -57,7 +92,7 @@ export default function StockView() {
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
-  padding-bottom: 80px;
+  padding-bottom: 50px;
   height: 75vh;
 `;
 
@@ -81,8 +116,8 @@ const TabButton = styled.button`
   border-radius: 20px;
   font-weight: 500;
   cursor: pointer;
-  background-color: ${({ isActive }) => (isActive ? "#1C1B1A" : "#E4E4E7")};
-  color: ${({ isActive }) => (isActive ? "#fff" : "#5A5B6A")};
+  background-color: ${({ $isActive }) => ($isActive ? "#1C1B1A" : "#E4E4E7")};
+  color: ${({ $isActive }) => ($isActive ? "#fff" : "#5A5B6A")};
 `;
 
 const TooltipWrapper = styled.div`
@@ -111,4 +146,11 @@ const TooltipText = styled.div`
   width: max-content;
   max-width: 250px;
   z-index: 10;
+`;
+
+const CardWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 80px;
 `;

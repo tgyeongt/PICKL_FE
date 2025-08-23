@@ -1,15 +1,16 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
-export default function Chart() {
+export default function HomeChart({ price, oneDayAgoPrice }) {
   const data = [
-    { name: "어제날짜", value: 3500 },
-    { name: "오늘날짜", value: 3000 },
+    { name: "어제날짜", value: oneDayAgoPrice },
+    { name: "오늘날짜", value: price },
   ];
+
   if (!data || data.length < 2) return null;
 
   const first = data[0].value;
   const last = data[data.length - 1].value;
-  const lineColor = last >= first ? "red" : "blue";
+  const lineColor = last >= first ? "#E42938" : "#1677FF";
 
   const values = data.map((d) => d.value);
   const min = Math.min(...values);
@@ -18,13 +19,13 @@ export default function Chart() {
 
   return (
     <LineChart
-      width={300}
-      height={300}
+      width={100}
+      height={100}
       data={data}
-      margin={{ top: 28, right: 16, bottom: 6, left: 0 }}
+      margin={{ top: 28, right: 20, bottom: 6, left: 20 }}
     >
       <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
-      <XAxis dataKey="name" tickMargin={6} tickLine={false} />
+      <XAxis dataKey="name" hide />
       <YAxis
         tick={false}
         axisLine={false}
@@ -38,8 +39,8 @@ export default function Chart() {
         stroke={lineColor}
         strokeWidth={2}
         dot={{ r: 4 }}
-        label={{ position: "top", fill: lineColor, fontSize: 12, offset: 8 }}
-        isAnimationActive={false}
+        label={{ position: "top", fill: lineColor, fontSize: 10, offset: 8 }}
+        isAnimationActive={true}
       />
     </LineChart>
   );
