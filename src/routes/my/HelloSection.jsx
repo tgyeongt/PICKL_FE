@@ -57,7 +57,7 @@ const HelloSectionWrapper = styled.div`
   max-width: 390px;
   margin: 0 auto;
   background: #fbfbfb;
-  padding: 50px 10px 29px;
+  padding: 60px 10px 29px;
 `;
 
 const HelloText = styled.p`
