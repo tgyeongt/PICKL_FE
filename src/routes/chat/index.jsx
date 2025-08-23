@@ -100,13 +100,12 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 80px;
   height: auto;
 
   .img {
-    margin-top: 80px;
+    margin-top: 8vh;
     margin-bottom: 20px;
-    height: 250px;
+    height: 30vh;
   }
 `;
 
@@ -141,7 +140,7 @@ const AnimationBox = styled.div`
   display: flex;
   flex-direction: column;
   gap: 15px;
-  margin: 40px 0;
+  margin: 5vh 0;
 
   .track {
     display: flex;
@@ -167,9 +166,10 @@ const ChatBtn = styled.button`
   background-color: #1c1b1a;
   color: #fff;
   border-radius: 10px;
-  width: 90%;
+  width: 350px;
   height: 50px;
   font-size: 16px;
   font-weight: 600;
-  margin-top: 50px;
+  position: absolute;
+  bottom: 10vh;
 `;
