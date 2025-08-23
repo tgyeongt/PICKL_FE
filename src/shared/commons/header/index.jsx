@@ -8,16 +8,8 @@ import { useLayoutEffect, useRef, useState } from "react";
 import Toast from "./Toast";
 
 export default function Header() {
-  const {
-    title,
-    showBack,
-    showHeart,
-    isVisible,
-    isHeartActive,
-    toggleHeart,
-    showHelp,
-    onHelp,
-  } = useHeaderStore();
+  const { title, showBack, showHeart, isVisible, isHeartActive, toggleHeart, showHelp, onHelp } =
+    useHeaderStore();
 
   const titleRef = useRef(null);
   const [titleW, setTitleW] = useState(0);
@@ -41,7 +33,6 @@ export default function Header() {
 
         <TitleOnly ref={titleRef}>{title}</TitleOnly>
 
-        {/* 도움말 아이콘: 제목 우측에 살짝 붙여 배치 */}
         {showHelp && (
           <HelpButton
             aria-label="도움말"
@@ -62,15 +53,13 @@ export default function Header() {
           )}
         </RightSlot>
       </Wrapper>
-
-      {/* 전역 토스트 렌더링 (하트 토글 포함 모든 토스트 메시지 처리) */}
       <Toast />
     </>
   );
 }
 
 const Wrapper = styled.header`
-  position: relative;
+  position: fixed;
   display: flex;
   align-items: center;
   box-sizing: border-box;
@@ -79,6 +68,7 @@ const Wrapper = styled.header`
   margin: 0 auto;
   height: 50px;
   padding: 0 20px;
+  background-color: white;
 `;
 
 const IconButton = styled.button`

@@ -3,27 +3,27 @@ import ItemCard from "./ItemCard";
 
 export default function Suggestion({ onSelectItem }) {
   const keywordList = [
-    { id: 110, title: "복숭아" },
-    { id: 181, title: "멜론" },
-    { id: 7, title: "토마토" },
+    { productNo: 411, title: "복숭아" },
+    { productNo: 383, title: "멜론" },
+    { productNo: 321, title: "토마토" },
   ];
 
   const seasonalList = [
     {
-      id: 676,
+      productNo: 395,
       title: "새송이버섯",
       unit: "100g",
       img: "https://picklocal.s3.ap-northeast-2.amazonaws.com/images/2025/08/8ed68c0e-94c9-4762-ae9a-14b908617667",
       price: 545,
     },
     {
-      id: 672,
+      productNo: 357,
       title: "깐마늘(국산)",
       unit: "1kg",
       img: "https://picklocal.s3.ap-northeast-2.amazonaws.com/images/2025/08/204434f0-a9d7-450c-b7fe-446537601f0f",
       price: 10449,
     },
-    { id: 742, title: "갈치/국산(냉장)(中)", unit: "1마리", img: "", price: 7464 },
+    { productNo: 2109, title: "갈치/국산(냉장)(中)", unit: "1마리", img: "", price: 7464 },
   ];
 
   return (
@@ -32,7 +32,11 @@ export default function Suggestion({ onSelectItem }) {
         <SubTitle>추천 검색어</SubTitle>
         <KeywordWrapper>
           {keywordList.map((item) => (
-            <div key={item.id} className="keyword" onClick={() => onSelectItem(item.id)}>
+            <div
+              key={item.productNo}
+              className="keyword"
+              onClick={() => onSelectItem(item.productNo)}
+            >
               {item.title}
             </div>
           ))}
@@ -42,8 +46,8 @@ export default function Suggestion({ onSelectItem }) {
         <SubTitle>이달의 Pick</SubTitle>
         {seasonalList.map((item) => (
           <ItemCard
-            key={item.id}
-            id={item.id}
+            key={item.productNo}
+            productNo={item.productNo}
             title={item.title}
             unit={item.unit}
             img={item.img}

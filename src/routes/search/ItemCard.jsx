@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router";
 import styled from "styled-components";
 
-export default function ItemCard({ id, title, unit, img, price }) {
+export default function ItemCard({ productNo, title, unit, img, price }) {
   const navigate = useNavigate();
 
   return (
-    <Card onClick={() => navigate(`ingredients/${id}`)}>
+    <Card onClick={() => navigate(`ingredients/${productNo}`)}>
       <ImgWrapper>
         <img className="img" src={img} alt={title} />
       </ImgWrapper>
