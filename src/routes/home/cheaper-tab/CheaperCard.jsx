@@ -46,6 +46,11 @@ const NameWrapper = styled.div`
   flex-direction: row;
   align-items: center;
 
+  img {
+    width: 31px;
+    height: 31px;
+  }
+
   .name {
     font-size: 15px;
     font-weight: 700;
@@ -92,6 +97,8 @@ const AccentBox = styled.div`
     color: ${({ selected }) => (selected === "전통시장" ? "#EC5F5F" : "#5F89EC")};
     font-weight: 700;
     font-size: 30px;
+    line-height: normal;
+    margin-top: 3px;
   }
 `;
 
@@ -112,7 +119,7 @@ const NormalBox = styled.div`
     font-weight: 700;
     font-size: 17px;
     line-height: normal;
-    margin-top: 5px;
+    margin-top: 3px;
   }
 
   .line {

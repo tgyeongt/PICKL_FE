@@ -22,7 +22,6 @@ export default function Header() {
             const res = await APIService.private.get(
               `/daily-price-change/store/items/${p.productNo}`
             );
-            console.log("API 응답:", res);
 
             if (res.success && res.data) {
               const data = res.data;

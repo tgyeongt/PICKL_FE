@@ -10,7 +10,6 @@ export default function RecommendCard() {
     async function fetchProduct() {
       try {
         const res = await APIService.private.get(`/daily-price-change/store/items/367`);
-        console.log("파전 API 응답:", res);
 
         if (res.success && res.data) {
           const data = res.data;
