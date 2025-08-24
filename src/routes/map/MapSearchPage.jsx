@@ -112,14 +112,6 @@ export default function MapSearchPage() {
     page: 1,
     size: 50,
   });
-  const buildMartParams = (bbox) => ({
-    minX: Number(bbox.minX.toFixed(3)),
-    minY: Number(bbox.minY.toFixed(3)),
-    maxX: Number(bbox.maxX.toFixed(3)),
-    maxY: Number(bbox.maxY.toFixed(3)),
-    page: 1,
-    size: 10,
-  });
 
   const {
     data: markets = [],
@@ -135,7 +127,6 @@ export default function MapSearchPage() {
       try {
         await testLoginIfNeeded();
       } catch (e) {
-        // 로그인 필요 없으면 무시
         // console.warn("[auth] testLoginIfNeeded 실패(무시 가능)", e);
       }
       const res = await APIService.private.get("/markets", { params: buildMarketParams(baseBbox) });
@@ -167,10 +158,15 @@ export default function MapSearchPage() {
         // 로그인 필요 없으면 무시
         // console.warn("[auth] testLoginIfNeeded 실패(무시 가능)", e);
       }
-      const res = await APIService.private.get("/marts", { params: buildMartParams(baseBbox) });
-      const raw = Array.isArray(res) ? res : res?.data ?? res?.content ?? res?.items ?? res ?? [];
-      const list = Array.isArray(raw) ? raw : Array.isArray(raw?.content) ? raw.content : [];
-      return list
+      const res = await APIService.private.get("/places", {
+        params: {
+          bounds: `${baseBbox.minX},${baseBbox.minY},${baseBbox.maxX},${baseBbox.maxY}`,
+          center: `${(baseBbox.minX + baseBbox.maxX) / 2},${(baseBbox.minY + baseBbox.maxY) / 2}`,
+          limit: 200,
+        },
+      });
+      const raw = res?.data ?? [];
+      return raw
         .map((r) => {
           const m = mapMarketFromAPI(r);
           return m && { ...m, type: "mart" };
@@ -220,7 +216,7 @@ export default function MapSearchPage() {
         {keyword ? (
           <SearchInfoText>
             <GreenText>{keyword}</GreenText>으로 검색된 결과{" "}
-            <GreenText>{isLoading ? "로딩중" : isError ? 0 : filtered.length}</GreenText>건
+            <GreenText>{isLoading ? "로딩중" : filtered.length}</GreenText>건
           </SearchInfoText>
         ) : (
           <LocationBox onClick={() => navigate("/map/edit-location")}>

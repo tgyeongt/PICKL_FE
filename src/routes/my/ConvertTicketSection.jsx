@@ -12,7 +12,6 @@ export default function ConvertTicketSection() {
   const selectedAddress = useAtomValue(selectedAddressAtom);
   const selected = state?.selectedVoucher ?? "seoul";
 
-  // PointStateSection과 정확히 동일한 방식으로 구현
   const deriveGuDong = (addr = "") => {
     const m1 = addr.match(/([\w가-힣]+구)\s+([\w가-힣]+동)/);
     if (m1) return `${m1[1]} ${m1[2]}`;
@@ -29,30 +28,25 @@ export default function ConvertTicketSection() {
 
   const shortAddr = deriveGuDong(rawAddr);
 
-  // 구 이름만 추출
   const getCurrentDistrict = () => {
-    // 먼저 구(구)를 찾아보기
     const districtMatch = shortAddr.match(/([\w가-힣]+구)/);
     if (districtMatch) {
       console.log("District found:", districtMatch[0]);
       return districtMatch[0];
     }
 
-    // 구가 없으면 시(시)를 찾아보기
     const cityMatch = shortAddr.match(/([\w가-힣]+시)/);
     if (cityMatch) {
       console.log("City found:", cityMatch[0]);
       return cityMatch[0];
     }
 
-    // 구나 시가 모두 없으면 기본값 반환
     console.log("No district or city found, using default");
     return "서초";
   };
 
   const currentDistrict = getCurrentDistrict();
 
-  // 디버깅용 로그
   console.log("ConvertTicketSection Debug:", {
     selectedAddress,
     fallbackAddr,

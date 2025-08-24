@@ -48,7 +48,6 @@ export default function DailyAdPage() {
     } catch (error) {
       console.error("추가 시도 요청 실패:", error);
       alert("추가 시도권을 발급받지 못했어. 잠시 후 다시 시도해줘!");
-      // 실패 시 현재 화면에 그대로 머묾
     } finally {
       setIsLoading(false);
     }

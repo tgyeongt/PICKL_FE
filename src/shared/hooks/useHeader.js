@@ -46,6 +46,12 @@ export default function useHeader({
 
         try {
           window.localStorage.setItem(storageKey, "true");
+          // 찜하기 성공 시 이벤트 발생
+          window.dispatchEvent(
+            new CustomEvent("favorite:change", {
+              detail: { type: targetType, id: targetId, willFavorite: true },
+            })
+          );
         } catch (_) {
           /* no-op */
         }
@@ -65,6 +71,12 @@ export default function useHeader({
 
         try {
           window.localStorage.removeItem(storageKey);
+          // 찜 해제 성공 시 이벤트 발생
+          window.dispatchEvent(
+            new CustomEvent("favorite:change", {
+              detail: { type: targetType, id: targetId, willFavorite: false },
+            })
+          );
         } catch (_) {
           /* no-op */
         }

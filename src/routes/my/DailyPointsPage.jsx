@@ -32,7 +32,7 @@ import { testLoginIfNeeded } from "../../shared/lib/auth";
 import { useSetAtom } from "jotai";
 import { pointsAtom } from "./convert/ConvertPointsContext";
 
-const LAST_KEY = "dailyPoints:lastQuestionKey"; // 질문 식별용 키 저장
+const LAST_KEY = "dailyPoints:lastQuestionKey";
 const DEV_MOCK_ON_5XX = false;
 
 function parseApiError(e) {
@@ -44,7 +44,7 @@ function decodeEmoji(s = "") {
   if (s?.startsWith?.("U+")) return String.fromCodePoint(parseInt(s.replace("U+", ""), 16));
   return s || "";
 }
-// 질문 고유키: date + ingredient.id + statement
+
 function buildQuestionKey(raw) {
   const d = raw?.date || "";
   const iid = raw?.ingredient?.id ?? "";
@@ -59,7 +59,7 @@ export default function DailyPointsPage() {
   const adNonceFromNav = state?.adNonce;
 
   const [retryToken, setRetryToken] = useState(null);
-  const [reseed, setReseed] = useState(null); // 강제 재요청용 난수
+  const [reseed, setReseed] = useState(null);
   const retryCountRef = useRef(0);
 
   const qc = useQueryClient();
@@ -67,7 +67,6 @@ export default function DailyPointsPage() {
 
   useHeader({ title: "", showBack: true });
 
-  // 광고에서 돌아왔을 때 캐시 제거 & 키 갱신
   useEffect(() => {
     if (!adWatched) return;
     const token = adNonceFromNav || String(Date.now());
@@ -79,7 +78,6 @@ export default function DailyPointsPage() {
     navigate(".", { replace: true, state: null });
   }, [adWatched, adNonceFromNav, navigate, qc]);
 
-  // 오늘의 문제 조회 (백엔드 최신 스펙 반영)
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["dailyPoints", "today", retryToken, reseed],
     queryFn: async () => {
@@ -102,11 +100,9 @@ export default function DailyPointsPage() {
             ? "emoji"
             : "none";
 
-        // 백엔드에 고유 id가 없으므로 key를 만들어 사용
         const key = buildQuestionKey(raw);
 
         return {
-          // id는 answer 제출에 필수 아님. 고유 구분용 key만 저장.
           key,
           date: raw?.date,
           itemName: raw?.ingredient?.name ?? "",
@@ -116,6 +112,7 @@ export default function DailyPointsPage() {
           attempted: !!raw?.attempted,
           canAnswer: !!raw?.canAnswer,
           remainingAttempts: raw?.remainingAttempts ?? 0,
+          ingredientId: raw?.ingredient?.id ?? null,
         };
       } catch (e) {
         const { status, msg } = parseApiError(e);
@@ -161,7 +158,6 @@ export default function DailyPointsPage() {
     keepPreviousData: false,
   });
 
-  // ▶ 새 문제 보장 로직 (같은 질문키/이미 시도/응답불가면 최대 2번 강제 재요청)
   useEffect(() => {
     if (!data) return;
     try {
@@ -170,14 +166,12 @@ export default function DailyPointsPage() {
       const sameAsBefore = !!curKey && lastKey === curKey;
       const blocked = data?.attempted || data?.canAnswer === false;
 
-      // 새 질문 정상 수령
       if (curKey && !sameAsBefore && !blocked) {
         sessionStorage.setItem(LAST_KEY, curKey);
         retryCountRef.current = 0;
         return;
       }
 
-      // 광고 직후 & 막힘 → 최대 2회 재요청
       const underRetry = Boolean(retryToken) && retryCountRef.current < 2;
       if (underRetry) {
         retryCountRef.current += 1;
@@ -188,8 +182,8 @@ export default function DailyPointsPage() {
           canAnswer: data?.canAnswer,
           try: retryCountRef.current,
         });
-        setReseed(crypto.randomUUID()); // queryKey 변경
-        qc.invalidateQueries({ queryKey: ["dailyPoints", "today"] }); // 캐시 무효화
+        setReseed(crypto.randomUUID());
+        qc.invalidateQueries({ queryKey: ["dailyPoints", "today"] });
       } else if (sameAsBefore || blocked) {
         alert("새 문제가 준비되지 않았어. 잠시 후 다시 시도해줘!");
       }
@@ -198,11 +192,9 @@ export default function DailyPointsPage() {
     }
   }, [data, retryToken, qc]);
 
-  // 정답 제출
   const { mutate: submitAnswer } = useMutation({
     mutationFn: async (answer) => {
       await testLoginIfNeeded();
-      // 백엔드에서 questionId 불필요(없음). idempotencyKey로 중복 방지.
       const payload = { answer, idempotencyKey: crypto.randomUUID() };
       const res = await APIService.private.post("/quiz/daily/answer", payload);
       return res?.data ?? res;
@@ -210,13 +202,11 @@ export default function DailyPointsPage() {
     onSuccess: async (res) => {
       const awarded = Number(res?.awarded ?? 0);
 
-      // 즉시 포인트 반영
       qc.setQueryData(["me", "summary"], (cur) => {
         const prev = Number(cur?.points ?? 0);
         return { ...(cur || {}), points: prev + awarded };
       });
 
-      // 전역 atom도 동기화
       setPoints((prev) => Number(prev ?? 0) + awarded);
 
       await qc.invalidateQueries({ queryKey: ["me", "summary"] });
@@ -226,7 +216,8 @@ export default function DailyPointsPage() {
         state: {
           result: res?.result,
           awarded: res?.awarded ?? 0,
-          ingredientName: res?.ingredientName || res?.item?.name,
+          ingredientName: data?.itemName || res?.ingredientName || res?.item?.name,
+          ingredientId: data?.ingredientId || res?.ingredient?.id || res?.item?.id,
         },
       });
     },

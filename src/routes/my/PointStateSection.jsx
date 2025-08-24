@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { useAtomValue } from "jotai"; // ✅ 추가
+import { useAtomValue } from "jotai";
 import { selectedAddressAtom } from "../map/state/addressAtom";
 import useCurrentAddress from "../map/hooks/useCurrentAddress";
 import pPoint from "@icon/my/pPointIcon.svg";
@@ -14,7 +14,7 @@ function deriveGuDong(addr = "") {
 }
 
 export default function PointStateSection() {
-  const selectedAddress = useAtomValue(selectedAddressAtom); // ✅ 정상 동작
+  const selectedAddress = useAtomValue(selectedAddressAtom);
 
   const currentPoints = useCurrentPoints();
 
@@ -26,7 +26,6 @@ export default function PointStateSection() {
 
   const shortAddr = deriveGuDong(rawAddr);
 
-  // 디버깅용 로그
   console.log("PointStateSection Debug:", {
     selectedAddress,
     fallbackAddr,

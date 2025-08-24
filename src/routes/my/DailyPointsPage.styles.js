@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const DailyPointsPageWrapper = styled.div`
-  padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 56px);
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
   width: 100%;
   margin: 0 auto;
@@ -54,7 +54,7 @@ export const OptionBox = styled.div`
   margin-top: 57px;
   box-sizing: border-box;
   width: 100%;
-  max-width: 390px; 
+  max-width: 390px;
   padding: 0 16px;
   justify-content: center;
   min-width: 0;

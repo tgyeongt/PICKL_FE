@@ -4,6 +4,11 @@ const inferType = (s) => {
 
   const c = (s?.category ?? "").toString();
 
+  // 새로운 대형마트 API의 카테고리 체크
+  if (c === "HYPERMARKET" || c === "SUPERMARKET" || c === "MART") {
+    return "mart";
+  }
+
   const isTraditional =
     c.includes("시장") ||
     c.includes("전통") ||
@@ -22,16 +27,20 @@ export const mapMarketFromAPI = (s) => {
     return null;
   }
 
+  const type = inferType(s);
+
   return {
     id: s.id,
     name: s.name,
-    type: inferType(s), 
+    type: type,
     address: s.address ?? "",
     latitude: lat,
     longitude: lng,
     parking: Boolean(s?.parking ?? false),
     imageUrl: s.imageUrl || "",
     rawCategory: s.category,
+    // 대형마트인 경우 brandCode도 추가
+    brandCode: type === "mart" ? s.brandCode : undefined,
   };
 };
 

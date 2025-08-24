@@ -13,46 +13,18 @@ export default function MyIngredientsPage() {
   const navigate = useNavigate();
   const [isNavigating, setIsNavigating] = useState(false);
 
-  const { ingredients, loading, error, hasMore, loadMore, unfavorite } = useFavoriteIngredients();
+  const { ingredients, loading, error, hasMore, loadMore, unfavorite, localFavoriteIds } =
+    useFavoriteIngredients();
 
   const observerRef = useRef(null);
 
-  // 로컬스토리지에서 식재료 찜 개수 계산
-  const countIngredientFavoritesFromLS = () => {
-    try {
-      const ls = window.localStorage;
-      let c = 0;
-      console.log("=== 로컬스토리지 검사 ===");
-      for (let i = 0; i < ls.length; i++) {
-        const k = ls.key(i) || "";
-        console.log(`키 ${i}: ${k}`);
-        if (k.startsWith("favorite:INGREDIENT:") && ls.getItem(k) === "true") {
-          c++;
-          console.log(`찜한 식재료 발견: ${k}`);
-        }
-      }
-      console.log(`총 찜한 식재료 개수: ${c}`);
-      return c;
-    } catch (e) {
-      console.error("로컬스토리지 검사 중 오류:", e);
-      return 0;
-    }
-  };
-
   // 실시간 찜 개수 업데이트
-  const [localFavCount, setLocalFavCount] = useState(() => countIngredientFavoritesFromLS());
+  const [localFavCount, setLocalFavCount] = useState(() => localFavoriteIds?.length || 0);
 
+  // localFavoriteIds가 변경될 때마다 개수 업데이트
   useEffect(() => {
-    const sync = () => setLocalFavCount(countIngredientFavoritesFromLS());
-    sync();
-    window.addEventListener("storage", sync);
-    // 같은 탭 반영: 간단히 setTimeout 폴링 0ms도 가능하지만, 필요 없으면 생략해도 OK
-    window.addEventListener("favorite:change", sync);
-    return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("favorite:change", sync);
-    };
-  }, []);
+    setLocalFavCount(localFavoriteIds?.length || 0);
+  }, [localFavoriteIds]);
 
   // 디버깅을 위한 로그
   console.log("=== MyIngredientsPage 디버깅 ===");
@@ -60,19 +32,17 @@ export default function MyIngredientsPage() {
   console.log("loading:", loading);
   console.log("error:", error);
   console.log("localFavCount:", localFavCount);
+  console.log("localFavoriteIds:", localFavoriteIds);
   console.log("ingredients length:", ingredients?.length);
-  console.log("ingredients type:", typeof ingredients);
-  console.log("ingredients is array:", Array.isArray(ingredients));
 
   const handleCardClick = async (item) => {
-    if (isNavigating) return; // 이미 네비게이션 중이면 중복 클릭 방지
+    if (isNavigating) return;
 
     try {
       setIsNavigating(true);
       const ingredientId = String(item.id);
       console.log("클릭된 식재료 ID:", ingredientId);
 
-      // 식재료 상세 페이지로 이동
       console.log("식재료 상세 페이지로 이동:", `/search/ingredients/${ingredientId}`);
       navigate(`/search/ingredients/${ingredientId}`);
     } catch (error) {
@@ -83,12 +53,28 @@ export default function MyIngredientsPage() {
     }
   };
 
+  const handleUnfavorite = (ingredientId) => {
+    console.log("찜 해제 시도:", ingredientId);
+
+    try {
+      const storageKey = `favorite:INGREDIENT:${ingredientId}`;
+      console.log(`식재료 로컬스토리지에서 제거: ${storageKey}`);
+      window.localStorage.removeItem(storageKey);
+    } catch (e) {
+      console.error("로컬스토리지 제거 실패:", e);
+    }
+
+    unfavorite(ingredientId);
+  };
+
   const items = useMemo(
     () =>
       (ingredients || []).map((ingredient) => ({
         id: ingredient.ingredientId,
         name: ingredient.name,
         img: ingredient.thumbnailUrl,
+        unit: ingredient.unit,
+        price: ingredient.price,
       })),
     [ingredients]
   );
@@ -96,7 +82,6 @@ export default function MyIngredientsPage() {
   console.log("items:", items);
   console.log("items length:", items?.length);
 
-  // 오로지 로컬스토리지만 사용
   const displayTotal = localFavCount;
 
   useEffect(() => {
@@ -145,7 +130,7 @@ export default function MyIngredientsPage() {
 
       <Grid as={motion.div} layout>
         <AnimatePresence>
-          {items.map((item, idx) => (
+          {items.map((item) => (
             <motion.div
               key={item.id}
               layout
@@ -153,25 +138,25 @@ export default function MyIngredientsPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9, y: 12 }}
               transition={{ duration: 0.25 }}
-              ref={idx === items.length - 1 ? observerRef : null}
             >
               <FavoriteItemCard
                 img={item.img}
                 title={item.name}
+                description={item.unit ? `${item.unit}` : `식재료 ${item.id}`}
                 liked={true}
                 onClick={() => handleCardClick(item)}
-                onClickHeart={(e) => {
-                  e?.stopPropagation?.();
-                  unfavorite(item.id);
-                }}
-                disabled={isNavigating}
+                onClickHeart={() => handleUnfavorite(item.id)}
               />
             </motion.div>
           ))}
         </AnimatePresence>
       </Grid>
 
-      {loading && <LoadingText>추가 로딩 중...</LoadingText>}
+      {hasMore && (
+        <div ref={observerRef} style={{ height: "20px" }}>
+          {loading && <LoadingText>더 불러오는 중...</LoadingText>}
+        </div>
+      )}
     </MyIngredientsPageWrapper>
   );
 }
@@ -179,6 +164,7 @@ export default function MyIngredientsPage() {
 const MyIngredientsPageWrapper = styled.div`
   min-height: 100vh;
   background: #fbfbfb;
+  padding-top: 50px;
   padding-bottom: 90px;
 `;
 

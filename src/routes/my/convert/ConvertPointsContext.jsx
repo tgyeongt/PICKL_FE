@@ -10,7 +10,7 @@ export const pointsAtom = atom(null);
 const DEFAULT_RULES = {
   pointStep: 1000,
   minPointConvert: 1000,
-  pointToWon: 10,
+  pointToWon: 1,
 };
 
 const ConvertPointsContext = createContext(null);

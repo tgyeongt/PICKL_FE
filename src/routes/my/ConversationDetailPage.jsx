@@ -86,7 +86,7 @@ export default function ConversationDetailPage() {
 }
 
 const Container = styled.div`
-  padding: 20px;
+  padding: 70px 20px 20px;
   min-height: 100vh;
 `;
 
