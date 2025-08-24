@@ -98,7 +98,6 @@ const AccentBox = styled.div`
     font-weight: 700;
     font-size: 30px;
     line-height: normal;
-    margin-top: 3px;
   }
 `;
 

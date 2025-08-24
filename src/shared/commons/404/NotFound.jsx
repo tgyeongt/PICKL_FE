@@ -14,11 +14,16 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 30vh;
+  padding-top: 10vh;
+
+  img {
+    width: 30px;
+    height: 30px;
+  }
 
   .title {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
-    margin: 5px 0;
+    margin: 10px 0;
   }
 `;

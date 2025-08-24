@@ -49,7 +49,7 @@ export default function SeasonalView() {
         effect: "slide",
         spaceBetween: 20,
         autoplay: {
-          delay: 3000,
+          delay: 2500,
           disableOnInteraction: false,
         },
         speed: 700,

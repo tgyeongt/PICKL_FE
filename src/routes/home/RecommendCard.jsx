@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import styled from "styled-components";
 import rain from "@icon/home/rain.svg";
 import { APIService } from "../../shared/lib/api";
+import { useNavigate } from "react-router";
 
 export default function RecommendCard() {
   const [item, setItem] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchProduct() {
@@ -28,7 +30,7 @@ export default function RecommendCard() {
   }, []);
 
   return (
-    <Wrapper>
+    <Wrapper onClick={() => navigate("/search/ingredients/367")}>
       <TextDiv>
         <p className="text_12">
           비 오는 날에는 <strong>파전</strong> 어때요?
