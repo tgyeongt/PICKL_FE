@@ -72,7 +72,7 @@ export default function ItemDetailPage() {
               1일
             </button>
             <button className={period === "1Y" ? "active" : ""} onClick={() => setPeriod("1Y")}>
-              1년
+              12달
             </button>
             <button className={period === "5Y" ? "active" : ""} onClick={() => setPeriod("5Y")}>
               5년

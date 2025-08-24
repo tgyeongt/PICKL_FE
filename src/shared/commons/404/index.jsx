@@ -1,13 +1,17 @@
 import styled from "styled-components";
 import icon_404 from "@icon/common/404.svg";
+import { useNavigate } from "react-router";
 
 export default function NotFoundPage() {
+  const navigate = useNavigate();
   return (
     <Wrapper>
       <img src={icon_404} alt="404" />
       <p className="title">페이지를 찾을 수 없습니다</p>
       <p className="content">죄송합니다. 더 이상 존재하지 않는 페이지입니다.</p>
-      <button className="btn">홈으로 이동</button>
+      <button className="btn" onClick={() => navigate("/")}>
+        홈으로 이동
+      </button>
     </Wrapper>
   );
 }

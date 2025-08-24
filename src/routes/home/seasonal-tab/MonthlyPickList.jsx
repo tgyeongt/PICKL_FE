@@ -36,7 +36,7 @@ const PickCard = styled.div`
 
 const Image = styled.img`
   width: 100%;
-  height: 60%;
+  height: 130px;
   object-fit: cover;
 `;
 
