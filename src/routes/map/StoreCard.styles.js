@@ -10,7 +10,7 @@ export const StoreCardWrapper = styled.div`
     pointer-events: auto;
     margin: 12px 0;
     width: 100%;
-    padding: 0 10px;
+    padding: 0;
     box-sizing: border-box;
   `
       : `
