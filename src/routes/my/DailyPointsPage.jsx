@@ -112,6 +112,7 @@ export default function DailyPointsPage() {
           attempted: !!raw?.attempted,
           canAnswer: !!raw?.canAnswer,
           remainingAttempts: raw?.remainingAttempts ?? 0,
+          ingredientId: raw?.ingredient?.id ?? null,
         };
       } catch (e) {
         const { status, msg } = parseApiError(e);
@@ -216,6 +217,7 @@ export default function DailyPointsPage() {
           result: res?.result,
           awarded: res?.awarded ?? 0,
           ingredientName: data?.itemName || res?.ingredientName || res?.item?.name,
+          ingredientId: data?.ingredientId || res?.ingredient?.id || res?.item?.id,
         },
       });
     },

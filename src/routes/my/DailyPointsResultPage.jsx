@@ -45,13 +45,24 @@ export default function DailyPointsResultPage() {
     try {
       await testLoginIfNeeded();
 
+      // 퀴즈 시스템과 식재료 시스템의 ID가 다를 수 있으므로 항상 이름으로 검색
       const searchRes = await APIService.private.get("/daily-price-change/store/items/search", {
         params: { name: itemName },
       });
 
       if (searchRes.success && searchRes.data.length > 0) {
-        const ingredientId = searchRes.data[0].id;
-        navigate(`/search/ingredients/${ingredientId}`);
+        // 검색 결과에서 정확한 이름을 가진 식재료를 찾기
+        const exactMatch = searchRes.data.find(
+          (item) =>
+            item.name === itemName || item.name.includes(itemName) || itemName.includes(item.name)
+        );
+
+        if (exactMatch) {
+          navigate(`/search/ingredients/${exactMatch.id}`);
+        } else {
+          // 정확한 매치가 없으면 첫 번째 결과 사용
+          navigate(`/search/ingredients/${searchRes.data[0].id}`);
+        }
       } else {
         navigate("/search", { state: { searchQuery: itemName } });
       }
