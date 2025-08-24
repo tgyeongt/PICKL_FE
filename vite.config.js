@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate", // 새 버전 생기면 자동 업데이트
+      registerType: "autoUpdate",
       includeAssets: [
         "favicons/favicon.ico",
         "favicons/apple-touch-icon.png",

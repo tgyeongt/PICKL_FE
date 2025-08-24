@@ -1,7 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RootLayout from "./shared/layouts/RootLayout";
-import ServiceLayout from "./shared/layouts/ServiceLayout";
 import ProtectedRoute from "./shared/layouts/ProtectedRoute";
 
 import RootPage from "./routes/home";
@@ -39,6 +38,9 @@ import ChatbotPage from "./routes/chat/ChatbotPage";
 // Search 페이지
 import ItemDetailPage from "./routes/search/ItemDetailPage";
 
+// 404 페이지
+import NotFoundPage from "./shared/commons/404";
+
 const router = createBrowserRouter([
   {
     Component: RootLayout,
@@ -49,7 +51,7 @@ const router = createBrowserRouter([
       {
         Component: ProtectedRoute,
         children: [
-          // 홈 하위
+          // 메인 페이지
           {
             path: "/",
             children: [
@@ -60,7 +62,7 @@ const router = createBrowserRouter([
             ],
           },
 
-          // 맵 하위
+          // 지도 페이지
           {
             path: "map",
             children: [
@@ -72,7 +74,7 @@ const router = createBrowserRouter([
             ],
           },
 
-          // 채팅 하위
+          // 채팅 페이지
           {
             path: "chat",
             children: [
@@ -82,36 +84,34 @@ const router = createBrowserRouter([
             ],
           },
 
-          // 패딩 포함 섹션들
+          // 검색 페이지
           {
-            Component: ServiceLayout,
+            path: "search",
             children: [
-              {
-                path: "search",
-                children: [
-                  { index: true, Component: Search },
-                  { path: "ingredients/:productNo", Component: ItemDetailPage },
-                ],
-              },
-              {
-                path: "my",
-                children: [
-                  { index: true, Component: My },
-                  { path: "list-ingredients", Component: MyIngredientsPage },
-                  { path: "list-recipes", Component: MyRecipesPage },
-                  { path: "history", Component: MyHistoryPage },
-                  { path: "history/:conversationId", Component: ConversationDetailPage },
-                  { path: "points-daily", Component: DailyPointsPage },
-                  { path: "points-convert", Component: ConvertPointsPage },
-                  { path: "points-daily/result", Component: DailyPointsResultPage },
-                  { path: "points-daily/closed", Component: DailyPointsClosedPage },
-                  { path: "points-daily/ad", Component: DailyAdPage },
-                ],
-              },
+              { index: true, Component: Search },
+              { path: "ingredients/:productNo", Component: ItemDetailPage },
+            ],
+          },
+
+          // 마이 페이지
+          {
+            path: "my",
+            children: [
+              { index: true, Component: My },
+              { path: "list-ingredients", Component: MyIngredientsPage },
+              { path: "list-recipes", Component: MyRecipesPage },
+              { path: "history", Component: MyHistoryPage },
+              { path: "history/:conversationId", Component: ConversationDetailPage },
+              { path: "points-daily", Component: DailyPointsPage },
+              { path: "points-convert", Component: ConvertPointsPage },
+              { path: "points-daily/result", Component: DailyPointsResultPage },
+              { path: "points-daily/closed", Component: DailyPointsClosedPage },
+              { path: "points-daily/ad", Component: DailyAdPage },
             ],
           },
         ],
       },
+      { path: "*", Component: NotFoundPage },
     ],
   },
 ]);

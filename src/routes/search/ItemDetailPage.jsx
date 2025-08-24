@@ -87,7 +87,7 @@ export default function ItemDetailPage() {
 }
 
 const Wrapper = styled.div`
-  padding: 0 10px;
+  padding: 0 30px;
   margin-top: 50px;
   display: flex;
   flex-direction: column;
@@ -126,6 +126,11 @@ const DiffText = styled.p`
   }
 `;
 
+const ChartWrapper = styled.div`
+  margin-top: 5vh;
+  height: 300px;
+`;
+
 const ButtonWrapper = styled.div`
   margin-top: 30px;
   display: flex;
@@ -144,9 +149,4 @@ const ButtonWrapper = styled.div`
       color: #5a5b6a;
     }
   }
-`;
-
-const ChartWrapper = styled.div`
-  margin-top: 30px;
-  height: 300px;
 `;

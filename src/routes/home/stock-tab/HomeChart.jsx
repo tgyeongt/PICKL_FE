@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 
 export default function HomeChart({ price, oneDayAgoPrice }) {
   const data = [
@@ -32,7 +32,6 @@ export default function HomeChart({ price, oneDayAgoPrice }) {
         width={0}
         domain={[(dataMin) => dataMin - pad, (dataMax) => dataMax + pad]}
       />
-      <Tooltip />
       <Line
         type="monotone"
         dataKey="value"

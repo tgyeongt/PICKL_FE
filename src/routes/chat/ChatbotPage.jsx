@@ -204,12 +204,23 @@ export default function ChatbotPage() {
     }
   };
 
+  const TypingIndicator = () => {
+    return (
+      <TypingDots>
+        <span></span>
+        <span></span>
+        <span></span>
+      </TypingDots>
+    );
+  };
+
   return (
     <Wrapper>
       <MessageList>
         {messages.map((m, i) => (
           <Message key={i} $role={m.role}>
             {m.text}
+            {m.role === "assistant" && !m.text && isStreaming && <TypingIndicator />}
           </Message>
         ))}
         <div ref={messagesEndRef} />
@@ -280,5 +291,40 @@ const SearchBox = styled.div`
     height: 40px;
     width: 40px;
     cursor: pointer;
+  }
+`;
+
+const TypingDots = styled.div`
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-top: 4px;
+
+  span {
+    width: 6px;
+    height: 6px;
+    background-color: #999;
+    border-radius: 50%;
+    display: inline-block;
+    animation: blink 1.4s infinite both;
+  }
+
+  span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes blink {
+    0% {
+      opacity: 0.2;
+    }
+    20% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.2;
+    }
   }
 `;

@@ -51,7 +51,7 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 130px 30px 30px 30px;
+  padding: 20vh 30px 30px 30px;
   background-color: #58d848;
   height: 100vh;
   max-width: 390px;
@@ -77,7 +77,9 @@ const TextWrapper = styled.div`
 const MotionImg = styled(motion.img)`
   position: absolute;
   right: 0;
-  bottom: 150px;
+  bottom: 15vh;
+  max-width: 300px;
+  width: 65vw;
 `;
 
 const LoginBtn = styled.button`

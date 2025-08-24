@@ -54,7 +54,7 @@ export default function FiveYearChart() {
 
   return (
     <LineChart
-      width={330}
+      width={340}
       height={300}
       data={priceData}
       margin={{ top: 28, right: 45, bottom: 6, left: 45 }}
