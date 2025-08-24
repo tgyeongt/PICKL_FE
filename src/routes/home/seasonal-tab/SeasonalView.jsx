@@ -15,6 +15,8 @@ export default function SeasonalView() {
   const swiperInstanceRef = useRef(null);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const now = new Date();
+  const [currentMonth] = useState(now.getMonth() + 1);
 
   const [seasonalList, setSeasonalList] = useState([]);
 
@@ -63,6 +65,7 @@ export default function SeasonalView() {
   }, [seasonalList]);
 
   if (loading) return <LoadingSpinner />;
+  const items = seasonalList.filter((item) => item.seasonMonth === currentMonth);
 
   return (
     <Wrapper>
@@ -76,7 +79,7 @@ export default function SeasonalView() {
         </ArrowButton>
         <SwiperWrapper className="swiper" ref={swiperContainerRef}>
           <div className="swiper-wrapper">
-            {seasonalList.map((item) => (
+            {items.map((item) => (
               <div className="swiper-slide" key={item.id}>
                 <SeasonalCard
                   id={item.id}
