@@ -38,6 +38,9 @@ import ChatbotPage from "./routes/chat/ChatbotPage";
 // Search 페이지
 import ItemDetailPage from "./routes/search/ItemDetailPage";
 
+// 404 페이지
+import NotFoundPage from "./shared/commons/404";
+
 const router = createBrowserRouter([
   {
     Component: RootLayout,
@@ -48,7 +51,7 @@ const router = createBrowserRouter([
       {
         Component: ProtectedRoute,
         children: [
-          // 홈 하위
+          // 메인 페이지
           {
             path: "/",
             children: [
@@ -59,7 +62,7 @@ const router = createBrowserRouter([
             ],
           },
 
-          // 맵 하위
+          // 지도 페이지
           {
             path: "map",
             children: [
@@ -71,7 +74,7 @@ const router = createBrowserRouter([
             ],
           },
 
-          // 채팅 하위
+          // 채팅 페이지
           {
             path: "chat",
             children: [
@@ -81,6 +84,7 @@ const router = createBrowserRouter([
             ],
           },
 
+          // 검색 페이지
           {
             path: "search",
             children: [
@@ -89,6 +93,7 @@ const router = createBrowserRouter([
             ],
           },
 
+          // 마이 페이지
           {
             path: "my",
             children: [
@@ -106,6 +111,7 @@ const router = createBrowserRouter([
           },
         ],
       },
+      { path: "*", Component: NotFoundPage },
     ],
   },
 ]);

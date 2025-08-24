@@ -57,7 +57,7 @@ const ToastBox = styled.div`
   color: white;
   padding: 12px 20px;
   border-radius: 30px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
   z-index: 1000;
   display: flex;
@@ -77,6 +77,6 @@ const ToastBox = styled.div`
     padding: 5px 8px;
     font-size: 14px;
     border-radius: 10px;
-    margin-left: 8px;
+    margin-left: 30px;
   }
 `;
