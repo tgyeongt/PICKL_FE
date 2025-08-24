@@ -55,4 +55,6 @@ const ConvertPointsPageWrapper = styled.div`
   background: #fbfbfb;
   padding: 50px 10px 0;
   overflow-x: hidden;
+  padding-right: 20px;
+  padding-left: 20px;
 `;
