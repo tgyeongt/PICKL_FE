@@ -66,7 +66,6 @@ export default function DailyPointsResultPage() {
         navigate("/search", { state: { searchQuery: itemName } });
       }
     } catch (error) {
-      console.error("식재료 검색 실패:", error);
       navigate("/search", { state: { searchQuery: itemName } });
     }
   };

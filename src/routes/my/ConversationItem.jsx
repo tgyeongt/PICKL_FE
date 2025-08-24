@@ -127,7 +127,6 @@ export default function ConversationItem({ conversation, onClick, onDelete }) {
 
       window.dispatchEvent(new CustomEvent("conversationDeleted"));
     } catch (error) {
-      console.error("대화 삭제 실패:", error);
       alert("대화 삭제에 실패했습니다. 다시 시도해주세요.");
     }
   };

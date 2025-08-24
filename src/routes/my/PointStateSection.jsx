@@ -26,13 +26,6 @@ export default function PointStateSection() {
 
   const shortAddr = deriveGuDong(rawAddr);
 
-  console.log("PointStateSection Debug:", {
-    selectedAddress,
-    fallbackAddr,
-    rawAddr,
-    shortAddr,
-  });
-
   return (
     <PointStateSectionWrapper>
       <LocationText>현위치 : {shortAddr || "위치 불러오는 중"}</LocationText>

@@ -97,12 +97,6 @@ export function ConvertPointsProvider({ children }) {
       points: newPoints,
     }));
 
-    console.log("포인트 전환 후 업데이트:", {
-      before: currentPoints,
-      after: newPoints,
-      차감: pointAmount,
-    });
-
     // 입력값 리셋
     dispatch({ type: "RESET" });
 

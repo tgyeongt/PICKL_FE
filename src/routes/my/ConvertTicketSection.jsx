@@ -31,29 +31,18 @@ export default function ConvertTicketSection() {
   const getCurrentDistrict = () => {
     const districtMatch = shortAddr.match(/([\w가-힣]+구)/);
     if (districtMatch) {
-      console.log("District found:", districtMatch[0]);
       return districtMatch[0];
     }
 
     const cityMatch = shortAddr.match(/([\w가-힣]+시)/);
     if (cityMatch) {
-      console.log("City found:", cityMatch[0]);
       return cityMatch[0];
     }
 
-    console.log("No district or city found, using default");
     return "서초";
   };
 
   const currentDistrict = getCurrentDistrict();
-
-  console.log("ConvertTicketSection Debug:", {
-    selectedAddress,
-    fallbackAddr,
-    rawAddr,
-    shortAddr,
-    currentDistrict,
-  });
 
   const TICKETS = [
     { key: "seoul", label: "서울사랑상품권", icon: seoulLove },

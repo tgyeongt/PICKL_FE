@@ -26,7 +26,6 @@ export default function ConversationDetailPage() {
           setError("대화 내용을 불러올 수 없습니다.");
         }
       } catch (err) {
-        console.error("Error fetching conversation:", err);
         setError("대화 내용을 불러오는 중 오류가 발생했습니다.");
       } finally {
         setLoading(false);

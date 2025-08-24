@@ -49,10 +49,10 @@ export default function MyRecipesPage() {
       if (type === "RECIPE" && !willFavorite) {
         try {
           const storageKey = `favorite:RECIPE:${id}`;
-          console.log(`이벤트로 인한 로컬스토리지 제거: ${storageKey}`);
+
           window.localStorage.removeItem(storageKey);
         } catch (e) {
-          console.error("이벤트로 인한 로컬스토리지 제거 실패:", e);
+          // 로컬스토리지 제거 실패 시 무시
         }
       }
       sync();
@@ -71,26 +71,19 @@ export default function MyRecipesPage() {
     try {
       setIsNavigating(true);
       const rid = String(item.id);
-      console.log("클릭된 레시피 ID:", rid);
 
       let seasonItemId = getSeasonIdByRecipe(rid);
-      console.log("캐시된 seasonItemId:", seasonItemId);
 
       if (seasonItemId) {
-        console.log("캐시된 정보로 이동:", `/seasonal/${seasonItemId}/${rid}`);
         navigate(`/seasonal/${seasonItemId}/${rid}`);
         return;
       }
 
-      console.log("캐시에 없음, API에서 찾기 시작...");
       try {
         const seasonItemsResponse = await APIService.private.get("/season-items");
         const seasonItems = seasonItemsResponse.data?.content || [];
-        console.log("시즌 아이템 개수:", seasonItems.length);
 
         if (seasonItems.length === 0) {
-          console.log("시즌 아이템이 없음, 다른 방법 시도...");
-
           for (let i = 1; i <= 100; i++) {
             try {
               const recipesResponse = await APIService.private.get(`/season-items/${i}/recipes`);
@@ -99,7 +92,6 @@ export default function MyRecipesPage() {
               const foundRecipe = recipes.find((recipe) => String(recipe.id) === rid);
               if (foundRecipe) {
                 seasonItemId = i;
-                console.log("레시피 찾음! seasonItemId:", seasonItemId);
                 upsertRecipeSeason(rid, seasonItemId);
                 break;
               }
@@ -110,40 +102,33 @@ export default function MyRecipesPage() {
         } else {
           for (const seasonItem of seasonItems) {
             try {
-              console.log(`시즌 아이템 ${seasonItem.id}의 레시피 확인 중...`);
               const recipesResponse = await APIService.private.get(
                 `/season-items/${seasonItem.id}/recipes`
               );
               const recipes = recipesResponse.data || [];
-              console.log(`시즌 아이템 ${seasonItem.id}의 레시피 개수:`, recipes.length);
 
               const foundRecipe = recipes.find((recipe) => String(recipe.id) === rid);
               if (foundRecipe) {
                 seasonItemId = seasonItem.id;
-                console.log("레시피 찾음! seasonItemId:", seasonItemId);
                 upsertRecipeSeason(rid, seasonItemId);
                 break;
               }
             } catch (error) {
-              console.warn(`Failed to fetch recipes for season item ${seasonItem.id}:`, error);
               continue;
             }
           }
         }
 
         if (seasonItemId) {
-          console.log("찾은 seasonItemId로 이동:", `/seasonal/${seasonItemId}/${rid}`);
           navigate(`/seasonal/${seasonItemId}/${rid}`);
           return;
         }
       } catch (error) {
-        console.error("Failed to find season item for recipe:", error);
+        // Failed to find season item for recipe silently
       }
 
-      console.log("seasonItemId를 찾을 수 없음");
       alert("이 레시피의 상세 정보를 찾을 수 없습니다. 시즌 레시피에서 먼저 확인해주세요.");
     } catch (error) {
-      console.error("Failed to navigate to recipe:", error);
       alert("레시피로 이동하는 중 오류가 발생했습니다.");
     } finally {
       setIsNavigating(false);
@@ -151,13 +136,6 @@ export default function MyRecipesPage() {
   };
 
   const items = useMemo(() => {
-    console.log("=== MyRecipesPage 레시피 데이터 ===");
-    console.log("recipes:", recipes);
-    if (recipes && recipes.length > 0) {
-      console.log("첫 번째 레시피:", recipes[0]);
-      console.log("레시피 필드들:", Object.keys(recipes[0]));
-    }
-
     return recipes.map((recipe) => ({
       id: recipe.recipeId,
       name: recipe.recipeName,
@@ -220,27 +198,10 @@ export default function MyRecipesPage() {
 
                   try {
                     const storageKey = `favorite:RECIPE:${item.id}`;
-                    console.log(`=== 레시피 찜 해제 디버깅 ===`);
-                    console.log(
-                      `삭제 전 로컬스토리지 상태:`,
-                      window.localStorage.getItem(storageKey)
-                    );
-                    console.log(`레시피 로컬스토리지에서 제거 시도: ${storageKey}`);
-
                     window.localStorage.removeItem(storageKey);
-
-                    console.log(
-                      `삭제 후 로컬스토리지 상태:`,
-                      window.localStorage.getItem(storageKey)
-                    );
-                    console.log(
-                      `삭제 완료 여부:`,
-                      window.localStorage.getItem(storageKey) === null
-                    );
                   } catch (e) {
-                    console.error("로컬스토리지 제거 실패:", e);
+                    // 로컬스토리지 제거 실패 시 무시
                   }
-                  console.log(`API 호출 시작: unfavorite(${item.id})`);
                   unfavorite(item.id);
                 }}
               />
