@@ -8,8 +8,8 @@ import useMySummary from "../hooks/useMySummary";
 export const pointsAtom = atom(null);
 
 const DEFAULT_RULES = {
-  pointStep: 1000,
-  minPointConvert: 1000,
+  pointStep: 10000,
+  minPointConvert: 10000,
   pointToWon: 1,
 };
 
@@ -38,14 +38,27 @@ export function ConvertPointsProvider({ children }) {
   // API에서 포인트 값이 바뀌면 전역 atom도 항상 동기화
   useEffect(() => {
     if (summary?.points == null) return;
-    setGlobalPoints((prev) =>
-      // 값이 달라졌다면 서버 값을 신뢰해 갱신
-      prev === summary.points ? prev : summary.points
-    );
-  }, [summary?.points, setGlobalPoints]);
+
+    // 전역 상태가 없거나 서버 값과 다른 경우 서버 값을 신뢰해 갱신
+    // 단, 포인트 전환 후에는 전역 상태를 우선시
+    if (globalPoints === null || globalPoints === undefined) {
+      setGlobalPoints(summary.points);
+    } else if (globalPoints !== summary.points) {
+      // 전역 상태가 있지만 서버 값과 다른 경우
+      // 포인트 전환 후일 수 있으므로 전역 상태를 유지
+    }
+  }, [summary?.points, setGlobalPoints, globalPoints]);
+
+  // 초기 로딩 시 전역 상태 설정
+  useEffect(() => {
+    if (summary?.points != null && globalPoints === null) {
+      setGlobalPoints(summary.points);
+    }
+  }, [summary?.points, globalPoints, setGlobalPoints]);
 
   // 전역 상태가 세팅되기 전엔 fallback으로 summary.points 사용
-  const currentPoints = summary?.points ?? null ?? globalPoints ?? 0;
+  const currentPoints =
+    globalPoints !== null && globalPoints !== undefined ? globalPoints : summary?.points ?? 0;
 
   const stats = {
     points: currentPoints,
@@ -72,10 +85,12 @@ export function ConvertPointsProvider({ children }) {
     if (amt > maxPoint)
       reasons.push(`보유 포인트(${maxPoint.toLocaleString()}P)보다 많이 전환할 수 없습니다`);
 
+    const canSubmit = reasons.length === 0 && !!state.selectedVoucher;
+
     return {
       maxPoint,
       wonAmount: amt * DEFAULT_RULES.pointToWon,
-      canSubmit: reasons.length === 0 && !!state.selectedVoucher,
+      canSubmit,
       reasons,
       disabled: isLoading || reasons.length > 0 || !state.selectedVoucher,
       rules: DEFAULT_RULES,
@@ -89,6 +104,8 @@ export function ConvertPointsProvider({ children }) {
 
     // 전역 상태에서 포인트 차감
     const newPoints = Math.max(0, currentPoints - pointAmount);
+
+    // 전역 상태 업데이트
     setGlobalPoints(newPoints);
 
     // React Query 캐시도 함께 업데이트
@@ -99,6 +116,9 @@ export function ConvertPointsProvider({ children }) {
 
     // 입력값 리셋
     dispatch({ type: "RESET" });
+
+    // 상태 업데이트가 확실히 반영되도록 강제 리렌더링
+    qc.invalidateQueries(["me", "summary"]);
 
     return { success: true };
   };

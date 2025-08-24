@@ -93,6 +93,7 @@ function TextSection() {
 
 function ButtonSection({ onClose, onNext }) {
   const { convert, converting, derived, state } = useConvertPoints();
+
   const handleConfirm = async () => {
     if (!derived?.canSubmit) {
       alert(derived?.reasons?.[0] || "입력 값을 확인해줘");

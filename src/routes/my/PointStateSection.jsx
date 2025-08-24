@@ -26,12 +26,14 @@ export default function PointStateSection() {
 
   const shortAddr = deriveGuDong(rawAddr);
 
+  const formattedPoints = formatNumber(currentPoints);
+
   return (
     <PointStateSectionWrapper>
       <LocationText>현위치 : {shortAddr || "위치 불러오는 중"}</LocationText>
       <Label>피클POINT</Label>
       <PointRow>
-        <PointNumber>{formatNumber(currentPoints)}</PointNumber>
+        <PointNumber>{formattedPoints}</PointNumber>
         <PointIcon src={pPoint} alt="" />
       </PointRow>
     </PointStateSectionWrapper>
