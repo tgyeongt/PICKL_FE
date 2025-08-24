@@ -53,6 +53,6 @@ const ConvertPointsPageWrapper = styled.div`
   max-width: 390px;
   margin: 0 auto;
   background: #fbfbfb;
-  padding: 0 10px;
+  padding: 50px 10px 0;
   overflow-x: hidden;
 `;

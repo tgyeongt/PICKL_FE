@@ -39,13 +39,12 @@ export default function MyHistoryPage({ onConversationDeleted }) {
   }, []);
 
   const handleConversationClick = (conversationId) => {
-    navigate(`/my/history/${conversationId}`);
+    navigate(`/chat/${conversationId}`);
   };
 
   const handleDeleteConversation = (conversationId) => {
     setConversations((prev) => prev.filter((conv) => conv.id !== conversationId));
 
-    // 상위 컴포넌트에 삭제 이벤트 알림
     if (onConversationDeleted) {
       onConversationDeleted();
     }
@@ -109,6 +108,7 @@ export default function MyHistoryPage({ onConversationDeleted }) {
 
 const Container = styled.div`
   min-height: 100vh;
+  padding-top: 50px;
 `;
 
 const ConversationList = styled.div``;

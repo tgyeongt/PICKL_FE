@@ -5,8 +5,7 @@ import selectMarket from "@icon/map/selectMarket.svg";
 import selectMart from "@icon/map/selectMart.svg";
 import distanceIcon from "@icon/map/distanceMarker.svg";
 import marketImg from "@image/marketImage.png";
-// 대형마트용 전용 이미지 - 현재는 전통시장 이미지와 동일하지만, 나중에 대형마트용 이미지로 교체 가능
-import martImg from "@image/marketImage.png";
+import martImg from "@image/martImage.png";
 
 import {
   StoreCardWrapper,
@@ -62,7 +61,6 @@ export default function StoreCard({ store, isListMode = false, onClick }) {
 
   if (!store) return null;
 
-  // 현재위치가 없어도 카드는 보이도록 수정
   const hasValidAddress = address?.lat && address?.lng;
 
   const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -95,7 +93,6 @@ export default function StoreCard({ store, isListMode = false, onClick }) {
     }
   };
 
-  // 현재위치가 있을 때만 거리 계산
   let distance = null;
   let walkMin = null;
   let driveMin = null;
@@ -111,47 +108,69 @@ export default function StoreCard({ store, isListMode = false, onClick }) {
   // 이미지 URL 유효성 검사 및 fallback 로직 개선
   const getStoreImage = () => {
     console.log("=== getStoreImage 디버깅 ===");
+    console.log("store:", store);
     console.log("store.type:", store.type);
     console.log("store.imageUrl:", store.imageUrl);
     console.log("store.imageUrl 타입:", typeof store.imageUrl);
     console.log("store.imageUrl 길이:", store.imageUrl?.length);
+    console.log("store.imageUrl이 빈 문자열인가?", store.imageUrl === "");
+    console.log("store.imageUrl이 공백만 있는가?", store.imageUrl?.trim() === "");
+    console.log("store.imageUrl이 null인가?", store.imageUrl === null);
+    console.log("store.imageUrl이 undefined인가?", store.imageUrl === undefined);
+
+    // 백엔드 API 응답 전체 구조 확인
+    console.log("=== 백엔드 API 응답 구조 분석 ===");
+    console.log("store 객체의 모든 키:", Object.keys(store));
+    console.log("store 객체의 모든 값:", Object.values(store));
 
     // 대형마트인 경우 백엔드 이미지 URL 우선 사용
     if (store.type === "mart") {
+      console.log("=== 대형마트 타입 처리 ===");
       if (store.imageUrl && store.imageUrl.trim() !== "") {
-        console.log("대형마트 타입 - 백엔드 imageUrl 사용:", store.imageUrl);
+        console.log("✅ 대형마트 타입 - 백엔드 imageUrl 사용 성공:", store.imageUrl);
+        console.log("이미지 URL 유효성 검사 통과");
         return store.imageUrl;
       } else {
-        console.log("대형마트 타입이지만 imageUrl 없음 - 기본 이미지 사용");
-        return martImg; // 대형마트용 기본 이미지로 변경
+        console.log("❌ 대형마트 타입이지만 imageUrl 없음 또는 빈 문자열");
+        console.log("imageUrl 값:", JSON.stringify(store.imageUrl));
+        console.log("imageUrl 길이:", store.imageUrl?.length);
+        console.log("trim() 결과:", store.imageUrl?.trim());
+        console.log("fallback으로 selectMart 아이콘 사용");
+        return martImg;
       }
     }
 
     // 전통시장인 경우 기본 이미지 사용
     if (store.type === "market") {
-      console.log("전통시장 타입 - marketImg 사용");
+      console.log("=== 전통시장 타입 처리 ===");
+      console.log("✅ 전통시장 타입 - marketImg 사용");
       return marketImg;
     }
 
     // 타입이 명확하지 않은 경우 백엔드 이미지가 있으면 사용, 없으면 기본 이미지
+    console.log("=== 타입 불명확 처리 ===");
     if (store.imageUrl && store.imageUrl.trim() !== "") {
-      console.log("타입 불명확 - 백엔드 imageUrl 사용:", store.imageUrl);
+      console.log("✅ 타입 불명확 - 백엔드 imageUrl 사용:", store.imageUrl);
       return store.imageUrl;
     }
 
-    console.log("타입 불명확 + 백엔드 이미지 없음 - marketImg 사용");
+    console.log("❌ 타입 불명확 + 백엔드 이미지 없음 - marketImg 사용");
     return marketImg;
   };
 
   const storeImg = getStoreImage();
 
   // 디버깅을 위한 로그 추가
-  console.log("=== StoreCard 디버깅 ===");
-  console.log("store:", store);
+  console.log("=== StoreCard 최종 렌더링 정보 ===");
+  console.log("store 객체:", store);
   console.log("store.type:", store.type);
+  console.log("store.name:", store.name);
+  console.log("store.id:", store.id);
   console.log("store.imageUrl:", store.imageUrl);
   console.log("marketImg:", marketImg);
+  console.log("martImg:", martImg);
   console.log("최종 storeImg:", storeImg);
+  console.log("이미지 로딩 시도 URL:", storeImg);
 
   return (
     <StoreCardWrapper
@@ -167,15 +186,22 @@ export default function StoreCard({ store, isListMode = false, onClick }) {
           src={storeImg}
           alt="상점 사진"
           onError={(e) => {
-            console.error("이미지 로딩 실패:", storeImg);
-            // mart 타입이면 대형마트용 기본 이미지로 fallback
+            console.error("=== 이미지 로딩 실패 ===");
+            console.error("실패한 이미지 URL:", storeImg);
+            console.error("store 타입:", store.type);
+            console.error("store 이름:", store.name);
+            console.error("store ID:", store.id);
+
+            // mart 타입이면 selectMart 아이콘으로 fallback
             if (store.type === "mart") {
-              console.log("대형마트 이미지 로딩 실패 - 대형마트용 기본 이미지로 fallback");
+              console.log("🔄 대형마트 이미지 로딩 실패 - selectMart 아이콘으로 fallback");
+              console.log("fallback 이미지:", martImg);
               e.target.src = martImg;
               return;
             }
             // 전통시장이나 기타 타입의 경우에만 기본 이미지로 fallback
-            console.log("전통시장/기타 타입 이미지 로딩 실패 - 기본 이미지로 fallback");
+            console.log("🔄 전통시장/기타 타입 이미지 로딩 실패 - 기본 이미지로 fallback");
+            console.log("fallback 이미지:", marketImg);
             e.target.src = marketImg;
           }}
         />

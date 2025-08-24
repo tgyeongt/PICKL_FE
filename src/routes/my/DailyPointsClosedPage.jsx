@@ -7,7 +7,13 @@ export default function DailyPointsClosedPage() {
 
   return (
     <ClosedWrapper>
-      <Emoji src={handIcon} alt="" />
+      <Emoji
+        src={handIcon}
+        alt=""
+        style={{
+          animation: "pulse 3s ease-in-out infinite",
+        }}
+      />
       <TitleBox>
         <Title>오늘의 퀴즈는 마감되었어요</Title>
         <Title>내일 만나요!</Title>
@@ -18,6 +24,19 @@ export default function DailyPointsClosedPage() {
       </Buttons>
 
       <CloseBtn onClick={() => navigate(-1)}>닫기 ×</CloseBtn>
+
+      <style>
+        {`
+          @keyframes pulse {
+            0%, 100% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.1);
+            }
+          }
+        `}
+      </style>
     </ClosedWrapper>
   );
 }

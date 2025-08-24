@@ -1,25 +1,21 @@
 import { useEffect, useState } from "react";
 
-// 기본 위치 상수 (KakaoMap.jsx와 동일)
 const DEFAULT_LOCATION = {
-  lat: 37.5013, // 서울 서초구 강남대로 27 (강남역 근처)
+  lat: 37.5013,
   lng: 127.0254,
   name: "서울 서초구 강남대로 27",
 };
 
-// GPS 위치 검증 (기본적인 유효성만 체크)
 function isUsableCoords(coords) {
   const lat = Number(coords?.latitude);
   const lng = Number(coords?.longitude);
   const acc = Number(coords?.accuracy ?? 99999);
 
-  // 기본적인 유효성만 체크
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     console.log("[useCurrentAddress] Invalid coordinates");
     return false;
   }
 
-  // 정확도가 너무 낮으면 거부 (200km 이상)
   if (acc > 200000) {
     console.log("[useCurrentAddress] Accuracy too low:", acc);
     return false;
@@ -55,7 +51,6 @@ export default function useCurrentAddress(enabled = true) {
 
       navigator.geolocation.getCurrentPosition(
         ({ coords }) => {
-          // 좌표 유효성 검사 추가
           if (!isUsableCoords(coords)) {
             console.log("[useCurrentAddress] Coordinates not usable, using default location");
             setAddress(DEFAULT_LOCATION.name);

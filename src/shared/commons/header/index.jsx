@@ -69,6 +69,7 @@ const Wrapper = styled.header`
   height: 50px;
   padding: 0 20px;
   background-color: white;
+  z-index: 100;
 `;
 
 const IconButton = styled.button`
