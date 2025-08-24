@@ -55,7 +55,6 @@ const Header = styled.div`
 
 const ToggleContainer = styled.div`
   display: flex;
-  height: 26px;
   align-items: center;
   background-color: #fff;
   border-radius: 30px;
