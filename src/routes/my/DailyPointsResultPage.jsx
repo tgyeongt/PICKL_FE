@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { APIService } from "../../shared/lib/api";
 import { testLoginIfNeeded } from "../../shared/lib/auth";
 import {
@@ -11,9 +12,7 @@ import {
   Sub,
   FailTitleBox,
   FailTitle,
-  SuccessImage,
   ImgBox,
-  FailImage,
   DecoIcon,
   Buttons,
   GhostBtn,
@@ -92,11 +91,20 @@ export default function DailyPointsResultPage() {
           <SuccessBigTitle>{awarded}P 획득</SuccessBigTitle>
           <Sub>예측 성공! 포인트가 적립되었어요</Sub>
           <ImgBox>
-            <SuccessImage
+            <motion.img
               src={successP}
               alt=""
               style={{
-                animation: "bounce 3s ease-in-out infinite",
+                width: "100%",
+                height: "100%",
+              }}
+              animate={{
+                y: [0, -10, -5, 0],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
               }}
             />
             <DecoIcon
@@ -178,63 +186,102 @@ export default function DailyPointsResultPage() {
             <FailTitle>내일 다시 도전해주세요</FailTitle>
           </FailTitleBox>
           <ImgBox>
-            <FailImage
+            <motion.img
               src={upsetFace}
               alt=""
               style={{
-                animation: "pulse 3s ease-in-out infinite",
+                width: "100%",
+                height: "100%",
+              }}
+              animate={{
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
               }}
             />
-            <DecoIcon
-              $variant="fail"
-              src={yellowIcon}
+            <motion.div
               style={{
+                position: "absolute",
                 top: "-40px",
                 left: "50%",
                 transform: "translateX(-50%) rotate(12deg)",
-                animation: "rotate 4s linear infinite",
               }}
-            />
-            <DecoIcon
-              $variant="fail"
-              src={redIcon}
+              animate={{ rotate: 360 }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            >
+              <DecoIcon $variant="fail" src={yellowIcon} />
+            </motion.div>
+            <motion.div
               style={{
+                position: "absolute",
                 top: "6px",
                 right: "-26px",
                 transform: "rotate(18deg)",
-                animation: "rotate 4s linear infinite reverse",
               }}
-            />
-            <DecoIcon
-              $variant="fail"
-              src={orangeIcon}
+              animate={{ rotate: -360 }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            >
+              <DecoIcon $variant="fail" src={redIcon} />
+            </motion.div>
+            <motion.div
               style={{
+                position: "absolute",
                 top: "54px",
                 left: "-36px",
                 transform: "rotate(-12deg)",
-                animation: "rotate 3s linear infinite",
               }}
-            />
-            <DecoIcon
-              $variant="fail"
-              src={redIcon}
+              animate={{ rotate: 360 }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            >
+              <DecoIcon $variant="fail" src={orangeIcon} />
+            </motion.div>
+            <motion.div
               style={{
+                position: "absolute",
                 bottom: "86px",
                 left: "-22px",
                 transform: "rotate(8deg)",
-                animation: "rotate 5s linear infinite reverse",
               }}
-            />
-            <DecoIcon
-              $variant="fail"
-              src={yellowIcon}
+              animate={{ rotate: -360 }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            >
+              <DecoIcon $variant="fail" src={redIcon} />
+            </motion.div>
+            <motion.div
               style={{
+                position: "absolute",
                 bottom: "80px",
                 right: "-20px",
                 transform: "rotate(-8deg)",
-                animation: "rotate 3.5s linear infinite",
               }}
-            />
+              animate={{ rotate: 360 }}
+              transition={{
+                duration: 3.5,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            >
+              <DecoIcon $variant="fail" src={yellowIcon} />
+            </motion.div>
           </ImgBox>
 
           <Buttons>
@@ -246,39 +293,6 @@ export default function DailyPointsResultPage() {
           <CloseBtn onClick={() => navigate("/my")}>닫기 ×</CloseBtn>
         </FailBox>
       )}
-      <style>
-        {`
-          @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-              transform: translateY(0);
-            }
-            40% {
-              transform: translateY(-10px);
-            }
-            60% {
-              transform: translateY(-5px);
-            }
-          }
-          
-          @keyframes pulse {
-            0%, 100% {
-              transform: scale(1);
-            }
-            50% {
-              transform: scale(1.1);
-            }
-          }
-          
-          @keyframes rotate {
-            0% {
-              transform: rotate(0deg);
-            }
-            100% {
-              transform: rotate(360deg);
-            }
-          }
-        `}
-      </style>
     </DailyPointsResultWrapper>
   );
 }
