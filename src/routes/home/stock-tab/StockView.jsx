@@ -3,11 +3,13 @@ import styled from "styled-components";
 import StockCard from "./StockCard";
 import QuestionIcon from "@icon/home/question_icon.svg";
 import { APIService } from "../../../shared/lib/api";
+import LoadingSpinner from "../../../shared/commons/loading/LoadingSpinner";
 
 export default function StockView() {
   const [selected, setSelected] = useState("소매");
   const [item, setItem] = useState([]);
   const [tooltipOpen, setTooltipOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const MARKET_MAP = {
     소매: "소매",
@@ -32,11 +34,15 @@ export default function StockView() {
         }
       } catch (error) {
         console.error(error);
+      } finally {
+        setLoading(false);
       }
     }
     fetchItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
+
+  if (loading) return <LoadingSpinner />;
 
   return (
     <Wrapper>

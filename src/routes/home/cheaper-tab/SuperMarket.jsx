@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import CheaperCard from "./CheaperCard";
 import { APIService } from "../../../shared/lib/api";
+import LoadingSpinner from "../../../shared/commons/loading/LoadingSpinner";
 
 export default function SuperMarket({ selected }) {
   const [superMarketList, setSuperMarketList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchSuperMarketItems() {
@@ -17,10 +19,14 @@ export default function SuperMarket({ selected }) {
         setSuperMarketList(filtered);
       } catch (error) {
         console.error("Failed to fetch supermarket items:", error);
+      } finally {
+        setLoading(false);
       }
     }
     fetchSuperMarketItems();
   }, []);
+
+  if (loading) return <LoadingSpinner />;
 
   return (
     <>

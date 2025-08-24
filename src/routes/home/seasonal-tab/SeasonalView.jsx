@@ -8,11 +8,13 @@ import SeasonalCard from "./SeasonalCard";
 import leftArrow from "@icon/home/arrow_left.svg";
 import rightArrow from "@icon/home/arrow_right.svg";
 import { APIService } from "../../../shared/lib/api";
+import LoadingSpinner from "../../../shared/commons/loading/LoadingSpinner";
 
 export default function SeasonalView() {
   const swiperContainerRef = useRef(null);
   const swiperInstanceRef = useRef(null);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
   const [seasonalList, setSeasonalList] = useState([]);
 
@@ -23,6 +25,8 @@ export default function SeasonalView() {
         setSeasonalList(res.data);
       } catch (error) {
         console.error("Failed to fetch season items:", error);
+      } finally {
+        setLoading(false);
       }
     }
     fetchSeasonItems();
@@ -57,6 +61,8 @@ export default function SeasonalView() {
       swiperInstanceRef.current?.destroy();
     };
   }, [seasonalList]);
+
+  if (loading) return <LoadingSpinner />;
 
   return (
     <Wrapper>
