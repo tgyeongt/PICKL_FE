@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import useHeader from "../../shared/hooks/useHeader";
-import { APIService } from "../../shared/lib/api";
+import { chatbotAPI } from "../../shared/hooks/useChatbot";
 import ConversationItem from "./ConversationItem";
 
 export default function MyHistoryPage({ onConversationDeleted }) {
@@ -20,7 +20,7 @@ export default function MyHistoryPage({ onConversationDeleted }) {
     try {
       setLoading(true);
       setError(null);
-      const response = await APIService.chatbot.getConversations();
+      const response = await chatbotAPI.getConversations();
       if (response.success) {
         setConversations(response.data);
       } else {
