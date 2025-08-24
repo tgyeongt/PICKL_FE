@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import styled from "styled-components";
 import handIcon from "@icon/my/twoHands.svg";
 
@@ -7,11 +8,24 @@ export default function DailyPointsClosedPage() {
 
   return (
     <ClosedWrapper>
-      <Emoji
+      <motion.img
         src={handIcon}
         alt=""
         style={{
-          animation: "pulse 3s ease-in-out infinite",
+          width: "182px",
+          height: "182px",
+          flexShrink: 0,
+          aspectRatio: "1/1",
+          marginBottom: "22px",
+          marginTop: "121px",
+        }}
+        animate={{
+          scale: [1, 1.1, 1],
+        }}
+        transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: "easeInOut",
         }}
       />
       <TitleBox>
@@ -24,19 +38,6 @@ export default function DailyPointsClosedPage() {
       </Buttons>
 
       <CloseBtn onClick={() => navigate(-1)}>닫기 ×</CloseBtn>
-
-      <style>
-        {`
-          @keyframes pulse {
-            0%, 100% {
-              transform: scale(1);
-            }
-            50% {
-              transform: scale(1.1);
-            }
-          }
-        `}
-      </style>
     </ClosedWrapper>
   );
 }
@@ -52,15 +53,6 @@ const ClosedWrapper = styled.div`
   justify-content: center;
   text-align: center;
   overflow-x: hidden;
-`;
-
-const Emoji = styled.img`
-  width: 182px;
-  height: 182px;
-  flex-shrink: 0;
-  aspect-ratio: 1/1;
-  margin-bottom: 22px;
-  margin-top: 121px;
 `;
 
 const TitleBox = styled.div`

@@ -6,6 +6,7 @@ import useFavoriteIngredients from "./hooks/useFavoriteIngredients";
 
 import FavoriteItemCard from "./FavoriteItemCard";
 import { AnimatePresence, motion } from "framer-motion";
+import ingredientLove from "../../shared/assets/icon/my/ingredientsLoveIcon.svg";
 
 export default function MyIngredientsPage() {
   useHeader({ title: "찜한 식재료 목록", showBack: true });
@@ -27,13 +28,6 @@ export default function MyIngredientsPage() {
   }, [localFavoriteIds]);
 
   // 디버깅을 위한 로그
-  console.log("=== MyIngredientsPage 디버깅 ===");
-  console.log("ingredients:", ingredients);
-  console.log("loading:", loading);
-  console.log("error:", error);
-  console.log("localFavCount:", localFavCount);
-  console.log("localFavoriteIds:", localFavoriteIds);
-  console.log("ingredients length:", ingredients?.length);
 
   const handleCardClick = async (item) => {
     if (isNavigating) return;
@@ -41,12 +35,9 @@ export default function MyIngredientsPage() {
     try {
       setIsNavigating(true);
       const ingredientId = String(item.id);
-      console.log("클릭된 식재료 ID:", ingredientId);
 
-      console.log("식재료 상세 페이지로 이동:", `/search/ingredients/${ingredientId}`);
       navigate(`/search/ingredients/${ingredientId}`);
     } catch (error) {
-      console.error("Failed to navigate to ingredient:", error);
       alert("식재료로 이동하는 중 오류가 발생했습니다.");
     } finally {
       setIsNavigating(false);
@@ -54,14 +45,12 @@ export default function MyIngredientsPage() {
   };
 
   const handleUnfavorite = (ingredientId) => {
-    console.log("찜 해제 시도:", ingredientId);
-
     try {
       const storageKey = `favorite:INGREDIENT:${ingredientId}`;
-      console.log(`식재료 로컬스토리지에서 제거: ${storageKey}`);
+
       window.localStorage.removeItem(storageKey);
     } catch (e) {
-      console.error("로컬스토리지 제거 실패:", e);
+      // 로컬스토리지 제거 실패 시 무시
     }
 
     unfavorite(ingredientId);
@@ -72,15 +61,12 @@ export default function MyIngredientsPage() {
       (ingredients || []).map((ingredient) => ({
         id: ingredient.ingredientId,
         name: ingredient.name,
-        img: ingredient.thumbnailUrl,
+        img: ingredientLove,
         unit: ingredient.unit,
         price: ingredient.price,
       })),
     [ingredients]
   );
-
-  console.log("items:", items);
-  console.log("items length:", items?.length);
 
   const displayTotal = localFavCount;
 

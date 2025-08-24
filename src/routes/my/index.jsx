@@ -25,6 +25,7 @@ const MyWrapper = styled.div`
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 100vh;
+  padding: 0 20px;
 `;
 
 const GreyBox = styled.div`

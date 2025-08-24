@@ -120,10 +120,10 @@ export default function ConvertHelpSheet({ open, onClose }) {
               <H>1. 전환 비율</H>
               <Ul>
                 <Li>
-                  <strong>1,000P = 1,000원</strong>
+                  <strong>10,000P = 10,000원</strong>
                 </Li>
                 <Li>
-                  전환 가능 단위: <strong>1,000P 이상, 1,000P 단위</strong>
+                  전환 가능 단위: <strong>10,000P 이상, 10,000P 단위</strong>
                 </Li>
               </Ul>
             </Section>

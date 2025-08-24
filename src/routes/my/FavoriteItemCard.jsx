@@ -71,13 +71,15 @@ const CardWrapper = styled.div`
 const ThumbWrapper = styled.div`
   position: relative;
   width: 100%;
-  height: 150px;
+  height: 150px; // 원래 크기로 되돌림
   overflow: hidden;
+  padding: 20px; // 이미지 주변에 여백 추가
+  box-sizing: border-box; // 패딩이 전체 크기에 포함되도록 설정
 `;
 const Thumb = styled.img`
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; // cover에서 contain으로 변경하여 이미지가 온전히 보이도록
   display: block;
 `;
 const RightTopIcon = styled.img`

@@ -12,16 +12,13 @@ function isUsableCoords(coords) {
   const acc = Number(coords?.accuracy ?? 99999);
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    console.log("[useCurrentAddress] Invalid coordinates");
     return false;
   }
 
   if (acc > 200000) {
-    console.log("[useCurrentAddress] Accuracy too low:", acc);
     return false;
   }
 
-  console.log("[useCurrentAddress] Coordinates accepted:", { lat, lng, acc });
   return true;
 }
 
@@ -52,7 +49,6 @@ export default function useCurrentAddress(enabled = true) {
       navigator.geolocation.getCurrentPosition(
         ({ coords }) => {
           if (!isUsableCoords(coords)) {
-            console.log("[useCurrentAddress] Coordinates not usable, using default location");
             setAddress(DEFAULT_LOCATION.name);
             setIsLoading(false);
             return;
@@ -74,8 +70,7 @@ export default function useCurrentAddress(enabled = true) {
             setIsLoading(false);
           });
         },
-        (err) => {
-          console.error("[useCurrentAddress] 위치 접근 실패:", err);
+        () => {
           setAddress(DEFAULT_LOCATION.name);
           setIsLoading(false);
         },

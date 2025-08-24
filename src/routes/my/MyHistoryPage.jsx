@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import useHeader from "../../shared/hooks/useHeader";
-import { APIService } from "../../shared/lib/api";
+import { chatbotAPI } from "../../shared/hooks/useChatbot";
 import ConversationItem from "./ConversationItem";
 
 export default function MyHistoryPage({ onConversationDeleted }) {
@@ -20,14 +20,13 @@ export default function MyHistoryPage({ onConversationDeleted }) {
     try {
       setLoading(true);
       setError(null);
-      const response = await APIService.chatbot.getConversations();
+      const response = await chatbotAPI.getConversations();
       if (response.success) {
         setConversations(response.data);
       } else {
         setError("대화 목록을 불러올 수 없습니다.");
       }
     } catch (err) {
-      console.error("Error fetching conversations:", err);
       setError("대화 목록을 불러오는 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
@@ -109,6 +108,7 @@ export default function MyHistoryPage({ onConversationDeleted }) {
 const Container = styled.div`
   min-height: 100vh;
   padding-top: 50px;
+  padding-left: 20px;
 `;
 
 const ConversationList = styled.div``;

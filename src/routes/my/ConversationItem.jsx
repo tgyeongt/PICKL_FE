@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import { APIService } from "../../shared/lib/api";
+import { chatbotAPI } from "../../shared/hooks/useChatbot";
 import moreHorizontalIcon from "../../shared/assets/icon/my/more-horizontal.svg";
 import DeleteConfirmModal from "./modal/DeleteConfirmModal";
 
@@ -122,12 +122,11 @@ export default function ConversationItem({ conversation, onClick, onDelete }) {
 
   const handleDeleteConfirm = async () => {
     try {
-      await APIService.chatbot.deleteConversation(conversation.id);
+      await chatbotAPI.deleteConversation(conversation.id);
       onDelete(conversation.id);
-      
+
       window.dispatchEvent(new CustomEvent("conversationDeleted"));
     } catch (error) {
-      console.error("대화 삭제 실패:", error);
       alert("대화 삭제에 실패했습니다. 다시 시도해주세요.");
     }
   };

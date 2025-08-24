@@ -119,6 +119,7 @@ export const Buttons = styled.div`
   flex-direction: column;
   gap: 15px;
   margin: 0 10px;
+  margin-top: 60px;
 `;
 
 export const GhostBtn = styled.button`
