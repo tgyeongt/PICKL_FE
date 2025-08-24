@@ -1,5 +1,27 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useParams } from "react-router-dom";
+import { privateAPI } from "../lib/api.js";
+
+// AI 피클 히스토리 관련 API 함수들
+export const chatbotAPI = {
+  // 대화 목록 조회 (제목 + ID)
+  getConversations: async () => {
+    const response = await privateAPI.get("/chatbot/conversations");
+    return response.data;
+  },
+
+  // 특정 대화의 채팅 내역 조회
+  getConversationHistory: async (conversationId) => {
+    const response = await privateAPI.get(`/chatbot/conversations/${conversationId}`);
+    return response.data;
+  },
+
+  // 대화 삭제
+  deleteConversation: async (conversationId) => {
+    const response = await privateAPI.delete(`/chatbot/conversations/${conversationId}`);
+    return response.data;
+  },
+};
 
 export default function useChatbot() {
   const { id } = useParams();
@@ -33,17 +55,9 @@ export default function useChatbot() {
     const fetchHistory = async () => {
       if (!conversationId) return;
       try {
-        const baseUrl = import.meta.env.VITE_SERVER_BASE_URL;
-        const token = localStorage.getItem("accessToken");
-        const res = await fetch(`${baseUrl}/chatbot/conversations/${conversationId}`, {
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-        const resData = await res.json();
-        if (res.ok) {
-          const apiMessages = resData.data?.messages || [];
+        const resData = await chatbotAPI.getConversationHistory(conversationId);
+        if (resData?.data?.messages) {
+          const apiMessages = resData.data.messages;
           const mapped = apiMessages.map((m) => ({
             role: m.role.toLowerCase(),
             text: m.content,

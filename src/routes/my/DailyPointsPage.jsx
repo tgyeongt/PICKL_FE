@@ -90,7 +90,6 @@ export default function DailyPointsPage() {
       try {
         const res = await APIService.private.get("/quiz/daily", { params });
         const raw = res?.data ?? res ?? {};
-        // console.log("[daily] raw =", raw);
 
         const iconValue = decodeEmoji(raw?.ingredient?.iconUrl ?? raw?.ingredient?.icon ?? "");
         const iconKind =
@@ -115,8 +114,7 @@ export default function DailyPointsPage() {
           ingredientId: raw?.ingredient?.id ?? null,
         };
       } catch (e) {
-        const { status, msg } = parseApiError(e);
-        console.error("[GET /quiz/daily] failed:", status, msg, e?.response?.data);
+        const { status } = parseApiError(e);
 
         if (status === 204) {
           navigate("/my/points-daily/result", { replace: true, state: { closed: true } });
@@ -175,13 +173,6 @@ export default function DailyPointsPage() {
       const underRetry = Boolean(retryToken) && retryCountRef.current < 2;
       if (underRetry) {
         retryCountRef.current += 1;
-        console.warn("[daily] same/attempted/cannot-answer → force refetch", {
-          lastKey,
-          curKey,
-          attempted: data?.attempted,
-          canAnswer: data?.canAnswer,
-          try: retryCountRef.current,
-        });
         setReseed(crypto.randomUUID());
         qc.invalidateQueries({ queryKey: ["dailyPoints", "today"] });
       } else if (sameAsBefore || blocked) {

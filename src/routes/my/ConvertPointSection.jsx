@@ -46,7 +46,7 @@ export default function ConvertPointSection() {
       <LabelRow>
         <Label>포인트 전환</Label>
         <ConvertedText>
-          1,000P = {(1000 * derived.rules.pointToWon).toLocaleString()}원
+          10,000P = {(10000 * derived.rules.pointToWon).toLocaleString()}원
         </ConvertedText>
       </LabelRow>
       <InputRow>
@@ -60,7 +60,7 @@ export default function ConvertPointSection() {
             onChange={handleChange}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            placeholder={`1000P 단위 / 최소 ${derived.rules.minPointConvert}P`}
+            placeholder={`10000P 단위 / 최소 ${derived.rules.minPointConvert}P`}
             onKeyDown={(e) => e.key === "Enter" && handleConvert()}
           />
           <Icon src={pPointBlack} alt="" />

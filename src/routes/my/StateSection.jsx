@@ -9,12 +9,6 @@ export default function StateSection() {
   const points = formatNumber(currentPoints);
   const joinedDays = summary?.daysSinceFriend ?? 0;
 
-  console.log("🔍 StateSection - Summary:", summary);
-  console.log("🔍 StateSection - Current Points:", currentPoints);
-  console.log("🔍 StateSection - Points:", points);
-  console.log("🔍 StateSection - Loading:", isLoading);
-  console.log("🔍 StateSection - Error:", error);
-
   if (isLoading) {
     return (
       <SectionWrapper>

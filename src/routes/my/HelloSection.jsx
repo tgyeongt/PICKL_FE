@@ -15,12 +15,9 @@ export default function HelloSection() {
   const { data: summary } = useMySummary();
 
   const selectedAddress = useAtomValue(selectedAddressAtom);
-  const { address: fallbackAddr, isLoading } = useCurrentAddress(true);
+  const { address: fallbackAddr } = useCurrentAddress(true);
 
   // 디버깅: 각 값 확인
-  console.log("[HelloSection] selectedAddress:", selectedAddress);
-  console.log("[HelloSection] fallbackAddr:", fallbackAddr);
-  console.log("[HelloSection] isLoading:", isLoading);
 
   // 현재위치를 못 읽으면 기본 위치 사용
   // selectedAddress에 실제 유효한 주소가 있을 때만 사용
@@ -28,10 +25,7 @@ export default function HelloSection() {
 
   const rawAddr = hasValidSelectedAddress || fallbackAddr || DEFAULT_LOCATION.name;
 
-  console.log("[HelloSection] hasValidSelectedAddress:", hasValidSelectedAddress);
-  console.log("[HelloSection] rawAddr:", rawAddr);
   const shortAddr = deriveGuDong(rawAddr);
-  console.log("[HelloSection] shortAddr:", shortAddr);
 
   return (
     <HelloSectionWrapper>

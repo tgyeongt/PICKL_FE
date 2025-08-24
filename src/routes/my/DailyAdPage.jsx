@@ -38,15 +38,11 @@ export default function DailyAdPage() {
     setIsLoading(true);
     try {
       await testLoginIfNeeded();
-      const res = await APIService.private.post("/quiz/attempts/extra");
-      const box = res && res.data !== undefined ? res.data : res;
-      const remaining = box?.remaining ?? null;
-      console.log("[attempts/extra] ok, remaining =", remaining, "raw =", box);
+      await APIService.private.post("/quiz/attempts/extra");
 
       const adNonce = crypto.randomUUID();
       navigate(returnTo, { replace: true, state: { adWatched: true, adNonce } });
     } catch (error) {
-      console.error("추가 시도 요청 실패:", error);
       alert("추가 시도권을 발급받지 못했어. 잠시 후 다시 시도해줘!");
     } finally {
       setIsLoading(false);

@@ -49,7 +49,6 @@ async function fetchMarts(params, controller) {
     });
     return res?.data ?? [];
   } catch (e) {
-    console.warn("[fetchMarts] API 호출 실패:", e);
     return [];
   }
 }
@@ -62,16 +61,13 @@ function isUsableCoords(coords) {
   const acc = Number(coords?.accuracy ?? 99999);
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    console.log("[usable] Invalid coordinates");
     return false;
   }
 
   if (acc > 200000) {
-    console.log("[usable] Accuracy too low:", acc);
     return false;
   }
 
-  console.log("[usable] Coordinates accepted:", { lat, lng, acc });
   return true;
 }
 
@@ -104,9 +100,7 @@ function getPositionOnce({ timeout = 10000 } = {}) {
     if (navigator.permissions?.query) {
       navigator.permissions
         .query({ name: "geolocation" })
-        .then((p) => {
-          console.log("[geo] permission state:", p.state);
-        })
+        .then(() => {})
         .catch(() => {});
     }
 
@@ -122,15 +116,14 @@ function getPositionOnce({ timeout = 10000 } = {}) {
         if (done) return;
         done = true;
         clearTimeout(tid);
-        const { latitude, longitude, accuracy } = pos.coords || {};
-        console.log("[geo] success:", { latitude, longitude, accuracy });
+
         resolve(pos);
       },
       (err) => {
         if (done) return;
         done = true;
         clearTimeout(tid);
-        console.warn("[geo] error:", { code: err?.code, message: err?.message });
+
         reject(err);
       },
       {
@@ -199,16 +192,12 @@ export default function KakaoMap() {
   // ---------- 맵 생성 (초기 중심 좌표를 인자로 받도록 변경: 핵심) ----------
   const createMap = useCallback((centerLat, centerLng) => {
     if (!mapRef.current || !mapRef.current.isConnected) {
-      console.warn("[map] Container not ready");
       return;
     }
 
     if (!window.kakao?.maps) {
-      console.warn("[map] Kakao maps not ready");
       return;
     }
-
-    console.log("[map] Creating map at:", centerLat, centerLng);
     const centerLatLng = new window.kakao.maps.LatLng(centerLat, centerLng);
 
     const map = new window.kakao.maps.Map(mapRef.current, {
@@ -233,11 +222,8 @@ export default function KakaoMap() {
 
     // 지도가 완전히 로드된 후 resize 트리거
     window.kakao.maps.event.addListener(map, "tilesloaded", () => {
-      console.log("[map] Tiles loaded, triggering resize");
       setTimeout(() => window.kakao.maps.event.trigger(map, "resize"), 100);
     });
-
-    console.log("[map] Map created successfully");
   }, []);
 
   // ---------- 마커/버블 ----------
@@ -282,8 +268,6 @@ export default function KakaoMap() {
 
   const showBubbleOverlay = useCallback(
     (store, storePosition, imageSrc, opts = { useOffset: true, offsetLat: 0.0007 }) => {
-      console.log("[bubble] Showing bubble overlay for store:", store.name, store);
-
       try {
         const key = `${store.latitude},${store.longitude}`;
         const prevRound = overlayMapRef.current.round[key];
@@ -338,8 +322,6 @@ export default function KakaoMap() {
   const renderMarkers = useCallback(
     (stores) => {
       if (!mapInstance || !stores) return;
-
-      console.log("[markers] Rendering markers:", stores.length);
 
       // 기존 마커들을 부드럽게 제거
       const removeMarkers = async () => {
@@ -462,8 +444,6 @@ export default function KakaoMap() {
 
           markersRef.current.push(roundOverlay);
         });
-
-        console.log("[markers] Rendered", markersRef.current.length, "markers");
       })();
     },
     [mapInstance, selectedCategory, showBubbleOverlay]
@@ -474,8 +454,6 @@ export default function KakaoMap() {
     let mounted = true;
 
     (async () => {
-      console.log("[init] Starting map initialization...");
-
       try {
         await ensureKakaoReady();
         if (!mounted) return;
@@ -483,26 +461,21 @@ export default function KakaoMap() {
         await waitForContainerSize();
         if (!mounted || isListMode) return;
 
-        console.log("[init] Kakao SDK and container ready");
-
         // 우선순위: addressState → geolocation(3s, usable만) → lastGeo → 여의도
         let center = null;
 
         if (addressState?.lat && addressState?.lng) {
           center = { lat: addressState.lat, lng: addressState.lng };
-          console.log("[init] Using addressState:", center);
         }
 
         if (!center) {
           try {
-            console.log("[init] Getting current position...");
             const pos = await getPositionOnce({ timeout: 3000 });
             const { coords } = pos || {};
             if (isUsableCoords(coords)) {
               const { latitude, longitude } = coords;
               center = { lat: latitude, lng: longitude };
               writeLastGeo(latitude, longitude);
-              console.log("[init] Using current position:", center);
 
               try {
                 const geocoder = new window.kakao.maps.services.Geocoder();
@@ -519,13 +492,13 @@ export default function KakaoMap() {
                   }
                 });
               } catch (e) {
-                console.warn("[init] Geocoding failed:", e);
+                // Geocoding failed silently
               }
             } else {
-              console.log("[init] Current position not usable");
+              // Current position not usable
             }
           } catch (error) {
-            console.warn("[init] Getting position failed:", error);
+            // Getting position failed silently
           }
         }
 
@@ -533,20 +506,17 @@ export default function KakaoMap() {
           const last = readLastGeo();
           if (last) {
             center = last;
-            console.log("[init] Using last known position:", center);
           }
         }
 
         // 기본값으로 서울 서초구 강남대로 27 사용
         if (!center) {
           center = DEFAULT_LOCATION;
-          console.log("[init] Using default position (Seoul Seocho-gu):", center);
         }
 
-        console.log("[init] Creating map with center:", center);
         createMap(center.lat, center.lng);
       } catch (error) {
-        console.error("[init] Map initialization failed:", error);
+        // Map initialization failed silently
       }
     })();
 
@@ -604,7 +574,6 @@ export default function KakaoMap() {
           writeLastGeo(latitude, longitude);
 
           if (!currentMarkerRef.current) {
-            console.log("[geo] Creating new current location marker");
             const markerImage = new window.kakao.maps.MarkerImage(
               currentMarkerIcon,
               new window.kakao.maps.Size(40, 40),
@@ -618,13 +587,12 @@ export default function KakaoMap() {
             marker.setMap(mapInstance);
             currentMarkerRef.current = marker;
           } else {
-            console.log("[geo] Updating current location marker");
             currentMarkerRef.current.setPosition(position);
             currentMarkerRef.current.setMap(mapInstance);
           }
         },
-        (error) => {
-          console.warn("[geo] Watch position error:", error);
+        () => {
+          // Watch position error silently
         },
         { enableHighAccuracy: false, maximumAge: 30000, timeout: 10000 }
       );
@@ -635,7 +603,7 @@ export default function KakaoMap() {
       try {
         if (navigator.permissions?.query) {
           const permission = await navigator.permissions.query({ name: "geolocation" });
-          console.log("[geo] Permission state:", permission.state);
+
           if (permission.state === "granted") {
             startWatch();
           } else if (permission.state === "prompt") {
@@ -647,7 +615,6 @@ export default function KakaoMap() {
           startWatch();
         }
       } catch (error) {
-        console.warn("[geo] Permission check failed, trying anyway:", error);
         startWatch();
       }
     };
@@ -656,7 +623,6 @@ export default function KakaoMap() {
 
     return () => {
       if (watchId != null) {
-        console.log("[geo] Clearing location watch");
         navigator.geolocation.clearWatch(watchId);
       }
     };
@@ -816,11 +782,8 @@ export default function KakaoMap() {
     select: (raw) =>
       raw
         .map((r) => {
-          console.log("=== 대형마트 원본 데이터 ===", r);
           const m = mapMarketFromAPI(r);
-          console.log("=== mapMarketFromAPI 결과 ===", m);
           const result = m && { ...m, type: "mart" };
-          console.log("=== 최종 대형마트 데이터 ===", result);
           return result;
         })
         .filter(Boolean),
@@ -1022,7 +985,7 @@ export default function KakaoMap() {
                     (addressState?.lat && addressState?.lng
                       ? { lat: addressState.lat, lng: addressState.lng }
                       : DEFAULT_LOCATION); // 서울 서초구 강남대로 27
-                  console.warn("[button] Coords not usable, fallback to:", fb);
+
                   mapInstance.panTo(new window.kakao.maps.LatLng(fb.lat, fb.lng));
                   return;
                 }
@@ -1030,13 +993,11 @@ export default function KakaoMap() {
                 // 정상 좌표일 때만 저장/이동/역지오코딩
                 const { latitude, longitude } = coords;
                 writeLastGeo(latitude, longitude);
-                console.log("[button] Moving to position:", { latitude, longitude });
 
                 const kakaoPos = new window.kakao.maps.LatLng(latitude, longitude);
                 mapInstance.panTo(kakaoPos);
 
                 if (!currentMarkerRef.current) {
-                  console.log("[button] Creating current location marker");
                   const markerImage = new window.kakao.maps.MarkerImage(
                     currentMarkerIcon,
                     new window.kakao.maps.Size(40, 40),
@@ -1050,7 +1011,6 @@ export default function KakaoMap() {
                   marker.setMap(mapInstance);
                   currentMarkerRef.current = marker;
                 } else {
-                  console.log("[button] Updating current location marker");
                   currentMarkerRef.current.setPosition(kakaoPos);
                   currentMarkerRef.current.setMap(mapInstance);
                 }
@@ -1076,10 +1036,9 @@ export default function KakaoMap() {
                     }
                   });
                 } catch (e) {
-                  console.warn("[button] Geocoding failed:", e);
+                  // Geocoding failed silently
                 }
               } catch (err) {
-                console.error("[button] Current location error:", err);
                 // 진짜 실패(권한 거부/API 불가)일 때만 안내
                 let tip = "";
                 switch (err?.code) {
