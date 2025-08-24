@@ -6,6 +6,7 @@ import useFavoriteIngredients from "./hooks/useFavoriteIngredients";
 
 import FavoriteItemCard from "./FavoriteItemCard";
 import { AnimatePresence, motion } from "framer-motion";
+import ingredientLove from "../../shared/assets/icon/my/ingredientsLoveIcon.svg";
 
 export default function MyIngredientsPage() {
   useHeader({ title: "찜한 식재료 목록", showBack: true });
@@ -60,7 +61,7 @@ export default function MyIngredientsPage() {
       (ingredients || []).map((ingredient) => ({
         id: ingredient.ingredientId,
         name: ingredient.name,
-        img: ingredient.thumbnailUrl,
+        img: ingredientLove,
         unit: ingredient.unit,
         price: ingredient.price,
       })),
