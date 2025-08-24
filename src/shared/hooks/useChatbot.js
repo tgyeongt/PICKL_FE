@@ -99,7 +99,12 @@ export default function useChatbot() {
 
   const enqueueAssistantText = (chunk) => {
     if (!chunk) return;
-    typingQueueRef.current.push(chunk);
+
+    let normalized = chunk;
+    if (normalized === "-") {
+      normalized = "\n\n-";
+    }
+    typingQueueRef.current.push(normalized);
     startTyping();
   };
 
