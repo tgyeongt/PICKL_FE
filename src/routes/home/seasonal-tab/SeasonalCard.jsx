@@ -23,7 +23,7 @@ export default function SeasonalCard({ id, title, img, description }) {
 const Card = styled.div`
   flex-shrink: 0;
   width: 220px;
-  height: 300px;
+  height: 280px;
   border-radius: 20px;
   position: relative;
   display: flex;

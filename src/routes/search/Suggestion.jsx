@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import ItemCard from "./ItemCard";
+import SuggestCard from "./SuggestCard";
 
 export default function Suggestion({ onSelectItem }) {
   const keywordList = [
@@ -23,7 +23,13 @@ export default function Suggestion({ onSelectItem }) {
       img: "https://picklocal.s3.ap-northeast-2.amazonaws.com/images/2025/08/204434f0-a9d7-450c-b7fe-446537601f0f",
       price: 10449,
     },
-    { productNo: 2109, title: "갈치/국산(냉장)(中)", unit: "1마리", img: "", price: 7464 },
+    {
+      productNo: 2109,
+      title: "갈치/국산(냉장)(中)",
+      unit: "1마리",
+      img: "https://picklocal.s3.ap-northeast-2.amazonaws.com/images/2025/08/bdeda80d-da3e-4c83-b3f2-55a9f25d26c3",
+      price: 7464,
+    },
   ];
 
   return (
@@ -45,7 +51,7 @@ export default function Suggestion({ onSelectItem }) {
       <TodaypickWrapper>
         <SubTitle>이달의 Pick</SubTitle>
         {seasonalList.map((item) => (
-          <ItemCard
+          <SuggestCard
             key={item.productNo}
             productNo={item.productNo}
             title={item.title}

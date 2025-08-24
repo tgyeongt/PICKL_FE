@@ -8,11 +8,15 @@ import SeasonalCard from "./SeasonalCard";
 import leftArrow from "@icon/home/arrow_left.svg";
 import rightArrow from "@icon/home/arrow_right.svg";
 import { APIService } from "../../../shared/lib/api";
+import LoadingSpinner from "../../../shared/commons/loading/LoadingSpinner";
 
 export default function SeasonalView() {
   const swiperContainerRef = useRef(null);
   const swiperInstanceRef = useRef(null);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const now = new Date();
+  const [currentMonth] = useState(now.getMonth() + 1);
 
   const [seasonalList, setSeasonalList] = useState([]);
 
@@ -23,6 +27,8 @@ export default function SeasonalView() {
         setSeasonalList(res.data);
       } catch (error) {
         console.error("Failed to fetch season items:", error);
+      } finally {
+        setLoading(false);
       }
     }
     fetchSeasonItems();
@@ -43,7 +49,7 @@ export default function SeasonalView() {
         effect: "slide",
         spaceBetween: 20,
         autoplay: {
-          delay: 3000,
+          delay: 2500,
           disableOnInteraction: false,
         },
         speed: 700,
@@ -58,6 +64,9 @@ export default function SeasonalView() {
     };
   }, [seasonalList]);
 
+  if (loading) return <LoadingSpinner />;
+  const items = seasonalList.filter((item) => item.seasonMonth === currentMonth);
+
   return (
     <Wrapper>
       <TextBox>
@@ -70,7 +79,7 @@ export default function SeasonalView() {
         </ArrowButton>
         <SwiperWrapper className="swiper" ref={swiperContainerRef}>
           <div className="swiper-wrapper">
-            {seasonalList.map((item) => (
+            {items.map((item) => (
               <div className="swiper-slide" key={item.id}>
                 <SeasonalCard
                   id={item.id}

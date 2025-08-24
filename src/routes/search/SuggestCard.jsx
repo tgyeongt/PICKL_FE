@@ -1,11 +1,15 @@
 import { useNavigate } from "react-router";
 import styled from "styled-components";
 
-export default function ItemCard({ productNo, title, unit, price }) {
+export default function SuggestCard({ productNo, title, unit, img, price }) {
   const navigate = useNavigate();
 
   return (
     <Card onClick={() => navigate(`ingredients/${productNo}`)}>
+      <ImgWrapper>
+        <img className="img" src={img} alt={title} />
+      </ImgWrapper>
+
       <TextBox>
         <div>
           <Title>{title}</Title>
@@ -20,8 +24,21 @@ export default function ItemCard({ productNo, title, unit, price }) {
 const Card = styled.div`
   display: flex;
   background-color: white;
-  height: 100px;
+  height: 110px;
   margin-bottom: 10px;
+`;
+
+const ImgWrapper = styled.div`
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+
+  .img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
 `;
 
 const TextBox = styled.div`
@@ -33,7 +50,7 @@ const TextBox = styled.div`
 `;
 
 const Title = styled.span`
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
 `;
 
@@ -44,7 +61,7 @@ const Unit = styled.span`
 `;
 
 const Price = styled.p`
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 700;
   color: #ec5f5f;
   line-height: normal;

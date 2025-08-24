@@ -2,13 +2,23 @@ import styled from "styled-components";
 import superMarketIcon from "@icon/home/super_market.svg";
 import traditionalMarketIcon from "@icon/home/traditional_market.svg";
 import lineIcon from "@icon/home/line.svg";
+import { useNavigate } from "react-router";
 
-export default function CheaperCard({ selected, name, img, unit, marketPrice, superMarketPrice }) {
+export default function CheaperCard({
+  selected,
+  name,
+  img,
+  unit,
+  marketPrice,
+  superMarketPrice,
+  productNo,
+}) {
   const mainIcon = selected === "전통시장" ? traditionalMarketIcon : superMarketIcon;
   const mainCategory = selected;
+  const navigate = useNavigate();
 
   return (
-    <CardWrapper>
+    <CardWrapper onClick={() => navigate(`/search/ingredients/${productNo}`)}>
       <NameWrapper>
         <img src={img} alt="상품 이미지" />
         <p className="name">{name}</p>
@@ -45,6 +55,11 @@ const NameWrapper = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
+
+  img {
+    width: 31px;
+    height: 31px;
+  }
 
   .name {
     font-size: 15px;
@@ -92,6 +107,7 @@ const AccentBox = styled.div`
     color: ${({ selected }) => (selected === "전통시장" ? "#EC5F5F" : "#5F89EC")};
     font-weight: 700;
     font-size: 30px;
+    line-height: normal;
   }
 `;
 
@@ -112,7 +128,7 @@ const NormalBox = styled.div`
     font-weight: 700;
     font-size: 17px;
     line-height: normal;
-    margin-top: 5px;
+    margin-top: 3px;
   }
 
   .line {

@@ -9,11 +9,16 @@ export default function MonthNavigator({ currentMonth, onPrev, onNext }) {
   const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
   const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
 
+  const isPrevPast = currentMonth === 1;
   const isNextFuture = nextMonth > todayMonth;
 
   return (
     <NavWrapper>
-      <NavButton onClick={onPrev}>
+      <NavButton
+        onClick={!isPrevPast ? onPrev : undefined}
+        $isDisabled={isPrevPast}
+        disabled={isPrevPast}
+      >
         <img src={leftArrow} alt="이전 달" />
         <span>{prevMonth}월</span>
       </NavButton>
@@ -22,7 +27,7 @@ export default function MonthNavigator({ currentMonth, onPrev, onNext }) {
 
       <NavButton
         onClick={!isNextFuture ? onNext : undefined}
-        $isFuture={isNextFuture}
+        $isDisabled={isNextFuture}
         disabled={isNextFuture}
       >
         <span>{nextMonth}월</span>
@@ -48,7 +53,7 @@ const NavButton = styled.button`
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  color: ${({ $isFuture }) => ($isFuture ? "#D2D2D6" : "#ADADAF")};
+  color: ${({ $isDisabled }) => ($isDisabled ? "#D2D2D6" : "#ADADAF")};
 
   img {
     width: 20px;

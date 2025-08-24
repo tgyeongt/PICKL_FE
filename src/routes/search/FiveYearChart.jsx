@@ -2,6 +2,8 @@ import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceDot } from "recharts";
 import { APIService } from "../../shared/lib/api";
+import LoadingSpinner from "../../shared/commons/loading/LoadingSpinner";
+import NotFound from "../../shared/commons/404/NotFound";
 
 export default function FiveYearChart() {
   const { productNo } = useParams();
@@ -37,8 +39,8 @@ export default function FiveYearChart() {
     fetchPrice();
   }, [productNo]);
 
-  if (loading) return <p>로딩 중...</p>;
-  if (!priceData || priceData.length < 2) return <p>데이터 없음</p>;
+  if (loading) return <LoadingSpinner />;
+  if (!priceData || priceData.length < 2) return <NotFound />;
 
   const first = priceData[0].value;
   const last = priceData[priceData.length - 1].value;

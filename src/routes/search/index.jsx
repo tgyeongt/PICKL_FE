@@ -48,7 +48,6 @@ export default function Search() {
             img: item.imageUrl,
             price: item.latestPrice,
           }));
-          console.log(res);
           setItemList(mapped);
         } else {
           setItemList([]);
