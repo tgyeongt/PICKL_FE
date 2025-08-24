@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import ItemCard from "./ItemCard";
+import SuggestCard from "./SuggestCard";
 
 export default function Suggestion({ onSelectItem }) {
   const keywordList = [
@@ -45,7 +45,7 @@ export default function Suggestion({ onSelectItem }) {
       <TodaypickWrapper>
         <SubTitle>이달의 Pick</SubTitle>
         {seasonalList.map((item) => (
-          <ItemCard
+          <SuggestCard
             key={item.productNo}
             productNo={item.productNo}
             title={item.title}
