@@ -33,6 +33,7 @@ export default function SuperMarket({ selected }) {
       {superMarketList.map((item) => (
         <CheaperCard
           key={item.productName}
+          productNo={item.productNo}
           selected={selected}
           name={item.productName}
           img={item.imageUrl}

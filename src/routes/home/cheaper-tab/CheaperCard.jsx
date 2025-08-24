@@ -2,13 +2,23 @@ import styled from "styled-components";
 import superMarketIcon from "@icon/home/super_market.svg";
 import traditionalMarketIcon from "@icon/home/traditional_market.svg";
 import lineIcon from "@icon/home/line.svg";
+import { useNavigate } from "react-router";
 
-export default function CheaperCard({ selected, name, img, unit, marketPrice, superMarketPrice }) {
+export default function CheaperCard({
+  selected,
+  name,
+  img,
+  unit,
+  marketPrice,
+  superMarketPrice,
+  productNo,
+}) {
   const mainIcon = selected === "전통시장" ? traditionalMarketIcon : superMarketIcon;
   const mainCategory = selected;
+  const navigate = useNavigate();
 
   return (
-    <CardWrapper>
+    <CardWrapper onClick={() => navigate(`/search/ingredients/${productNo}`)}>
       <NameWrapper>
         <img src={img} alt="상품 이미지" />
         <p className="name">{name}</p>

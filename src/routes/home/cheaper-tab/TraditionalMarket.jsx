@@ -33,6 +33,7 @@ export default function TraditionalMarket({ selected }) {
       {marketList.map((item) => (
         <CheaperCard
           key={item.productName}
+          productNo={item.productNo}
           selected={selected}
           name={item.productName}
           img={item.imageUrl}
