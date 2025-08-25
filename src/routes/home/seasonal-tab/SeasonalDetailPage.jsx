@@ -8,6 +8,7 @@ import Icon3 from "@icon/home/detail_icon_3.svg";
 import Icon4 from "@icon/home/detail_icon_4.svg";
 import useHeader from "@hooks/useHeader";
 import DetailItem from "./DetailItem";
+import LoadingSpinner from "../../../shared/commons/loading/LoadingSpinner";
 
 export default function SeasonalDetailPage() {
   const { id } = useParams();
@@ -41,7 +42,7 @@ export default function SeasonalDetailPage() {
 
   const icons = [Icon1, Icon2, Icon3, Icon4];
 
-  if (!item) return <p>Loading...</p>;
+  if (!item) return <LoadingSpinner />;
 
   const questions = [
     { q: "선택 방법", a: item.howToChoose },

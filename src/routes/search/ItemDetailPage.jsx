@@ -6,6 +6,7 @@ import { APIService } from "../../shared/lib/api";
 import OneDayChart from "./OneDayChart";
 import OneYearChart from "./OneYearChart";
 import FiveYearChart from "./FiveYearChart";
+import LoadingSpinner from "../../shared/commons/loading/LoadingSpinner";
 
 export default function ItemDetailPage() {
   const { productNo } = useParams();
@@ -48,6 +49,8 @@ export default function ItemDetailPage() {
         return null;
     }
   };
+
+  if (!item) return <LoadingSpinner />;
 
   return (
     <Wrapper>

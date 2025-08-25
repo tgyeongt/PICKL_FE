@@ -38,6 +38,7 @@ const Image = styled.img`
   width: 100%;
   height: 130px;
   object-fit: cover;
+  border-radius: 15px 15px 0 0;
 `;
 
 const TextBox = styled.div`
