@@ -22,14 +22,18 @@ export default function MonthlyPickPage() {
   };
 
   const [seasonalList, setSeasonalList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchSeasonItems() {
+      setIsLoading(true);
       try {
         const res = await APIService.private.get("/season-items");
         setSeasonalList(res.data);
       } catch (error) {
         console.error("Failed to fetch season items:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
     fetchSeasonItems();
@@ -40,7 +44,7 @@ export default function MonthlyPickPage() {
   return (
     <>
       <MonthNavigator currentMonth={currentMonth} onPrev={handlePrev} onNext={handleNext} />
-      <MonthlyPickList items={items} />
+      <MonthlyPickList items={items} isLoading={isLoading} />
     </>
   );
 }

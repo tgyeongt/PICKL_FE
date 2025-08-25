@@ -10,6 +10,7 @@ import Icon3 from "@icon/home/detail_icon_3.svg";
 import Icon4 from "@icon/home/detail_icon_4.svg";
 import Timer from "@icon/home/time_icon.svg";
 import Knife from "@icon/home/knife_icon.svg";
+import LoadingSpinner from "../../../shared/commons/loading/LoadingSpinner";
 
 export default function SeasonalRecipePage() {
   const { id, recipeId } = useParams();
@@ -47,6 +48,8 @@ export default function SeasonalRecipePage() {
     { q: "조리 방법", a: recipe.instructions },
     { q: "꿀팁", a: recipe.tip },
   ];
+
+  if (!recipe) return <LoadingSpinner />;
 
   return (
     <Wrapper>

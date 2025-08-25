@@ -6,6 +6,7 @@ import { APIService } from "../../shared/lib/api";
 import OneDayChart from "./OneDayChart";
 import OneYearChart from "./OneYearChart";
 import FiveYearChart from "./FiveYearChart";
+import LoadingSpinner from "../../shared/commons/loading/LoadingSpinner";
 
 export default function ItemDetailPage() {
   const { productNo } = useParams();
@@ -49,39 +50,35 @@ export default function ItemDetailPage() {
     }
   };
 
+  if (!item) return <LoadingSpinner />;
+
   return (
     <Wrapper>
-      {item ? (
-        <>
-          <TextWrapper>
-            <TitleText>
-              <span className="title">{item.productName}</span>
-              <span className="unit">{item.unit}</span>
-            </TitleText>
-            <DiffText $isPositive={item.priceDiff >= 0}>
-              <span className="price">{item.latestPrice?.toLocaleString() || "-"}원</span>
-              {item.priceDiff >= 0 ? "+" : ""}
-              {item.priceDiff}원 ({item.priceDiffRate}%)
-            </DiffText>
-          </TextWrapper>
+      <TextWrapper>
+        <TitleText>
+          <span className="title">{item.productName}</span>
+          <span className="unit">{item.unit}</span>
+        </TitleText>
+        <DiffText $isPositive={item.priceDiff >= 0}>
+          <span className="price">{item.latestPrice?.toLocaleString() || "-"}원</span>
+          {item.priceDiff >= 0 ? "+" : ""}
+          {item.priceDiff}원 ({item.priceDiffRate}%)
+        </DiffText>
+      </TextWrapper>
 
-          <ChartWrapper>{renderChart()}</ChartWrapper>
+      <ChartWrapper>{renderChart()}</ChartWrapper>
 
-          <ButtonWrapper>
-            <button className={period === "1D" ? "active" : ""} onClick={() => setPeriod("1D")}>
-              1일
-            </button>
-            <button className={period === "1Y" ? "active" : ""} onClick={() => setPeriod("1Y")}>
-              12달
-            </button>
-            <button className={period === "5Y" ? "active" : ""} onClick={() => setPeriod("5Y")}>
-              5년
-            </button>
-          </ButtonWrapper>
-        </>
-      ) : (
-        <p>로딩 중...</p>
-      )}
+      <ButtonWrapper>
+        <button className={period === "1D" ? "active" : ""} onClick={() => setPeriod("1D")}>
+          1일
+        </button>
+        <button className={period === "1Y" ? "active" : ""} onClick={() => setPeriod("1Y")}>
+          12달
+        </button>
+        <button className={period === "5Y" ? "active" : ""} onClick={() => setPeriod("5Y")}>
+          5년
+        </button>
+      </ButtonWrapper>
     </Wrapper>
   );
 }
