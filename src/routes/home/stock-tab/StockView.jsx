@@ -99,6 +99,7 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 600px;
 `;
 
 const Header = styled.div`

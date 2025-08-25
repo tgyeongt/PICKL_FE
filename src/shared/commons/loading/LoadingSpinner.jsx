@@ -23,5 +23,5 @@ const SpinnerWrapper = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 100px 0;
+  padding: 120px 0;
 `;

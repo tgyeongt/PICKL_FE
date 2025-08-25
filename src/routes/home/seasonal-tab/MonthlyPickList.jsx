@@ -1,8 +1,29 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
-export default function MonthlyPickList({ items }) {
+export default function MonthlyPickList({ items, isLoading }) {
   const navigate = useNavigate();
+
+  if (isLoading) {
+    return (
+      <ListWrapper>
+        {Array(4)
+          .fill(0)
+          .map((_, index) => (
+            <PickCard key={index}>
+              <Skeleton height={130} borderRadius="15px 15px 0 0" />
+              <TextBox>
+                <Skeleton width={80} height={20} />
+                <Line />
+                <Skeleton width={120} height={14} />
+              </TextBox>
+            </PickCard>
+          ))}
+      </ListWrapper>
+    );
+  }
 
   return (
     <ListWrapper>

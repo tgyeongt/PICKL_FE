@@ -6,6 +6,7 @@ import { APIService } from "../../../shared/lib/api";
 import OneDayChart from "./OneDayChart";
 import OneYearChart from "./OneYearChart";
 import FiveYearChart from "./FiveYearChart";
+import LoadingSpinner from "../../../shared/commons/loading/LoadingSpinner";
 
 export default function CategoryDetailPage() {
   useHeader({
@@ -46,36 +47,32 @@ export default function CategoryDetailPage() {
     }
   };
 
+  if (!detail) return <LoadingSpinner />;
+
   return (
     <Wrapper>
-      {detail ? (
-        <>
-          <TextWrapper>
-            <p className="title">{detail.categoryName}</p>
-            <DiffText $isPositive={detail.priceDiff >= 0}>
-              <span className="price">{detail.avgLatestPrice?.toLocaleString() || "-"}원</span>
-              {detail.priceDiff >= 0 ? "+" : ""}
-              {detail.priceDiff}원 ({detail.priceDiffRate}%)
-            </DiffText>
-          </TextWrapper>
+      <TextWrapper>
+        <p className="title">{detail.categoryName}</p>
+        <DiffText $isPositive={detail.priceDiff >= 0}>
+          <span className="price">{detail.avgLatestPrice?.toLocaleString() || "-"}원</span>
+          {detail.priceDiff >= 0 ? "+" : ""}
+          {detail.priceDiff}원 ({detail.priceDiffRate}%)
+        </DiffText>
+      </TextWrapper>
 
-          <ChartWrapper>{renderChart()}</ChartWrapper>
+      <ChartWrapper>{renderChart()}</ChartWrapper>
 
-          <ButtonWrapper>
-            <button className={period === "1D" ? "active" : ""} onClick={() => setPeriod("1D")}>
-              1일
-            </button>
-            <button className={period === "1Y" ? "active" : ""} onClick={() => setPeriod("1Y")}>
-              12달
-            </button>
-            <button className={period === "5Y" ? "active" : ""} onClick={() => setPeriod("5Y")}>
-              5년
-            </button>
-          </ButtonWrapper>
-        </>
-      ) : (
-        <Spinner />
-      )}
+      <ButtonWrapper>
+        <button className={period === "1D" ? "active" : ""} onClick={() => setPeriod("1D")}>
+          1일
+        </button>
+        <button className={period === "1Y" ? "active" : ""} onClick={() => setPeriod("1Y")}>
+          12달
+        </button>
+        <button className={period === "5Y" ? "active" : ""} onClick={() => setPeriod("5Y")}>
+          5년
+        </button>
+      </ButtonWrapper>
     </Wrapper>
   );
 }
@@ -134,23 +131,4 @@ const ButtonWrapper = styled.div`
 const ChartWrapper = styled.div`
   margin-top: 30px;
   height: 300px;
-`;
-
-const Spinner = styled.div`
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #5a5b6a;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin-top: 200px;
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
 `;
