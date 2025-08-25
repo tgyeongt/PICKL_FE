@@ -267,7 +267,7 @@ export default function KakaoMap() {
   };
 
   const showBubbleOverlay = useCallback(
-    (store, storePosition, imageSrc, opts = { useOffset: true, offsetLat: 0.0007 }) => {
+    (store, storePosition, imageSrc, opts = { useOffset: true, offsetLat: 0.002 }) => {
       try {
         const key = `${store.latitude},${store.longitude}`;
         const prevRound = overlayMapRef.current.round[key];
